@@ -15,7 +15,7 @@ cache must be invalidated at cache-line level (e.g. 64 Bytes).
 Since cache invalidation can cause a core accessing the same cache line 
 to stall and wait for the data to be loaded, 
 wasting both the CPU time and memory bandwidth in the same time. 
-frequen cache invalidations caused by false sharing 
+Frequent cache invalidations caused by false sharing 
 can cause severe performance issue, even slowdown a program as much as an order of magnitude.
 Unfortunately, the hardware evolution of making more cores
 or with larger cache line size makes false sharing increasingly common.
@@ -23,7 +23,7 @@ or with larger cache line size makes false sharing increasingly common.
 False sharing has been found to affect different levels of software stack, including
 OS (Linux kernel~\cite{OSfalsesharing}), Java virtual machine~\cite{JVMfalsesharing}, 
 common libraries~\cite{libfalsesharing} and real applications~\cite{appfalsesharing, mysql}. 
-People also observed false sharing in runtime system such as share memory system
+People also observed false sharing in share memory system
 ~\cite{dsmfalsesharing} and transactional memory ~\cite{tmfalsesharing}.
 Although many efforts have been made in false sharing detection, existing
 tools have various limitations:
@@ -59,7 +59,7 @@ and changing different target platforms such as address mode (32-bit or 64-bit) 
 size (64 Bytes or 128 Bytes) and so on. Unfortuantely, 
 existing detection tools do not consider these dynamic properties, and
 therefore are unable to identify potential performance-degrading false
-sharing problems that may occur in an execution under a set of different 
+sharing problems that may occur in an execution under a different set of 
 dynamic properties.
 
 In this paper, we propose a new false sharing detector, \defaults{}, aiming to
@@ -73,7 +73,6 @@ false sharing problems that may appear in a slightly different environment.
 \Defaults{} has the following contributions:
 \begin{itemize}
 \item
-% methodology
 \defaults{} provides a novel false sharing detection method by
 combining compiler instrumentation with runtime system.
 %, which can avoid the shortcomings of existing tools. 
@@ -118,7 +117,17 @@ environment rather than test environment due to environmental changes.
 
 \end{itemize}
 
-The orgnization of this paper is as follows .....
+\subsection*{Outline}
+
+The remainder of this paper is organized as follows. 
+Section~\ref{sec:overview} describes \defaults{}'s detection mechanisms and
+algorithms in detail.
+Section~\ref{sec:prediction} discusses how to predict potential false sharing without manifests. 
+Section~\ref{sec:evaluation} presents experimental results, including using \defaults{} to find 
+false sharing problems in several benchmarks and real applications. 
+Finally, 
+Section~\ref{sec:relatedwork} describes key related work and Section~\ref{sec:conclusion} concludes.
+
 
 %There are two types of false sharings:
 %A. Different threads are accessed different locations according to the definition of flase sahrings. 
