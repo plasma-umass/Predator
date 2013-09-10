@@ -1,9 +1,11 @@
+\label{sec:evaluation}
+
 All evaluations are performed on a quiescent Intel Core 2 dual-processor system equipped with 
 16GB of RAM. 
 %whereas each processor has 4 cores. 
 %processor with 4 cores), with 8GB of RAM. 
 Each processor is a 4-core 64-bit Intel Xeon running at 2.33 GHz with a 4MB
-shared L2 cache and XXXMB private L1 DCache and ICache. 
+shared L2 cache and 32KB private L1 cache. 
 The underlying operating system is unmodified CentOS 5.5, running with Linux kernel
 version 2.6.18-194.17.1.el5. The glibc version is 2.5. 
 In order to compare the performance fairly, all benchmarks were built as 64-bit executables 
@@ -11,11 +13,12 @@ using LLVM compiler (version 3.2). The compiler optimization level is set to ``-
 so memory allocation callsites can be reported precisely.
 %since we can not report line number of source code with optimization level larger than
 %``-O2''.
+In our evaluation, we choose two popular benchmark suites, Phoenix~\cite{phoenix-hpca} and PARSEC~\cite{parsec}.
 
 Our evaluations aim to answer the following questions:
 \begin{itemize}
 \item
-  How effective is \defaults{} on detecting false sharing problem (Section ~\ref{sec:effective})?
+  How effective is \defaults{} on detecting and predicting false sharing problem (Section ~\ref{sec:effective})?
 
 \item
   What is the performance overhead of \defaults{} with and without prediction
@@ -25,10 +28,6 @@ Our evaluations aim to answer the following questions:
   What is the memory overhead of \defaults{}~ (Section~\ref{sec:memoverhead})?
 \end{itemize}
 
-In our evaluation, we choose 
-two popular benchmark suites, Phoenix~\cite{phoenix-hpca} and PARSEC~\cite{parsec}.
-In additon, we select X real applications that are widely used but have not
-been used in any previous false sharing detection work.
 
 \subsection{Detection and Prediction Effectiveness}
 \label{sec:effective}
@@ -91,15 +90,16 @@ In \texttt{histogram}, multiple threads repeatedly modify different locations of
 Padding the data structure \texttt{thread\_arg\_t} fixes the false sharing problem and 
 helps to improve the performance around 46\%.
 In \texttt{streamcluster}, multiple threads are changing a \texttt{bool} array, \texttt{switch\_membership}, simultaneously. By simply changing this array to \texttt{long} type contributes to about 4.7\% performance improvement. 
-None of these two false sharing problems has been reported by previous tools.
+%None of these two false sharing problems has been reported by previous tools.
 
 Other false sharing problems has been revealed by previous tool \sheriff{}~\cite{sheriff}. 
 Same as \sheriff{}, we didn't see much performance improvement for \texttt{reverse\_index} and 
 \texttt{word\_count} since number of updates inside them is not a significant number. But they
 are actually false sharing problems that have been verified manually by us.
 
-\texttt{streamcluster} has another false sharing problem that different threads may change the same object 
-simultaneously. Actually authors of \texttt{streamclsuter} have already realized possible
+\texttt{streamcluster} has another false sharing problem that different threads 
+may change the same object simultaneously. 
+Actually authors of \texttt{streamclsuter} have already realized possible
 false shairing problems and meant to utilize a macro \texttt{CACHE\_LINE} to avoid it. Unfortunately,
 the defaulted value of this macro is setted to $32$ bytes, which is different with the actual
 cache line size that we are using. By setting to $64$ bytes instead, we see around $7.5\%$ performance
@@ -112,10 +112,10 @@ Fixing false sharing inside can improve the performance for $12\times$.
 Actually, if we do not enable prediction then 
 we can not detect false sharing problem inside because false sharing behavior is 
 very sensitive to the starting address of false sharing object. 
+We are going to explore this more detailed in Section~\ref{sec:predicteval}.
 Since \defaults{} are using a customized memory manager, which may
 bring us different allocation metadata and different memory map for allocation,
 false sharing problem may not manifest with ``-O1'' optmization flag of \texttt{clang}.
-We are going to explore this more detailed in Section~\ref{sec:predicteval}.
 %http://tex.stackexchange.com/questions/42619/x-mark-to-match-checkmark
 %\begin{comment}
 
@@ -136,12 +136,11 @@ According to the architect of \texttt{MySQL} Mikael Ronstrom, ``we had gathered 
 InnoDB..., participants from MySQL support... and a number of generic specialists on 
 computer performance...'', ''the fruit of the meeting ... were able to 
 improve \texttt{MySQL} performance by 6$\times$ with those scalability fixes''. 
-The false sharing of boost library is also hard to find manually 
-as since it is caused by the special usage of \texttt{spinlock} pool. 
+The false sharing of boost library is caused by the special usage of \texttt{spinlock} pool and fixing
+it brings 40\% performance improvement. 
 \defaults{} is able to succesfully detect false sharing locations
 in \texttt{MySQL} and \texttt{boost} library. 
-For the other four applications, \defaults{} doest not find false sharing that
-severely degrade performance.
+For the other four applications, \defaults{} doest not find serere false sharing problems.
 
 \subsubsection{Prediction Effectiveness}
 \label{sec:predicteval}
