@@ -39,14 +39,15 @@ e.g. \texttt{mysql} server application and \texttt{boost} library. Fixing these 
 false sharing problems brings us around $6\times$ and $40\%$ improvement.
 
 Moreoever, existing tools can only detect those manifested false sharing.
-However, any change of compiler optimization, compiler, memory manager, 
-memory allocation order, cache line size or even hardware processors 
-may affect manifests of false sharing, which leaves many of them undetected by existing tools. 
-By exploring many possibilities under various settings,
-\Defaults{} is the first tool that can {\it predict} possible false sharing
-problems that do not even manifest. It can report all possible false
-sharing problems with only one execution and minimal overhead in addition to
-detection overhead. 
+However, the manifests of false sharing can be affected by alignments between
+objects and cache lines: any change of compiler optimization, compiler, memory manager, 
+memory allocation order, cache line size or different target binary 
+may affect manifests of false sharing, 
+which leaves many of them undetected by existing tools.
+\Defaults{} is the first tool which can predict possible false sharing 
+accurately by examining word accesses and verifying possible cache invalidations.   
+It can report all false sharing problems with only one execution and 
+minimal overhead in addition to detection overhead. 
 
 %What is novel in our work?
 %How is the performance overhead?
