@@ -1,5 +1,7 @@
 % Why prediction is important?
+\label{sec:prediction}
 
+\subsection{Potential False Sharing}
 %\begin{figure*}[!htb]
 \begin{figure*}
 \begin{center} 
@@ -23,7 +25,6 @@
 \label{fig:potentialfalsesharing}
 \end{figure*}
 
-\subsection{Potential False Sharing}
 Manifests of false sharing highly depend on 
 alignments of objects and corresponding cache lines.
 Our prediction tool focuses on \textbf{potential false sharing},  the type of
@@ -111,7 +112,7 @@ and adjacent cache lines.
 When the number of writes to a cache line $L$ reaches a second threshold (called as
 {\it Predicting-Threshold}), 
 identify potential false sharing by evaluating these word accesses on $L$ and 
-its adjacent cache lines. Section ~\ref{sec:evaluation} describes the evaluation method.
+its adjacent cache lines. Section ~\ref{sec:evaluatingfs} describes the evaluation method.
 %Since this threshold is used to trigger the prediction process, we call it
 %prediction-trigger threshold.
 
@@ -123,7 +124,7 @@ Otherwise, go back to Step 2 to track more detailed accesses.
 \end{enumerate}
 
 \subsection{Evaluating Potential False Sharing}
-\label{sec:evaluation}
+\label{sec:evaluatingfs}
 %For simplicity, \defaults{} do not evaluate potential false sharing if a cache line 
 %has actual false sharing.
 To describe easily, we first introduce a {\it virtual line} concept:
@@ -200,7 +201,7 @@ object on a real cache line.
 cache invalidations on those virtual lines. 
 
 For potential false sharing caused by double cache line size, as described in
-last section~\ref{sec:evaluation}, a virtual line is composed of 
+last section~\ref{sec:evaluatingfs}, a virtual line is composed of 
 cache line with index $2*i$ and $2*i+1$. \defaults{} verifies cache invalidations
 on a virtual line on which false sharing has been discovered.
 

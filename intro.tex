@@ -20,7 +20,7 @@ can cause severe performance issue, even slowdown a program as much as an order 
 Unfortunately, the hardware evolution of making more cores
 or with larger cache line size makes false sharing increasingly common.
 
-False sharing has been found to affect different levels of software stack, including
+False sharing has been found in different levels of software stack, including
 OS (Linux kernel~\cite{OSfalsesharing}), Java virtual machine~\cite{JVMfalsesharing}, 
 common libraries~\cite{libfalsesharing} and real applications~\cite{appfalsesharing, mysql}. 
 People also observed false sharing in share memory system
@@ -41,13 +41,14 @@ communicate among different threads. Also, to the best of our knowledge, none of
 utilized to find false sharing problem in real applications.
 
 Despite their different features and limitations, all existing detection tools 
-have two common drawbacks.
+have two more common drawbacks.
 The first drawback is that existing techniques can not detect false sharing for 
 the entire software stack, whereas they can work on a specific level of software stack.
 The second drawback is that they can only detect those false sharing occurring in current execution.
 However, as pointed out by Nanavati et al.~\cite{OSdetection}, 
 some dynamic properties of a system can easily 
-change the manifest of false sharing problems. They also give an example that 
+change the manifest of false sharing problems.
+They also give an example that 
 {\it "GCC fixes false sharing in the Phoenix linear\_regression benchmark 
 at -O2 and -O3 optimization, while clang fails to even at the highest
 optimization level".}
@@ -120,7 +121,7 @@ environment rather than test environment due to environmental changes.
 \subsection*{Outline}
 
 The remainder of this paper is organized as follows. 
-Section~\ref{sec:overview} describes \defaults{}'s detection mechanisms and
+Section~\ref{sec:detection} describes \defaults{}'s detection mechanisms and
 algorithms in detail.
 Section~\ref{sec:prediction} discusses how to predict potential false sharing without manifests. 
 Section~\ref{sec:evaluation} presents experimental results, including using \defaults{} to find 
