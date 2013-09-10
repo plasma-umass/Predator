@@ -1,0 +1,129 @@
+%False sharing problem is a cache usage problem. 
+%Cache, with much faster access speed than main memory, is normally utilized by CPU
+%to accelerate program executions by preloading a fixed size of data into the cache each time, 
+%called as a cache line.  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Why 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{sec:intro} 
+False sharing is notorious for performance degradation in multithreaded
+programs due to cache coherence protocol, which exists in most mordern 
+ mutlicore processors.
+The reason of having cache coherence protocol is to ensure the correctness of
+program executions: 
+if some cache line data on a core needs to be updated, the duplicated data in any other core's private 
+cache must be invalidated at cache-line level (e.g., 64 Bytes). 
+However, frequent invalidations can cause severe performance problem.
+In the case of false sharing where multiple threads access different locations
+in the same cache line in a \textit{ping-pong} manner, generated cache
+invalidations can easily degrade program performance as much as an order of magnitude. 
+%Because cache invalidation can cause a thread accessing the same cache line to stall and wait for the data 
+%to be loaded from main memory, wasting both the CPU time and memory bandwidth in the same time. 
+Unfortunately, the hardware evolution is on the venue of building more cores
+with larger cache line size, which makes false sharing increasingly common.
+
+Prior studies have shown that false sharing affects different levels of current software stack.
+It has been found in OS (Linux kernel~\cite{OSfalsesharing}), Java virtual machine~\cite{JVMfalsesharing}, 
+common libraries~\cite{libfalsesharing} and real applications~\cite{appfalsesharing, mysql}. 
+People also observed false sharing in runtime system such as share memory system
+~\cite{dsmfalsesharing} and transactional memory ~\cite{tmfalsesharing}.
+Although many efforts have been made in false sharing detection, existing
+tools have various limitations:
+they either introduce significant performance overhead~
+\cite{falseshare:simulator, falseshare:binaryinstrumentation1,falseshare:binaryinstrumentation2}, or 
+ are incapable of reporting false sharing 
+precisely and accurately~\cite{qinzhaodetection, detect:ptu, detect:intel, falseshare:binaryinstrumentation1, DProf, falseshare:binaryinstrumentation2}, 
+or require special OS support~\cite{OSdetection}.
+% or they can only detect one kind of
+%false sharing problem on a specific multithreading library~\cite{sheriff}.
+The state-of-the-art tool, Sheriff~\cite{sheriff} overcomes these limitations. However, 
+it can only detect write-write type false sharing in programs using pthreads library,
+and can not work correctly on programs using ad-hoc synchronizations or using stack variables to 
+communicate among different threads. Also, to the best of our knowledge, none of them has been 
+utilized to find false sharing problem in real applications.
+
+Despite their different features and limitations, all existing detection tools 
+have two common drawbacks.
+The first drawback is that existing techniques can not detect false sharing for 
+the entire software stack, whereas they can work on a specific level of software stack.
+The second drawback is that they can only detect those false sharing occurring in current execution.
+However, as pointed out by Nanavati et al.~\cite{OSdetection}, 
+some dynamic properties of a system can easily 
+change the manifest of false sharing problems. They also give an example that 
+{\it "GCC fixes false sharing in the Phoenix linear\_regression benchmark 
+at -O2 and -O3 optimization, while clang fails to even at the highest
+optimization level".}
+To our understanding, those dynamic properties include 
+choosing different compiler, 
+enabling different compiler optimizations, 
+using different memory management schemes,
+and changing different target platforms such as address mode (32-bit or 64-bit) and cache line
+size (64 Bytes or 128 Bytes) and so on. Unfortuantely, 
+existing detection tools do not consider these dynamic properties, and
+therefore are unable to identify potential performance-degrading false
+sharing problems that may occur in an execution under a set of different 
+dynamic properties.
+
+In this paper, we propose a new false sharing detector, \defaults{}, aiming to
+not only {\it detect} all existing false sharing problems accurately and precisely,
+but {\it predict} those potential 
+false sharing problems that may appear in a slightly different environment. 
+%To be more specific, 
+%\defaults{} can report potential false sharing problems with different cache line size and different starting address of an object 
+%without the need of another execution. 
+
+\Defaults{} has the following contributions:
+\begin{itemize}
+\item
+% methodology
+\defaults{} provides a novel false sharing detection method by
+combining compiler instrumentation with runtime system.
+%, which can avoid the shortcomings of existing tools. 
+Since \defaults{} neither relies on the support of specific hardware and OS ,
+nor binds to specific threading library, 
+it is suitable for the entire software stack, 
+i.e., hypervisors, operating systems, libraries and applications. 
+%Since compiler can be utilized to do selective instrumentation, 
+%\defaults{} can be utilized to detect all kinds of false sharing problem with ideal overhead. 
+
+% effect: can detect all kinds of false sharing problems.
+\item
+\defaults{} can actually detect all kinds of false sharing problems accurately and precisely 
+with reasonable overhead. 
+It reveals some unknown false sharing problems in those benchmark suites evaluated by 
+previous approaches.
+It is also the first tool to detect false sharing problems existing in real applications, e.g.,
+\texttt{mysql} server application and \texttt{boost} library.
+% combine compiler instrumentation with runtime system, so that it can 
+%detect all kinds of false sharing problem including write-write false sharing. 
+%avoid the shortcomings of runtime-only system, where Sheriff can not detect the read-writee false sharings. 
+%Also, because of the limit of their implementation, Sheriff can not support the program using the ad hoc synchronization
+%or using the stack variables to communicate among different threads.
+%Also, it looks like that we can provide a evenly performance overhead.
+%Also, sheriff should only work on specific thread library, currently, it can only work on pthreads library. 
+%We are trying to extending the same idea to different thread library. Now we can also run DeFault to detect all 
+%false sharings using other threads libraries.
+
+% prediction
+\item
+\defaults{} is the first approach to predict potential false sharing that does
+not manifest in an execution but may appear and greatly affect the performance of programs 
+in a slightly different environment. 
+This avoids the predicament of detection tools: problems may occur in a real
+environment rather than test environment due to environmental changes. 
+%Existing approaches is based on specific hardware,
+%runtime environment(using specific libraries and compilers) and specific cache line size, which is OK to detect those 
+%existing false sharings. But they fail to capture those variables or objects which can greately slow down performance 
+
+%In order to save memory usage, we propose a threshold invoked detection based on the predefined number of writes on a cache line, which
+%can be used to track the .
+
+\end{itemize}
+
+The orgnization of this paper is as follows .....
+
+%There are two types of false sharings:
+%A. Different threads are accessed different locations according to the definition of flase sahrings. 
+%B. Locations with a large amount of reads is placed in the cache line with a large amount of writes.
+%For the second type, existing tools may tend to miss that.  

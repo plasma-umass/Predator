@@ -1,0 +1,34 @@
+(1) Maybe user should have a option to check those false sharing inside stack variables.
+(2) Should we use a thread index instead to save some spaces? Also, maybe it is better for the performance. 
+    Generally, we will not have two threads that are accessing the same subheap. However, we may have to use
+    the pthread\_t for comparison since it is unique? but actually it is not.
+    We should use the unique heap in order to avoid the lock usage and overlapping (Diehard problem). In Diehard,
+    two threads can use the same heap every time. 
+    Also, we may introduce the current pointer in the thread library so that we can know corresponding information quickly. 
+    whenever all children threads has been exited, then we should possibly update the 
+    So we should use a
+
+(3) Should we have an internal heap which also use tid to index their subheap.
+(4) When there are multiple files there, how we can instrument every file one by one? Design a makefile to do this automatically. 
+
+(a) Inserting the into clang so that we do not need to change the make file for each files.
+(b) We will keep track of each read/write accesses instead of only checking once for each basic block.
+
+
+Improving the performance step by step
+(1) Avoiding using the singleton if we can use the simple variable.
+(2) Trying to use the sampling (100 instructions we only sample one).
+
+(4) How to sample those accesses. We donot want to loose those cache invalidations. 
+So for each cache line, we are using the cache line based sampling mechanism. 
+In the non-sampling phase, we will not update everything. 
+
+However, there is a per-thread based sampling. For example, we only sample those accesses in the 
+first 500 over 1000 accesses. However, we may lost a lot of interleaving accesses by doing this. 
+
+If we are using the system level accessCount, for example, updating this shared accesses can cause a lot of
+invalidations - which cause a lot of performance problem by using the shared account.
+
+Also, we should try to implement those very basic accesses incremental in the first level instead of inside a very deep level.
+
+

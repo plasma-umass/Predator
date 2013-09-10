@@ -1,0 +1,52 @@
+%How is existing work?
+%Sharing inside mulithreaading programs is not easy, they can easily cause correctness or performance problem. 
+%Inappropriate sharing can dramatically degrade the performance of 
+%mulithreading programs and seriously affect the scalability. 
+%So detecting false sharing accurately and precisely can be helpful for user to fix corresponding performance problem. 
+
+\begin{comment}
+False sharing is notorious for performance degradation in multithreaded
+programs. It apprears when two or more threads running on different cores periodically access 
+different portions of data that can fit into one cache line. Since caching
+system in a multicore processor needs to ensure a coherent view of memory
+accross all cores, it has to grant an exclusive access
+for each write operation by invidating duplicate copies in other cores. As a
+result, frequent cache invalidation can seriously affect the scalability and
+performance of multithreaded programs.
+\end{comment} 
+
+False sharing is a notorious performance issue for different software stacks, 
+which can dramatically degrade the performance and seriously affect the scalability 
+of software.
+
+%Many reserach efforts have been made to detect false sharing. 
+Unfortunately, previous approaches to detect false sharing
+either introduce significant performance overhead, or fail
+to report false sharing accurately and precisely, or have different limitations of usage. 
+%\sheriff{}, the prior state-of-the-art tool, 
+%can only detect write-write false sharing in applications using \pthreads{} library.
+We propose a novel method, \defaults{}, to combine compiler instrumentation
+and runtime system to detect false sharing: 
+the compiler instruments every memory access and 
+runtime system traces memory accesses to detect false sharing problems.
+\defaults{} is accurate (no false positives) and precise, which can pinpoint 
+those exact objects having false sharing problems.
+Also, unlike previous work, this method can
+identify false sharing problems across the entire software stack including 
+hypervisors, operating systems, libraries and applications. 
+\defaults{} have been utilized successfully to detect false sharing of real applications,
+e.g. \texttt{mysql} server application and \texttt{boost} library. Fixing these found
+false sharing problems brings us around $6\times$ and $40\%$ improvement.
+
+Moreoever, existing tools can only detect those manifested false sharing.
+However, any change of compiler optimization, compiler, memory manager, 
+memory allocation order, cache line size or even hardware processors 
+may affect manifests of false sharing, which leaves many of them undetected by existing tools. 
+By exploring many possibilities under various settings,
+\Defaults{} is the first tool that can {\it predict} possible false sharing
+problems that do not even manifest. It can report all possible false
+sharing problems with only one execution and minimal overhead in addition to
+detection overhead. 
+
+%What is novel in our work?
+%How is the performance overhead?

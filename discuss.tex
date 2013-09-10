@@ -1,0 +1,11 @@
+Whether we need the correctness of tracing?
+
+Since we only want some statistical confidence on the results, we can not guarantee the following things but that
+should not change the results.
+(1) Since we are working on IR level in the instrumentaton phase, then we may not guarantee the complete correctness of 
+accesses. 
+(2) We can not guarantee the atomicity of accesses and the updating of cache line status.
+
+How to extend?
+How to extend to other threading library?
+How to extend to other software stack, like Operating System? 
