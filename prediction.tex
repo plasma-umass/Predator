@@ -27,19 +27,18 @@
 
 Manifests of false sharing highly depend on 
 alignments of objects and corresponding cache lines.
-Our prediction tool focuses on \textbf{potential false sharing},  the type of
+Our prediction tool focuses on \texttt{potential false sharing}, the type of
 false sharing that does not 
 manifest in current execution but appears and greatly affects the performance of programs
 in a slightly different environment.
 
-Figure~\ref{fig:potentialfalsesharing} shows an  
-example.
+Figure~\ref{fig:potentialfalsesharing} shows such an example.
 In this figure, two rectangles with different patterns
 represents two portions of the same 
 object. In Figure~\ref{fig:nofs}), there is no false sharing when thread T1 only updates 
 ``cache line 1'' and T2 only updates ``cache line 2''.
 However, false sharing appears in one of the following cases even with the same
-access pattern.
+access pattern. 
 
 \begin{itemize}
 \item
@@ -53,6 +52,7 @@ When the starting address of this object is not aligned with the starting addres
 the first cache line, 
 then T1 and T2 can update the second cache line simultaneously, 
 which causes false sharing (Figure~\ref{fig:fsnoalignment}). 
+We also examine another real example of this case in Section~\ref{sec:predicteval} too.
 %When some dynamic property changes the starting address of this object so that it 
 %is not aligned with the starting address of the first cache line, 
 \end{itemize} 
@@ -61,26 +61,9 @@ which causes false sharing (Figure~\ref{fig:fsnoalignment}).
 in any of these two cases, which can
 be caused by those dynamic properties discussed in Section~\ref{sec:intro}.
 For example, all dynamic properties except change of cache line size 
-can lead to different starting address 
-of an object. 
+can lead to different starting address of an object. 
 Thus, predicting false sharing in these two cases actually 
 explores many possibilities caused by all dynamic properties.
-%starting from results actually explores many possibilities under various settings. 
-%Thus, \defaults{} focuses on the following results changed by dynamic
-%properties and predicts potential false sharing without
-%an additional compilation and an additional execution.
-
-%In order to detect those potential false sharing caused by change of alignment,  
-%\defaults{} intentionally omit the alignment of 
-%an object with corresponding actual cache lines, which helps to reveal those 
-%similar potential false sharing as that showed in Figure~\ref{fig:nofs}. 
-%That is, \defaults{} can always predict that there is a possible false sharing 
-%for the access pattern showed in example
-%For example, choosing a different compiler or compiler optimizations, 
-%using a different memory manager and compiling to different target platforms 
-%may change memory layout of an application and thus affect 
-%manifest of false sharing.
-%The hardware trend of using larger cache line size can increase manifests of false sharing.
 
 \subsection{Basic Workflow of Prediction}
 \label{sec:predictionmechanism} 
@@ -155,8 +138,7 @@ of every word in cache line $L$.
 However, it is slow and can largely over-estimate possible cache invalidations.
 To address this problem, \defaults{} only cares about those cache invalidations caused by
 {\it hot accesses}. A hot access in a cache line refers to the word whose number of read or write accesses 
-is larger than the averaged number of accesses on each word in the same cache
-line.
+is larger than the averaged number of accesses on each word in the same cache line.
 For every hot access $X$ in cache line $L$, \defaults{} searches another
 hot access $Y$ in $L$'s previous cache line or next cache line satifying with
 the following conditions: 
@@ -174,10 +156,12 @@ $X$ and $Y$ are issued by different threads.
 \end{itemize}
 
 Whenever it finds an pair of $X$ and $Y$, 
-\defaults{} starts calculating the number of cache invalidations caused by $X$ and $Y$
-based on our observation and conservative assumption.
-If this number is larger than the average number of accesses to each word of $L$, 
-\defaults{} identifies a potential false sharing place and stops searching.
+\defaults{} computes the number of cache invalidations caused by $X$ and $Y$.
+Based on our observation and conservative assumption,
+this pair of $X$ and $Y$ should at least cause cache invalidations 
+larger than the average number of accesses to each word of $L$ since both of them 
+are hot accesses.
+Thus \defaults{} identifies a potential false sharing place and stops searching.
 
 Note that \defaults{} has different specification for a virtual line in
 different scenarios. 
@@ -212,7 +196,7 @@ So there is an additional step to determine which virtual line to be tracked.
 
 \begin{figure}
 \begin{center} 
-\includegraphics[width=3.3in]{fig/prediction-tian.jpg}
+\includegraphics[width=3.3in]{fig/trackpotential}
 \end{center}
 \caption{Determining a virtual line with size $sz$ according to hot accesses.}
 \label{fig:trackpotential}
@@ -225,12 +209,10 @@ at location $X-((sz-d)/2)$ and ending at $Y+((sz-d)/2)$ is tracked.
 This adjustment allows to track more possible cache invalidations caused by
 accesses to $X$ and $Y$ and adjacent accesses.
 Since adjusting the starting address of a virtual line has the same effect of
-ajusting the starting address of an object in detecting false sharing, thus
+adjusting the starting address of an object in detecting false sharing, thus
 all cache lines related to the same object must be adjusted in the same time.
 \defaults{} then tracks cache invalidations based on these adjusted virtual lines.
 \begin{comment}
 In the end, \defaults{} can report to users how to adjust the starting address of an
 object can manifest all hided false sharing.
-
-XXXX
 \end{comment}

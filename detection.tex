@@ -7,23 +7,21 @@
 %when data of a cache line on a core is changed, the duplicated data of the same cache line 
 %in any other core must be invalidated in order to guarantee the correctness.
 Frequent cache invalidations caused by false sharing can cause severe performance problem.
-To better describe the problem and our approach, we assume each thread runs on a distinct core throughout this
-paper. Given this assumption, we observe that 
+To better describe the problem and our approach, we assume each thread runs on a distinct core throughout this paper. Given this assumption, we observe that 
 \textbf{if a thread writes a cache line after other threads have 
 accessed the same cache line, this write operation most likely causes at least
 one invalidation}. 
 Based on this observation, \Defaults{} captures cache invalidations for all cache lines and 
-identify performance-degradating false sharing in source code using this information.
+ranks performance degrading false sharing by cache invalidations.
 % by keeping track of accesses from different threads. 
  
 %to be loaded from main memory, wasting both the CPU time and memory bandwidth in the same time.
 To capture cache invalidations, it is important to track memory accesses from different 
 threads. 
-Without hardware, however, it is difficult for runtime system itself to capture read and write accesses efficiently, 
-accurately and timely. 
-For example, \Sheriff{} relying on memory protection mechanism and word-by-word
-comparison to track accumulated write accesses in a period of time 
-entails XXX overhead~\cite{sheriff}. 
+Without hardware, however, it is difficult for runtime system itself to capture read and write accesses efficiently, accurately and timely. 
+For example, \Sheriff{} relies on memory protection mechanism and word-by-word
+comparison to track accumulated write accesses but can not track read accesses with a 
+reasonable overhead~\cite{sheriff}. 
 
 %Liu et al. using one
 %tool of binary 
@@ -31,7 +29,7 @@ entails XXX overhead~\cite{sheriff}.
 %$100\times$ performance overhead ~\cite{falseshare:binaryinstrumentation2}   
 
 On the other hand, compiler can easily identify  
-read or write accesses by looking at instruction types. However,
+read or write accesses. However,
 it is lack of the knowledge about when and how those instructions are being accessed, 
 which depend on a specific execution including input and runtime environment. 
 %Fortunately, runtime system can capture these kinds of information with the help of compiler isntrumentation. 
@@ -48,7 +46,8 @@ to detect and report false sharing (see Section~\ref{sec:runtime}).
 \Defaults{} relies on LLVM to perform instrumentation on Intermediate Representation level (IR)~\cite{llvm}.
 It traverses all functions one by one and 
 searches for memory accesses on global and heap variables. 
-For each memory access, \defaults{} adds one function call to jump into the runtime system with memory access  
+For each memory access, \defaults{} instruments one function call to 
+jump into the runtime system with memory access  
 address and access type.
 The reason \Defaults{} skip accesses to stack variables 
 is that stack variables are normally used for be thread local storage and
@@ -57,7 +56,7 @@ variables can always be turned on when necessary.
 
 The instrumentation pass is placed at the very end of LLVM optimization passes 
 so that only those memory accesses surviving all previous 
-LLVM optimization are instrumented. This 
+LLVM optimization passes are instrumented. This 
 technique is very similar to the one used in AddressSanitizer~\cite{Addresssanitizer}.
 %But this technique could be very costly and we discuss the optimization in the Section~\ref{optimization}. 
 
@@ -69,7 +68,8 @@ information passed through by functions calls inserted during compiler
 instrumentation phase. 
 %Same as \Sheriff{}, 
 %\Defaults{} reports precise information about a false sharing problem.
-By analyzing traces of memory accesses, \defaults{} precisely reports 
+%By analyzing traces of memory accesses, 
+\defaults{} precisely reports 
 performance-degrading false sharing in the end.
 Specifically, for each global variable invovled in false sharing, its name, address and size
 information are reported. 
@@ -83,7 +83,7 @@ users locate where the problem is and how to fix false sharing problem.
 \subsubsection{Detecting Cache Invalidations}
 \Defaults{} reports those global variables or heap objects on those cache lines 
 having a large amount of cache invalidations. 
-Thus, it is critical to capture invalidation information effectively. 
+Thus, it is critical to capture invalidations effectively. 
 \Defaults{} achieves this goal by introducing a  
 two-entries-cache-history table for each cache line, as shown in Table~\ref{table:cachehistory}. 
 
@@ -109,7 +109,7 @@ For every new access on a cache line {\it l}, we check {\it l}'s history table
   \begin{itemize}
     \item
       If {\it T} is full, there is no need to record this read access, becasue
-      read accesses cannot generate cache invalidations.
+      read accesses can not generate cache invalidations.
     \item
       If {\it T} is empty, or not full and another existing entry has a different thread
       ID, then we record {\it R} and its thread by filling a new entry in to the table. 
@@ -137,13 +137,13 @@ For every new access on a cache line {\it l}, we check {\it l}'s history table
 After those individual cache lines having a large amount of cache
 invalidations are detected,
 \defaults{} needs further analysis to identify actual false sharing. 
-This is because a cache line having a large amount of cache invalidations does not 
-always mean false sharing. 
+%This is because a cache line having a large amount of cache invalidations does not 
+%always mean false sharing. 
 True sharing such as mulitple threads updating 
-the same counter in a cache line also causes invalidations.
+the same counter in a cache line also causes cache invalidations.
 
 In order to report false sharing precisely and accurately, 
-\Defaults{} explores the following mechanisms. 
+\Defaults{} employs the following mechanisms. 
 \begin{itemize}
 \item
 \defaults{} keeps track of access information for each word on those
@@ -154,13 +154,12 @@ allows \defaults{} to accurately distinguish false sharing from true sharing
 in the reporting phase,  
 It also helpful to locate where 
 actual false sharing occurs when there are multiple fields or multiple objects in the same cache line. 
-\textbf{EXPLAINING TWO TYPES OF FALSE SHARINGS}
 
 \item
-In order to precisely report origins of false sharing objects, \defaults{}
+In order to precisely report origins of false sharing heap objects, \defaults{}
 keeps callsite information for each heap object and reports the source code level
 information about each heap object. To obtain those callsite information, \defaults{}
-intercepts all memory allocations and de-allocations,  and relies on \texttt{backtrace()} 
+intercepts all memory allocations and de-allocations, and relies on \texttt{backtrace()} 
 function to obtain the callsite stack. 
 \defaults{} also avoids pseudo false sharing (false positives) caused by memory re-usages 
 by handling correspondingly in memory de-allocations, whereas those heap objects with false 
@@ -173,13 +172,12 @@ Similar to
 AddressSanitizer~\cite{Addresssanitizer} and other systems~\cite{qinzhaodetection}~\cite{Valgrind}. 
 \defaults{} uses shadow memory mechanism
 where each cache line of user space has a corresponding entry in the shadow memory. 
-Based on the address of incoming access, it can directly  
+Based on address of an access, it can directly locate
 the metadata for the corresponding cache line.
 
-
 \item
-To map user space of applications, \defaults{} uses predefined starting address and fixed size for 
-heap. It also contains a customized memory allocator, which is built on 
+In order to support shadow memory mechanism, \defaults{} uses predefined starting address and 
+fixed size for heap. It also contains a customized memory allocator, which is built on 
 Heaplayers~\cite{heaplayers} based on a ``per-thread-heap'' mechanism firstly introduced 
 by Hoard~\cite{Hoard}. Memory allocations from different threads 
 are not coming from the same physical cache line, which automatically avoids false sharing 
@@ -189,9 +187,14 @@ allocator can not be detected by \defaults{}.
 
 \end{itemize} 
  
+\subsection{Optimization}
+\label{optimization}
+Tracking memory accesses can be prohitively expensive. To improve 
+performance, \defaults{} utilizes the following  mechanisms too. 
+%, where main improvement has been evaluated in Section~\ref{}.
+
 \subsubsection{Threshold-Based Tracking Mechanism}
 \Defaults{} aims to detect performance degrading false sharing.
-% where those cache lines with a large amount of cache invalidations and writes.
 Since cache invalidations are the root cause of performance degrading and only writes 
 can possibly introduce cache invalidations, 
 those cache lines with a small amount of writes are never being our target.
@@ -207,7 +210,7 @@ In our implementation, \defaults{} maintains two mappings in shadow memory:
 {\it CacheWrites}, which tracks memory writes on every cache line, 
 and {\it CacheTrackings}, which tracks detailed information 
 on each cache line when the number of writes on a cache line is larger than
-the {\it Tracking-Threshould}. 
+the {\it Tracking-Threshold}. 
 If the threshold is not reached, there is no need to check corresponding {\it CacheTrackings}. 
 Figure~\ref{fig:algorithm} illustrates the detailed mechanism.
 
@@ -245,13 +248,6 @@ it allocates space to track detailed cache invalidations and word accesses and t
 uses atomic compare-and-swap instruction to set cache tracking address for this cache line in
 the shadow mapping. From now on, all accesses on this cache line are started to be tracked.
 
-\subsection{Optimization}
-\label{optimization}
-Tracking memory accesses can be prohitively expensive. To improve 
-performance, \defaults{} employs several mechanisms. This section discribes
-them in detail.
-%, where main improvement has been evaluated in Section~\ref{}.
-
 \subsubsection{Selective Compiler Instrumetation}
 \defaults{} relies on instrumentation to provide memory access information to the runtime system 
 and detects false sharing based on memory traces. 
@@ -278,11 +274,12 @@ functions or variables are not be isntrumented. Also, user can provide a red lis
 \end{itemize}
 
 \subsubsection{Sampling Mechanism}
-Threadshold-based mechanism described above requires to maintain a counter for each
-line. Updating those counters 
-can exacerbate the performance. For instance, if originally a cache line exists false
-sharing, invalidation of original cache line leads to another cache invalidation on
-those cache lines containing the counter.
+Since \defaults{} maintains all word accesses information, access counter and other information for 
+every possible false sharing cache line, 
+updating those counters 
+can exacerbate the false sharing effect when a cache line actually has false
+sharing: invalidation of original cache line leads to another cache invalidation on
+those cache lines for bookkeeping.
 
 %To reduce the performance overhead caused by this, \defaults{} only samples the first specified
 %number of accesses of each sampling interval for those those problematic cache lines. 
