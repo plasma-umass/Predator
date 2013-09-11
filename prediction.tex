@@ -54,7 +54,7 @@ address is actually $0$ bytes or $56$ bytes in their test environment.
 \caption{Manifestness of false sharing changes under different environment}
 \label{fig:potentialfalsesharing}
 \end{figure*}
-Our prediction tool focuses on \texttt{potential false sharing}, the type of
+Our prediction tool focuses on {\it potential false sharing}, the type of
 false sharing that does not 
 manifest in current execution but may appear and greatly affect the performance of programs
 in a slightly different environment.
@@ -94,19 +94,22 @@ explores many possibilities caused by all dynamic properties.
 \subsection{Basic Workflow of Prediction}
 \label{sec:predictionmechanism} 
 
-Similar to detection, 
+Similar to the detection part, 
 \defaults{} only precticts those potential false sharing that can 
 cause performance problem.
-% in two cases, cache line size doubling and starting
-%address change of an object. 
 The implementation is based on
 two important observations. First, only accesses to 
 adjacent cache lines can form potential false sharing, 
 i.e., introducing cache invalidations when cache line size
 or an object's starting address changes.
-Second, only a large amount of cache invalidation degrade performance.
-The basic workflow
-to capture potential false sharings is as follows:
+Second, false sharing can greatly degrade performance when 
+there are a large amount of cache invalidations.
+
+Based on these two observations, \defaults{} develops 
+the following workflow to capture potential false sharings.
+Those optimizations listed in Section~\ref{optimization} also apply
+here, although we do not repeat these optimizations in
+this whole section.
 
 \begin{enumerate}
 \item
