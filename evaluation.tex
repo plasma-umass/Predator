@@ -163,24 +163,9 @@ data structure is $64$ bytes.
 \begin{figure}[!h]
 {\centering
 \subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/linearregression.psedocode}}
-%\hspace{30pt} 
-%\subfigure[False sharing with different alignment]{%
-%   \label{fig:lr_perf}
-%   \includegraphics[width=0.36\textwidth]{fig/Potential3.jpg}}
 \caption{False sharing problem inside \texttt{linear\_regression} benchmark.
 \label{fig:linearregression}}
 }
-\end{figure}
-
-\begin{figure}[!h]
-\begin{center}
-\includegraphics[width=3.3in]{fig/perfsensitive}
-\end{center}
-\caption{
-Inside \texttt{linear\_regression} benchmark,
-performance is sensitive to the offset between starting address of the false sharing object 
-and the starting of cache line 
-\label{fig:perfsensitive}}
 \end{figure}
 
 For this false sharing problem, the main thread allocates an array of $8$ elements 

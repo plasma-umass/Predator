@@ -3,36 +3,63 @@
 
 \subsection{Potential False Sharing}
 %\begin{figure*}[!htb]
+
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=3.3in]{fig/perfsensitive}
+\end{center}
+\caption{
+Inside \texttt{linear\_regression} benchmark,
+performance is sensitive to the offset between starting address of the false sharing object 
+and the starting of cache line 
+\label{fig:perfsensitive}}
+\end{figure}
+
+Manifestness of false sharing highly depend on 
+alignments between objects and corresponding cache lines.
+We can see an example in Figure~\ref{fig:perfsensitive}, one benchmark evaluated in
+Section~\ref{sec:evaluation}. 
+For this \texttt{linear\_regression} benchmark,
+when the offset of starting address between false sharing object and corresponding cache lines 
+is $0$ or $56$ bytes, 
+we do not see any false sharing effect. That is, we can achieve perfect scalability under
+these cases.  
+When the offset is $24$ bytes, we see the most severe performance effect caused 
+by false sharing problem. 
+The difference of performance between these two can be as large as $15\times$.
+None of existing detection tools considers this possibility caused by alignments. 
+Thus, existing tools can only report those manifested false sharing at best. 
+For this example, they may miss a very severe false sharing problem if the offset of starting 
+address is actually $0$ bytes or $56$ bytes in their test environment.
+\defaults{} overcomes this shortcoming by predicting potential false sharing accurately. 
+
 \begin{figure*}
 \begin{center} 
 \subfigure[No false sharing]{%
    \label{fig:nofs}
-   \includegraphics[width=0.24\textwidth]{fig/Potential1.jpg}
+   \includegraphics[width=0.24\textwidth]{fig/Potential1}
 }%
 \hspace{30pt}
 \subfigure[False sharing with larger cache size]{%
    \label{fig:fslarger}
-   \includegraphics[width=0.24\textwidth]{fig/Potential2.jpg}
+   \includegraphics[width=0.24\textwidth]{fig/Potential2}
 }%
 \hspace{30pt}
 \subfigure[False sharing with different alignment]{%
    \label{fig:fsnoalignment}
-   \includegraphics[width=0.36\textwidth]{fig/Potential3.jpg}
+   \includegraphics[width=0.36\textwidth]{fig/Potential3}
 }%
 \end{center}
 %\includegraphics{fig/potential.pdf}
 \caption{Manifestness of false sharing changes under different environment}
 \label{fig:potentialfalsesharing}
 \end{figure*}
-
-Manifests of false sharing highly depend on 
-alignments of objects and corresponding cache lines.
 Our prediction tool focuses on \texttt{potential false sharing}, the type of
 false sharing that does not 
-manifest in current execution but appears and greatly affects the performance of programs
+manifest in current execution but may appear and greatly affect the performance of programs
 in a slightly different environment.
 
-Figure~\ref{fig:potentialfalsesharing} shows such an example.
+Figure~\ref{fig:potentialfalsesharing} shows a simplified example.
 In this figure, two rectangles with different patterns
 represents two portions of the same 
 object. In Figure~\ref{fig:nofs}), there is no false sharing when thread T1 only updates 
@@ -52,7 +79,6 @@ When the starting address of this object is not aligned with the starting addres
 the first cache line, 
 then T1 and T2 can update the second cache line simultaneously, 
 which causes false sharing (Figure~\ref{fig:fsnoalignment}). 
-We also examine another real example of this case in Section~\ref{sec:predicteval} too.
 %When some dynamic property changes the starting address of this object so that it 
 %is not aligned with the starting address of the first cache line, 
 \end{itemize} 
