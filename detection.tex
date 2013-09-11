@@ -3,36 +3,35 @@
 \subsection{Overview}
 %\defaults{} is a hybrid approach that combines the runtime system with compiler instrumentation.
 \label{sec:overview}
-%false sharing is caused by cache coherence protocol: 
-%when data of a cache line on a core is changed, the duplicated data of the same cache line 
-%in any other core must be invalidated in order to guarantee the correctness.
-Frequent cache invalidations caused by false sharing can cause severe performance problem.
-To better describe the problem and our approach, we assume each thread runs on a distinct core throughout this paper. Given this assumption, we observe that 
-\textbf{if a thread writes a cache line after other threads have 
+As described in Section~\ref{sec:intro}, 
+false sharing only occurs when two threads running on two different cores, with its private cache,
+simultaneously access independent data in the same cache line.
+In the remainder of this paper, we assume that {\it each thread runs on a 
+distinct core with its own private cache}. 
+
+Given this assumption, we observe that 
+{\it if a thread writes a cache line after other threads have 
 accessed the same cache line, this write operation most likely causes at least
-one invalidation}. 
-Based on this observation, \Defaults{} captures cache invalidations for all cache lines and 
-ranks performance degrading false sharing by cache invalidations.
+an invalidation}. 
+Based on this \textbf{basic observation}, \Defaults{} captures cache invalidations for all possible 
+cache lines 
+in the detecting phase. Since only frequent cache invalidations can cause performance problem, 
+\defaults{} ranks performance degrading severeness of false sharing according to 
+the number of cache invalidations and only reports those performance-degrading false sharing.
 % by keeping track of accesses from different threads. 
  
 %to be loaded from main memory, wasting both the CPU time and memory bandwidth in the same time.
 To capture cache invalidations, it is important to track memory accesses from different 
 threads. 
-Without hardware, however, it is difficult for runtime system itself to capture read and write accesses efficiently, accurately and timely. 
+Without hardware, however, it is difficult for runtime system itself to 
+capture read and write accesses efficiently, accurately and timely. 
 For example, \Sheriff{} relies on memory protection mechanism and word-by-word
-comparison to track accumulated write accesses but can not track read accesses with  
+comparison to track accumulated write accesses. But there is no way to track read accesses with  
 reasonable overhead~\cite{sheriff}. 
-
-%Liu et al. using one
-%tool of binary 
-%instrumentation (Pin) to collect memory accesses introduces more than 
-%$100\times$ performance overhead ~\cite{falseshare:binaryinstrumentation2}   
-
 On the other hand, compiler can easily identify  
 read or write accesses. However,
 it is lack of the knowledge about when and how those instructions are being accessed, 
 which depend on a specific execution including input and runtime environment. 
-%Fortunately, runtime system can capture these kinds of information with the help of compiler isntrumentation. 
 
 Therefore, \defaults{} combines the runtime system with compiler instrumentation technique to capture 
 cache invalidations: compiler instruments memory accesses so the runtime
@@ -43,12 +42,11 @@ to detect and report false sharing (see Section~\ref{sec:runtime}).
 \subsection{Compiler Instrumentation}
 \label{sec:compiler}
 
-\Defaults{} relies on LLVM to perform instrumentation on Intermediate Representation level (IR)~\cite{llvm}.
+\Defaults{} relies on LLVM to perform instrumentation on Intermediate Representation(IR) level~\cite{llvm}.
 It traverses all functions one by one and 
 searches for memory accesses on global and heap variables. 
 For each memory access, \defaults{} instruments one function call to 
-jump into the runtime system with memory access  
-address and access type.
+notify the runtime system with memory access address and access type.
 The reason \Defaults{} skip accesses to stack variables 
 is that stack variables are normally used for be thread local storage and
 therefore do not introduce false sharing. However, instrumentation on stack
@@ -56,36 +54,30 @@ variables can always be turned on when necessary.
 
 The instrumentation pass is placed at the very end of LLVM optimization passes 
 so that only those memory accesses surviving all previous 
-LLVM optimization passes are instrumented. This 
-technique is very similar to the one used in AddressSanitizer~\cite{Addresssanitizer}.
-%But this technique could be very costly and we discuss the optimization in the Section~\ref{optimization}. 
+LLVM optimization passes are instrumented. 
+This  technique is very similar to the one used in AddressSanitizer~\cite{Addresssanitizer}.
 
 \subsection{Runtime System}
 \label{sec:runtime}
-
-Runtime system tracks every executed memory access by handling 
-information passed through by functions calls inserted during compiler
-instrumentation phase. 
-%Same as \Sheriff{}, 
-%\Defaults{} reports precise information about a false sharing problem.
-%By analyzing traces of memory accesses, 
-\defaults{} precisely reports 
-performance-degrading false sharing in the end.
-Specifically, for each global variable invovled in false sharing, its name, address and size
-information are reported. 
-For heap objects, actual callsite stack for allocations, address 
-and size information are reported. 
-In addition, \defaults{} provides word accesses information for those cache
-lines involved in false sharing, 
-including which threads are accessing which words. This information can help 
-users locate where the problem is and how to fix false sharing problem.
+The runtime system of \defaults{} collects every memory access by handling 
+those functions calls inserted during compiler instrumentation phase and analyzes
+possible cache invalidations based on the basic observation discussed in Section~\ref{sec:overview}.
+In the end, \defaults{} precisely reports performance-degrading false sharing:
+for each global variable invovled in false sharing, its name, address and size
+information are reported; For heap objects, actual callsite stack for allocations, address 
+and size information are reported.
+In addition, \defaults{} provides word accesses information for those cache lines 
+involved in false sharing, including which threads are accessing which words. 
+This information can help 
+users to locate where the problem is and how to fix false sharing problem.
 
 \subsubsection{Detecting Cache Invalidations}
 \Defaults{} reports those global variables or heap objects on those cache lines 
 having a large amount of cache invalidations. 
 Thus, it is critical to capture invalidations effectively. 
 \Defaults{} achieves this goal by introducing a  
-two-entries-cache-history table for each cache line, as shown in Table~\ref{table:cachehistory}. 
+two-entries-cache-history table for each cache line, which is 
+shown in Table~\ref{table:cachehistory}. 
 
 \begin{table}
 \centering
@@ -96,71 +88,74 @@ two-entries-cache-history table for each cache line, as shown in Table~\ref{tabl
      &   \\ \hline
      &   \\ \hline
   \end{tabular}
-  \caption{Two-entries-cache-history table. \label{table:cachehistory}}
+  \caption{Two-entries-cache-history table for every cache line. \label{table:cachehistory}}
 \end{table} 
 
 In this table, each entry has two fields: thread ID and access type (read or write). 
-For every new access on a cache line {\it l}, we check {\it l}'s history table
-{\it T} to decide whether there is a cache invidation based on following rules:
+For every new access on a cache line $L$, we check $L$'s history table
+$T$ to decide whether there is a cache invidation based on following rules:
 
 \begin{itemize}
 \item
-  For a read access {\it R}, 
+  For a read access $R$, 
   \begin{itemize}
     \item
-      If {\it T} is full, there is no need to record this read access, becasue
+      If $T$ is full, there is no need to record this read access, becasue
       read accesses can not generate cache invalidations.
     \item
-      If {\it T} is empty, or not full and another existing entry has a different thread
-      ID, then we record {\it R} and its thread by filling a new entry in to the table. 
+      If $T$ is empty, or not full and another existing entry has a different thread
+      ID, then we record $R$ and its thread by filling a new entry in to the table. 
   \end{itemize}
 \item
-  For a write access {\it W}, 
+  For a write access $W$, 
   \begin{itemize}
     \item
-      If {\it T} is full, then {\it W} can cause a cache invalidation since at least 
+      If $T$ is full, then $W$ can cause a cache invalidation since at least 
       one of two existing entries has a different thread ID for this cache line. 
+      After recording this invalidation, we update 
+      existing entry with $W$ and its thread.
     \item
-      If {\it T} is empty,
-      then we record {\it W} and its thread by filling a new entry in to the table. 
+      If $T$ is empty,
+      then we record $W$ and its thread by filling a new entry in to the table. 
     \item
-      If {\it T} has an exisiting entry,
-      we check if {\it W} and the exisiting entry has the same thread ID. If
-      so, {\it W} can not cause a cache invalidation, so we update the existing
-      entry with {\it W}. Otherwise, we identify an invalidation on this line caused by
-      {\it W}. After recording this invalidation information, we update 
-      existing entry with {\it W} and its thread.
+      If $T$ has an exisiting entry,
+      we check if $W$ and the exisiting entry has the same thread ID. If
+      so, $W$ can not cause a cache invalidation, so we update the existing
+      entry with $W$. Otherwise, we identify an invalidation on this line caused by $W$. 
+      After recording this invalidation information, we update 
+      existing entry with $W$ and its thread.
   \end{itemize}
 \end{itemize}
 
 \subsubsection{Reporting False Sharing}
 After those individual cache lines having a large amount of cache
 invalidations are detected,
-\defaults{} needs further analysis to identify actual false sharing. 
-%This is because a cache line having a large amount of cache invalidations does not 
-%always mean false sharing. 
-True sharing such as mulitple threads updating 
-the same counter in a cache line also causes cache invalidations.
+\defaults{} needs further analysis to differentiate actual false sharing from true sharing. 
+True sharing, e.g. mulitple threads updating 
+the same counter in a cache line, can also causes a large amount of cache invalidations.
 
-In order to report false sharing precisely and accurately, 
+In order to report false sharing precisely and accurately,  
 \Defaults{} employs the following mechanisms. 
 \begin{itemize}
 \item
 \defaults{} keeps track of access information for each word on those
-cache lines involved in false sharing: how many reads or writes to each word by which thread. 
+cache lines involved in false sharing: 
+how many reads or writes to each word by which thread. 
 When a word is accessed by multiple threads,
 we marked the access as a shared access. This information 
 allows \defaults{} to accurately distinguish false sharing from true sharing 
-in the reporting phase,  
-It also helpful to locate where 
-actual false sharing occurs when there are multiple fields or multiple objects in the same cache line. 
+in the reporting phase.
+It is also helpful to locate where 
+actual false sharing occurs when there are multiple fields or multiple objects 
+in the same cache line, thus can greatly reduce manual overhead to fix false sharing problems
+correspondingly. 
 
 \item
 In order to precisely report origins of false sharing heap objects, \defaults{}
 keeps callsite information for each heap object and reports the source code level
 information about each heap object. To obtain those callsite information, \defaults{}
 intercepts all memory allocations and de-allocations, and relies on \texttt{backtrace()} 
-function to obtain the callsite stack. 
+function of \texttt{glibc} library to obtain the callsite stack. 
 \defaults{} also avoids pseudo false sharing (false positives) caused by memory re-usages 
 by handling correspondingly in memory de-allocations, whereas those heap objects with false 
 sharing is not re-used at all.
@@ -170,9 +165,9 @@ To keep tracking of reads and writes on each word for those problematic cache li
 the bookkeeping information lookup must be efficient.
 Similar to 
 AddressSanitizer~\cite{Addresssanitizer} and other systems~\cite{qinzhaodetection}~\cite{Valgrind}. 
-\defaults{} uses shadow memory mechanism
+\defaults{} uses shadow memory mechanism 
 where each cache line of user space has a corresponding entry in the shadow memory. 
-Based on address of an access, it can directly locate
+Based on address of an access, \defaults{} can quickly locate
 the metadata for the corresponding cache line.
 
 \item
@@ -187,13 +182,14 @@ allocator can not be detected by \defaults{}.
 
 \end{itemize} 
  
-\subsection{Optimization}
+\subsection{Optimizations}
 \label{optimization}
-Tracking memory accesses can be prohitively expensive. To improve 
-performance, \defaults{} utilizes the following  mechanisms too. 
+Tracking every memory access can be extermely expensive, thus 
+\defaults{} also utilizes the following mechanisms to further improve performance.
 %, where main improvement has been evaluated in Section~\ref{}.
 
 \subsubsection{Threshold-Based Tracking Mechanism}
+\label{sec:thresholdtracking}
 \Defaults{} aims to detect performance degrading false sharing.
 Since cache invalidations are the root cause of performance degrading and only writes 
 can possibly introduce cache invalidations, 
@@ -201,12 +197,13 @@ those cache lines with a small amount of writes are never being our target.
 For this reason, \defaults{} starts to track cache invalidations, reads and word accesses 
 of a cache line only after the number of writes on this cache line is above a
 pre-defined threshold, called {\it Tracking-Threshould}. 
-Before this threshold is reached, \defaults{} only tracks writes on a cache line while skipping those 
-reads operations. 
+Before this threshold is reached, \defaults{} only tracks writes on a cache line 
+while skipping those reads operations. 
 This mechanism helps to filter out
-those impossible candidates, reduce memory overhead and optimize the overall performance. 
+those impossible cache lines, reducing performance and memory overhead
+in the same time.
 
-In our implementation, \defaults{} maintains two mappings in shadow memory: 
+In the actual implementation, \defaults{} maintains two mappings in shadow memory: 
 {\it CacheWrites}, which tracks memory writes on every cache line, 
 and {\it CacheTrackings}, which tracks detailed information 
 on each cache line when the number of writes on a cache line is larger than
@@ -242,56 +239,73 @@ void HandleAccess(unsigned long addr, bool isWrite) {
 \end{figure}
 
 To avoid expensive lock operations, \defaults{} uses atomic instruction to increment 
-the counter of writes for each cache line. 
+{\it CacheWrites} counters for each cache line. 
 When the number of writes of a cache line reaches the predefined threshold,
-it allocates space to track detailed cache invalidations and word accesses and then 
-uses atomic compare-and-swap instruction to set cache tracking address for this cache line in
-the shadow mapping. From now on, all accesses on this cache line are started to be tracked.
+it allocates space to track detailed cache invalidations and word accesses.
+For performance reason, \defaults{} also 
+uses atomic \texttt{compare-and-swap} instruction to set cache tracking address for this cache line in
+the shadow mapping.
+After {\it CacheWrites} on a cache line reaches predefined {\it Tracking-Threshold}, 
+all read and write accesses on this cache line are started to be tracked.
+Cache invalidations are also computed based on cache line history table of corresponding
+cache line, shown in Table~\ref{table:cachehistory}. 
+
 
 \subsubsection{Selective Compiler Instrumetation}
 \defaults{} relies on instrumentation to provide memory access information to the runtime system 
-and detects false sharing based on memory traces. 
+and detects false sharing based on sequences of memory accesses. 
 Thus the amount of instrumentation can largely affect the performance overhead: more 
 instrumentation always means more performance overhead. 
-Thus, \defaults{} provides a very flexible framework to instrument programs depending on performance requirements. 
+Thus, \defaults{} provides a very flexible framework to instrument programs 
+depending on performance requirements. 
 
-% in a flexible fashion so that only necessary memory read/write accesses are 
-%provided to runtime system in order to reduce performance overhead of detection. 
 Currently, \Defaults{} only instruments once for one type of memory access on each address 
-in one basic block. 
-We argue that this sampling mechanism here do not affect the effectiveness of detection. 
-This is because \Defaults{} targets to detect performance degrading false sharing with a large amount of cache invalidations,
-and less tracking of one basic block can induce less cache invalidations but it won't affect the overall behavior of cache invalidations. 
+in the same basic block. 
+We argue that this selective instrumentation does not affect the effectiveness of detection. 
+Because \Defaults{} targets to detect those false sharing with a large amount of cache invalidations,
+less tracking of accesses inside one basic block can induce less cache invalidations 
+but it won't affect the overall behavior of cache invalidations. 
 
 % detection will not cause performance problem. 
-Also, \defaults{} can be easily extended to support more selective instrumentation as follows:
+For performance reason, 
+\defaults{} can be easily extended to support more selective instrumentation as follows:
 \begin{itemize}
 \item
 \Defaults{} can selectively instrument reads-and-writes or writes-only. Fo example, instrumenting writes-only can help to detect write-write false sharing, as Sheriff does. 
 \item
 \Defaults{} can be set to instrument or skip one specific kind of targets. For example, user can provide a black list so that those modules,
-functions or variables are not be isntrumented. Also, user can provide a red list so that only specified functions or variables are instrumented. 
+functions or variables are not instrumented. 
+Also, user can provide a red list so that only specified functions or variables are instrumented. 
 \end{itemize}
 
 \subsubsection{Sampling Mechanism}
-Since \defaults{} maintains all word accesses information, access counter and other information for 
-every possible false sharing cache line, 
-updating those counters 
-can exacerbate the false sharing effect when a cache line actually has false
-sharing: invalidation of original cache line leads to another cache invalidation on
-those cache lines for bookkeeping.
-
-%To reduce the performance overhead caused by this, \defaults{} only samples the first specified
-%number of accesses of each sampling interval for those those problematic cache lines. 
-%Note that we originally maintains a global counter for all accesses and uses the number of 
-%all accesses as a sample interval. However, using a global counter for all accesses creates 
-%high performance overhead caused by cache invalidations. 
+According to Section~\ref{sec:thresholdtracking}, 
+when a cache line has writes larger than {\it Tracking-Threshold}, 
+every access must be tracked to add the following bookkeeping information,
+including word accesses information, access counter of 
+this cache line and cache access history table, etc. 
+When a cache line actually has false sharing or true sharing problems inside,
+updating those counters can greatly exacerbate performance problems caused by false sharing or true
+sharing: not only there is an cache invalidation of original cache line, but also there is
+at least another cache invalidation caused by updating these bookkeeping information.
 
 To reduce the performance overhead caused by this, \defaults{} only samples the first specified
-number of accesses of each sampling interval for those those problematic cache lines. 
-Currently, we maintain an access counter for each cache line and only samples the first $10000$ accesses 
-for every 1 Million accesses (sampling interval), with sampling rate 1\%. By using this mechanism, 
-we greatly reduce the performance overhead while not missing any performance-degrading false sharing.  
+number of accesses of each sampling interval for those problematic cache lines. 
+Note that we originally keep a global counter for all accesses and uses the number of 
+all accesses to compuate sample intervals. However, this creates 
+extereme performance overhead caused by cache invalidations of updating the same counter
+for all accesses. 
+Currently, we maintain an access counter for each cache line 
+and only tracks the first $10000$ accesses for every 1 million accesses 
+(sampling interval) on a cache line.
+So we uses the sampling rate 1\% for those problematic cache lines, 
+with writes larger than {\it Tracking-Threshold}.
+We might miss false sharing with an access pattern like this:
+accesses causing false sharing must always 
+happen exactly at other 99\% accesses for every 1 million accesses.
+However, the possibility with this exact pattern on a cache line is extermely low.
+Thus, by using this sampling mechanism, we greatly reduce the performance overhead 
+while not missing any performance-degrading false sharing.  
 
 \begin{comment}
 \subsubsection{Updating-In-Place}

@@ -29,20 +29,20 @@ We propose a novel method, \defaults{}, to combine compiler instrumentation
 and runtime system to detect false sharing: 
 the compiler instruments every memory access and 
 runtime system collects memory accesses to detect false sharing problems.
-\defaults{} is accurate (no false positives) and precise, which can pinpoint 
-those exact objects having false sharing problems.
+\defaults{} detects false sharing accurately and precisely: it reports no 
+false positives and pinpoints those exact objects having false sharing problems.
 Also, unlike previous work, this method can
 identify false sharing problems across the entire software stack including 
 hypervisors, operating systems, libraries and applications. 
 \defaults{} have been utilized successfully to detect false sharing of real applications,
-e.g. \texttt{mysql} server application and \texttt{boost} library. Fixing these found
+including \texttt{mysql} server application and \texttt{boost} library. Fixing these found
 false sharing problems brings us around $6\times$ and $40\%$ improvement.
 
 Moreoever, existing tools can only detect those manifested false sharing.
 However, the manifestness of false sharing can be affected by alignments between
 objects and cache lines: any change of compiler optimization, compiler, memory manager, 
 memory allocation order, cache line size or different target binary 
-may affect manifestness of false sharing, 
+may change alignments of objects and thus affect manifestness of false sharing, 
 which leaves many of them undetected by existing tools.
 \Defaults{} is the first tool which can predict possible false sharing 
 accurately by examining word accesses and verifying possible cache invalidations.   

@@ -14,18 +14,21 @@ shared resources among different computing units, e.g. processes, tasks, threads
 False sharing is an example of resource contention: {\it false sharing occurs when 
 different computing units running on different cores with its private caches 
 simultaneously access independent data residing on the same cache line}.
-False sharing, because of cache coherance protocol, can severely plummet software 
+False sharing, because of cache coherance protocol, can severely degrade software 
 performance, as much as an order of magnitude~\cite{falseshareeffect}.
 Cache coherence protocol is used to ensure correctness of program executions originally: 
 if some data on a core has been updated, the duplicated data in any other core's private 
 cache must be invalidated at cache-line level (e.g. 64 Bytes). 
 But in the case of false sharing, those cache invalidations are totally unnecessary and only
 cause performance issue. 
-A computing unit in a core accessing any data located in the same cache line 
-updated by other computing unit residing on other cores, has 
-to stall and wait for the data to be reloaded despite a lack of logical necessity, 
-which wastes both the CPU time and memory bandwidth in the same time. 
-Unfortunately, the hardware evolution of building more cores
+When a cache line is marked as invalid, 
+later accesses must retrieve an up-to-date copy of the whole cache line 
+from main memory or another core's cache.
+%This is true even for reads that only access an unmodified portion of the cache line.
+%updated by other computing unit running on other cores, it has 
+%to stall and wait for the data to be reloaded despite a lack of logical necessity, 
+This wastes both the CPU time and memory bandwidth in the same time. 
+Unfortunately, the hardware trend of building more cores
 or with larger cache line size makes false sharing increasingly common.
 
 False sharing has been found in different levels of software stack, including
@@ -42,7 +45,7 @@ precisely and accurately~\cite{qinzhaodetection, detect:ptu, detect:intel, false
 or require special OS support~\cite{OSdetection}.
 % or they can only detect one kind of
 %false sharing problem on a specific multithreading library~\cite{sheriff}.
-Sheriff~\cite{sheriff} do not have these shortcomings but it has its limitations: 
+Sheriff~\cite{sheriff} does not have these shortcomings but has its own limitations: 
 it can only detect write-write type false sharing in programs using pthreads library,
 and can break correctness of programs using ad-hoc synchronizations or using stack variables to 
 communicate among different threads. 
@@ -51,11 +54,12 @@ communicate among different threads.
 
 Despite their different features and limitations, all existing detection tools 
 have two more common drawbacks.
-The first drawback is that existing techniques can not detect false sharing for 
-the entire software stack, whereas they can work on a specific level of software stack.
-The second drawback is that they can only detect those false sharing occurring in current execution.
+Firstly, existing techniques can not detect false sharing for 
+the entire software stack.
+% although they might work on a specific level of software stack.
+Secondly, existing tools can only detect those false sharing occurring in current execution.
 However, as pointed out by Nanavati et al.~\cite{OSdetection}, 
-some dynamic properties of a system can easily change manifestness of false eharing problems.
+some dynamic properties of a system can easily change manifestness of false sharing problems.
 They also give an example that 
 {\it "GCC fixes false sharing in the Phoenix linear\_regression benchmark 
 at -O2 and -O3 optimization, while clang fails to even at the highest
@@ -82,20 +86,23 @@ false sharing problems that may appear in a slightly different environment.
 \Defaults{} has the following contributions:
 \begin{itemize}
 \item
-\textbf{Generic Detection Solution:}\defaults{} provides a novel false sharing detection method by
+\textbf{General Detection Method:}\defaults{} provides a novel false sharing detection method by
 combining compiler instrumentation with runtime system.
 %, which can avoid the shortcomings of existing tools. 
 Since \defaults{} neither relies on the support of specific hardware and OS ,
 nor binds to specific threading library, 
-it is suitable for the entire software stack, 
-i.e., hypervisors, operating systems, libraries and applications. 
+this method is suitable for the entire software stack, 
+i.e., hypervisors, operating systems, libraries and applications.
+But the remainder of this paper only talks about detecting false sharing problems in multi-threaded 
+programs, so we use ``threads'' to replace ``computing unit'' from now on.
 %Since compiler can be utilized to do selective instrumentation, 
 %\defaults{} can be utilized to detect all kinds of false sharing problem with ideal overhead. 
 
 % effect: can detect all kinds of false sharing problems.
 \item
-\textbf{Practicable Detection Tool:} \defaults{} can actually detect all kinds of false sharing problems accurately and precisely 
-with reasonable overhead, around $7\times$ performance overhead. 
+\textbf{Practicable Detection Tool:} \defaults{} can actually detect all kinds of false sharing 
+problems accurately and precisely 
+with reasonable overhead, around $7\times$ performance overhead and $22\%$ memory overhead. 
 It reveals some unknown false sharing problems in those benchmark suites evaluated by 
 previous approaches.
 It is also the first false sharing tool to uncover performance problems existing in real applications, e.g.,
@@ -133,7 +140,7 @@ The remainder of this paper is organized as follows.
 Section~\ref{sec:detection} describes \defaults{}'s detection mechanisms and
 algorithms in detail.
 Section~\ref{sec:prediction} discusses how to predict potential false sharing accurately 
-without the occurrence of false sharing. 
+without occurrence. 
 Section~\ref{sec:evaluation} presents experimental results, including using \defaults{} to 
 reveal unknown false sharing problems in several benchmarks and real applications. 
 Finally, 
