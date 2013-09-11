@@ -144,9 +144,8 @@ For the other four applications, \defaults{} doest not find serere false sharing
 
 \subsubsection{Prediction Effectiveness}
 \label{sec:predicteval}
-
 We evaluates the prediction effectiveness of \defaults{} on the \texttt{linear\_regression} benchmark.
-We choose this for two reasons:
+We choose this benchmark for two reasons:
 \begin{enumerate}
 \item
 False sharing problem of this benchmark can not be detected without prediction. 
@@ -197,9 +196,10 @@ of the false sharing object, which can be caused by many of dynamic properties
 listed in Section~\ref{sec:intro}, e.g.,
 hardware platform, optimization flag, compiler etc.
 This sensitivity can be seen in Figure~\ref{fig:perfsensitive}.
-That is, when offset is $0$ or $56$ bytes, we can not see the performance degradation.
-Actually, with our customized memory manager and original program,
-the offset between the starting address and the starting of cache line is $56$ bytes,
+That is, when offset is $0$ or $56$ bytes, there is no false sharing at all.
+Actually, using our customized memory manager,
+the offset between the starting address of potential false sharing object 
+and starting of cache line is actually $56$ bytes,
 that explain why we can not detect false sharing problem without prediction enabled.
 
 \defaults{} can predict false sharing problem precisely for all of these cases. This explains
@@ -209,7 +209,8 @@ the effectiveness of prediction tool.
 \label{sec:perfoverhead}
 To avoid the effect caused by extreme outliers,
 all performance data are based on the average of 10 runs excluding the
-maximum and minimum values. 
+maximum and minimum values.
+Actual performance overhead can be seen in the following figure~\ref{}. 
 
 
 \subsection{Memory Overhead}
@@ -244,8 +245,4 @@ reporting yields a large number in percentage calculation.
 \label{fig:memusage}
 \end{figure*}
 
-
-% http://stackoverflow.com/questions/118307/a-way-to-determine-a-processs-real-memory-usage-i-e-private-dirty-rss
-
- 
 

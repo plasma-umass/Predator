@@ -1,2 +1,25 @@
 \label{sec:conclusion}
+This paper presents a novel method to detect false sharing problem by combining
+compiler instrumentation and runtime system. 
+Compiler instruments every read and write access of global variables
+and heap objects by inserting a function call to notify corresponding runtime
+system. 
+By handling those instrumented function calls, runtime system can collect
+and analyze false sharing problems based on cache invalidations: those 
+false sharing causing severe performance degrading should have a great amount of 
+cache invalidations. To differentiate false sharing with true sharing, 
+\defaults{} further provides word accesses information for those cache lines involved in false sharing, 
+which can help users locate where the problem is and how to fix false sharing problem.
 
+Manifests of false sharing can be affected by alignments between
+objects and cache lines, which can be caused by any change of compiler optimization, 
+compiler, memory manager, memory allocation order, cache line size or different target binary.
+\Defaults{} can further predict potential false sharing caused by the change of cache line size 
+or starting address of objects, thus it helps to prevent the predicament of existing tools:
+problems may occur in a real environment rather than test environment due to environmental changes.
+ 
+In the actual evaluation, \defaults{} finds some unknown false sharing problems in two popular benchmark
+suites, \texttt{Phoenix} and \texttt{PARSEC}. 
+\defaults{} are also evaluated on $6$ different real applications and 
+successfully finds existing false sharing problems inside \texttt{MySQL} and \texttt{boost} libraries. 
+\defaults{] can be utilized to find some unknown false sharing performance problems in real deployments.
