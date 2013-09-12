@@ -13,7 +13,8 @@ using LLVM compiler (version 3.2). The compiler optimization level is set to ``-
 so memory allocation callsites can be reported precisely.
 %since we can not report line number of source code with optimization level larger than
 %``-O2''.
-In our evaluation, we choose two popular benchmark suites, Phoenix~\cite{phoenix-hpca} and PARSEC~\cite{parsec}.
+In our evaluation, we choose two popular benchmark suites, Phoenix~\cite{phoenix-hpca} and PARSEC~\cite{parsec}. Since we can't compile or run all benchmarks of PARSEC successfully, we only include those benchmarks which can be compiled and run successfully here. For example, \texttt{facesim} can't be compiled 
+because \texttt{llvm} forcing a much stricter rule for C++ syntax. \texttt{canneal} can't be run successfully even on original llvm compiler.
 
 Our evaluations aim to answer the following questions:
 \begin{itemize}
@@ -192,21 +193,42 @@ the effectiveness of prediction tool.
 
 \subsection{Performance Overhead}
 \label{sec:perfoverhead}
-To avoid the effect caused by extreme outliers,
-all performance data are based on the average of 10 runs excluding the
-maximum and minimum values.
-Actual performance overhead can be seen in the following figure~\ref{fig:perf}. 
 
 \begin{figure*}[!ht]
 \begin{center}
-\includegraphics[width=5in]{fig/perf}
+\includegraphics[width=6.5in]{fig/perf}
 \end{center}
 \caption{
 Performance overhead of \defaults{} with and without prediction.
 \label{fig:perf}}
 \end{figure*}
 
-Manifestness of false sharing highly depends on 
+To avoid the effect caused by extreme outliers, all performance data shown in this section
+are based on the average of 10 runs excluding the maximum and minimum values.
+Actual performance overhead can be seen in the following figure~\ref{fig:perf}. 
+
+From this figure, we can see for all $16$ benchmarks among Phoenix and PARSEC
+benchmark suites, normalized runtime for \defaults{} (with prediction) is around $6.7\times$.
+Also, there is no much performance difference for \defaults{} with and without prediction. 
+This also means that prediction part of \defaults{} only adds very minimum performance overhead. 
+
+Among these benchmarks, there are $5$ benchmarks running slower than $8\times$, 
+including \texttt{histogram, kmeans, bodytrack, ferret} and \texttt{swaptions}. 
+\texttt{histogram} has the most performance overhead and it runs more than $26$ slower than original 
+program. 
+\texttt{histogram} has a severe false sharing problem inside, thus tracking detailed access for those
+problematic cache lines greately exacerbate the false sharing effect (see more discussion on this in Section~\ref{sec:sample}). 
+For \texttt{bodytrack} and \texttt{ferret}, \defaults{} detected a large amount of cache lines with 
+writes larger than {\it Tracking-Threshold}. Tracking all detailed access for these cache lines 
+introduce significant performance overhead. 
+Currently, we have no idea about why \texttt{kmeans} runs slow in \defaults{}. 
+
+We also see from Figure~\ref{fig:perf}, \texttt{matrix\_multiply, blackscholes} and \texttt{x264} do not
+introduce significant performance here. Maybe there are signficant portion of operations 
+are working on stack variables. 
+Since \defaults{} do not instrument stack variables, 
+operations on stack variables will not introduce any
+additional performance overhead. 
 
 \subsection{Memory Overhead}
 \label{sec:memoverhead}
@@ -233,7 +255,7 @@ reporting yields a large number in percentage calculation.
 
 \begin{figure*}
 \begin{center} 
-\includegraphics[width=5in]{fig/memusage}
+\includegraphics[width=6.5in]{fig/memusage}
 \end{center}
 %\includegraphics{fig/potential.pdf}
 \caption{Memory usage overhead}

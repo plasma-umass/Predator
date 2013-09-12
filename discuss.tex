@@ -1,11 +1,45 @@
-Whether we need the correctness of tracing?
+\label{sec:discussion}
 
-Since we only want some statistical confidence on the results, we can not guarantee the following things but that
-should not change the results.
-(1) Since we are working on IR level in the instrumentaton phase, then we may not guarantee the complete correctness of 
-accesses. 
-(2) We can not guarantee the atomicity of accesses and the updating of cache line status.
+\subsection{Prediction Limitation}
+As discussed in Section~\ref{sec:intro}, there are a lot of dynamic properties
+which can affect manifestness of false sharing problems. 
+\defaults{} can predict potential false sharing problems caused by when cache line size
+or an object's starting address changes.
+However, \defaults{} can not predict false sharing between two different objects
+if they are caused by different compiler and different memory manager. 
+Different compiler can generate different layout of programs for global variables. 
+If global variables $A$ and $B$ are located in the same cache line, they can create severe false 
+sharing problems. 
+If current compiler, $llvm$, happens to put these two varibles into two different cache lines, 
+\defaults{} can not predict this type of potential false sharing. 
 
-How to extend?
-How to extend to other threading library?
-How to extend to other software stack, like Operating System? 
+\subsection{Extention}
+Although \defaults{} conceptually can be used to detect false sharing in different levels of 
+software stack, currently it can not be applied to those levels directly. 
+Some components, like customized memory manager, can only work in user level. Also, \defaults{}
+has to identify the source of accesses using some system specfic calls. For example, it uses
+gettid() to identify accesses from different threads.   
+Extending \defaults{} to different levels of software stack will be the future work for us.
+
+\subsection{Performance Improvement}
+\defaults{} runs around $6.6$ slower averagely in all of evaluated benchmarks. 
+Currently, all memory accesses are instrumented with a library call to notify the runtime system. 
+However, this creates some unnecessary performance overhead from function calls and library calls. 
+A library call invokes normal function call overhead plus another indirection overhead through 
+a Global Offset Table (GOT) and Procedure Linkage Table (PLT).
+This can introduce significant performance overhead for some simple logic listed in the following:
+\begin{itemize}
+\item
+When total writes on a cache line is less than {\it Tracking-Threshold}, 
+\defaults{} simply incrementes the counter of writes for this cache line for a write access. 
+If an access is a read, \defaults{} does nothing. 
+\item
+In sampling mechanism discussed in Section~\ref{sec:sample}, 
+most accesses (99\%) only needs to increment an access counter of corresponding cache line.
+\end{itemize}
+
+These simple logic only invokes several circles of useful work, either checking or updating a counter.
+Acutally, the overhead of function calls or library calls can be much more than the useful work.
+Thus, in the future, \defaults{} should avoid expensive library and function calls by 
+extending all these simple instructions directly when an access is instrumented.
+
