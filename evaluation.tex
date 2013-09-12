@@ -195,8 +195,18 @@ the effectiveness of prediction tool.
 To avoid the effect caused by extreme outliers,
 all performance data are based on the average of 10 runs excluding the
 maximum and minimum values.
-Actual performance overhead can be seen in the following figure~\ref{}. 
+Actual performance overhead can be seen in the following figure~\ref{fig:perf}. 
 
+\begin{figure*}[!ht]
+\begin{center}
+\includegraphics[width=5in]{fig/perf}
+\end{center}
+\caption{
+Performance overhead of \defaults{} with and without prediction.
+\label{fig:perf}}
+\end{figure*}
+
+Manifestness of false sharing highly depends on 
 
 \subsection{Memory Overhead}
 \label{sec:memoverhead}
