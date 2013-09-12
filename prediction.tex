@@ -1,8 +1,9 @@
 % Why prediction is important?
 \label{sec:prediction}
 
-\subsection{Potential False Sharing}
+\subsection{Overview}
 %\begin{figure*}[!htb]
+\label{sec:predictoverview}
 
 \begin{figure}[!h]
 \begin{center}
@@ -15,7 +16,7 @@ and the starting of cache line
 \label{fig:perfsensitive}}
 \end{figure}
 
-Manifestness of false sharing highly depend on 
+Manifestness of false sharing highly depends on 
 alignments between objects and corresponding cache lines.
 We can see an example in Figure~\ref{fig:perfsensitive}, one benchmark evaluated in
 Section~\ref{sec:evaluation}. 
@@ -26,7 +27,7 @@ we do not see any false sharing effect. That is, we can achieve perfect scalabil
 these cases.  
 When the offset is $24$ bytes, we see the most severe performance effect caused 
 by false sharing problem. 
-The difference of performance between these two can be as large as $15\times$.
+The performance difference between these two can be as large as $15\times$.
 None of existing detection tools considers this possibility caused by alignments. 
 Thus, existing tools can only report those manifested false sharing at best. 
 For this example, they may miss a very severe false sharing problem if the offset of starting 
@@ -54,15 +55,15 @@ address is actually $0$ bytes or $56$ bytes in their test environment.
 \caption{Manifestness of false sharing changes under different environment}
 \label{fig:potentialfalsesharing}
 \end{figure*}
-Our prediction tool focuses on {\it potential false sharing}, the type of
+The prediction of \defaults{} focuses on {\it potential false sharing}, the type of
 false sharing that does not 
 manifest in current execution but may appear and greatly affect the performance of programs
 in a slightly different environment.
 
 Figure~\ref{fig:potentialfalsesharing} shows a simplified example.
 In this figure, two rectangles with different patterns
-represents two portions of the same 
-object. In Figure~\ref{fig:nofs}), there is no false sharing when thread T1 only updates 
+represents two portions of the same object. 
+In Figure~\ref{fig:nofs}), there is no false sharing when thread T1 only updates 
 ``cache line 1'' and T2 only updates ``cache line 2''.
 However, false sharing appears in one of the following cases even with the same
 access pattern. 
@@ -141,7 +142,7 @@ Otherwise, go back to Step 2 to track more detailed accesses.
 %has actual false sharing.
 To describe easily, we first introduce a {\it virtual line} concept:
 A virtual line is {\it a memory range with certain size}.
-When the number of writes on a cache line $L$ reaches the Predicting-Threshold,
+When the number of writes on a cache line $L$ reaches the {\it Predicting-Threshold},
 \defaults{} evaluates potential false sharing by computing the number of possible cache 
 invalidations on a virtual line. Specifically, if the number of cache
 invalidations is larger than the average number of accesses
