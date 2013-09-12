@@ -76,32 +76,32 @@ therefore are unable to identify potential performance-degrading false
 sharing problems that may occur in an execution under a different set of 
 dynamic properties.
 
-In this paper, we propose a new false sharing detector, \defaults{}, aiming to
+In this paper, we propose a new false sharing detector, \Predator{}, aiming to
 not only {\it detect} all existing false sharing problems accurately and precisely,
 but {\it predict} those potential 
 false sharing problems that may appear in a slightly different environment. 
 %To be more specific, 
-%\defaults{} can report potential false sharing problems with different cache line size and different starting address of an object 
+%\Predator{} can report potential false sharing problems with different cache line size and different starting address of an object 
 %without the need of another execution. 
 
-\Defaults{} has the following contributions:
+\Predator{} has the following contributions:
 \begin{itemize}
 \item
-\textbf{General Detection Method:}\defaults{} provides a novel false sharing detection method by
+\textbf{General Detection Method:}\Predator{} provides a novel false sharing detection method by
 combining compiler instrumentation with runtime system.
 %, which can avoid the shortcomings of existing tools. 
-Since \defaults{} neither relies on the support of specific hardware and OS ,
+Since \Predator{} neither relies on the support of specific hardware and OS ,
 nor binds to specific threading library, 
 this method is suitable for the entire software stack, 
 i.e., hypervisors, operating systems, libraries and applications.
 But the remainder of this paper only talks about detecting false sharing problems in multi-threaded 
 programs, so we use ``threads'' to replace ``computing unit'' from now on.
 %Since compiler can be utilized to do selective instrumentation, 
-%\defaults{} can be utilized to detect all kinds of false sharing problem with ideal overhead. 
+%\Predator{} can be utilized to detect all kinds of false sharing problem with ideal overhead. 
 
 % effect: can detect all kinds of false sharing problems.
 \item
-\textbf{Practicable Detection Tool:} \defaults{} can actually detect all kinds of false sharing 
+\textbf{Practicable Detection Tool:} \Predator{} can actually detect all kinds of false sharing 
 problems accurately and precisely 
 with reasonable overhead, around $7\times$ performance overhead and $22\%$ memory overhead. 
 It reveals some unknown false sharing problems in those benchmark suites evaluated by 
@@ -121,7 +121,7 @@ improves performance about $6\times$ and $40\%$ correspondingly.
 
 % prediction
 \item
-\textbf{Accurate Prediction Approach:}\defaults{} is the first approach to accurately predict potential false sharing that does
+\textbf{Accurate Prediction Approach:}\Predator{} is the first approach to accurately predict potential false sharing that does
 not manifest in an execution but may appear and greatly affect the performance of programs 
 in a slightly different environment. 
 This avoids the predicament of detection tools: problems may occur in a real
@@ -138,11 +138,11 @@ environment rather than test environment due to environmental changes.
 \subsection*{Outline}
 
 The remainder of this paper is organized as follows. 
-Section~\ref{sec:detection} describes \defaults{}'s detection mechanisms and
+Section~\ref{sec:detection} describes \Predator{}'s detection mechanisms and
 algorithms in detail.
 Section~\ref{sec:prediction} discusses how to predict potential false sharing accurately 
 without occurrence. 
-Section~\ref{sec:evaluation} presents experimental results, including using \defaults{} to 
+Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to 
 reveal unknown false sharing problems in several benchmarks and real applications. 
 Section~\ref{sec:discussion} discuesses limitations of prediction and presents our future work.
 Finally, 

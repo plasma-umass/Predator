@@ -1,7 +1,7 @@
 \label{sec:detection}
 
 \subsection{Overview}
-%\defaults{} is a hybrid approach that combines the runtime system with compiler instrumentation.
+%\Predator{} is a hybrid approach that combines the runtime system with compiler instrumentation.
 \label{sec:overview}
 As described in Section~\ref{sec:intro}, 
 false sharing only occurs when two threads running on two different cores, with its private cache,
@@ -13,10 +13,10 @@ Given this assumption, we observe that
 {\it if a thread writes a cache line after other threads have 
 accessed the same cache line, this write operation most likely causes at least
 an invalidation}. 
-Based on this \textbf{basic observation}, \Defaults{} captures cache invalidations for all possible 
+Based on this \textbf{basic observation}, \Predator{} captures cache invalidations for all possible 
 cache lines 
 in the detecting phase. Since only frequent cache invalidations can cause performance problem, 
-\defaults{} ranks performance degrading severeness of false sharing according to 
+\Predator{} ranks performance degrading severeness of false sharing according to 
 the number of cache invalidations and only reports those performance-degrading false sharing.
 % by keeping track of accesses from different threads. 
  
@@ -33,7 +33,7 @@ read or write accesses. However,
 it is lack of the knowledge about when and how those instructions are being accessed, 
 which depend on a specific execution including input and runtime environment. 
 
-Therefore, \defaults{} combines the runtime system with compiler instrumentation technique to capture 
+Therefore, \Predator{} combines the runtime system with compiler instrumentation technique to capture 
 cache invalidations: compiler instruments memory accesses so the runtime
 system is notified when an access is executed (see Section~\ref{sec:compiler}),
 and the runtime system is responsible for collecting and analyzing actual memory accesses 
@@ -42,12 +42,12 @@ to detect and report false sharing (see Section~\ref{sec:runtime}).
 \subsection{Compiler Instrumentation}
 \label{sec:compiler}
 
-\Defaults{} relies on LLVM to perform instrumentation on Intermediate Representation(IR) level~\cite{llvm}.
+\Predator{} relies on LLVM to perform instrumentation on Intermediate Representation(IR) level~\cite{llvm}.
 It traverses all functions one by one and 
 searches for memory accesses on global and heap variables. 
-For each memory access, \defaults{} instruments one function call to 
+For each memory access, \Predator{} instruments one function call to 
 notify the runtime system with memory access address and access type.
-The reason \Defaults{} skip accesses to stack variables 
+The reason \Predator{} skip accesses to stack variables 
 is that stack variables are normally used for be thread local storage and
 therefore do not introduce false sharing. However, instrumentation on stack
 variables can always be turned on when necessary. 
@@ -59,23 +59,23 @@ This  technique is very similar to the one used in AddressSanitizer~\cite{Addres
 
 \subsection{Runtime System}
 \label{sec:runtime}
-The runtime system of \defaults{} collects every memory access by handling 
+The runtime system of \Predator{} collects every memory access by handling 
 those functions calls inserted during compiler instrumentation phase and analyzes
 possible cache invalidations based on the basic observation discussed in Section~\ref{sec:overview}.
-In the end, \defaults{} precisely reports performance-degrading false sharing:
+In the end, \Predator{} precisely reports performance-degrading false sharing:
 for each global variable invovled in false sharing, its name, address and size
 information are reported; For heap objects, actual callsite stack for allocations, address 
 and size information are reported.
-In addition, \defaults{} provides word accesses information for those cache lines 
+In addition, \Predator{} provides word accesses information for those cache lines 
 involved in false sharing, including which threads are accessing which words. 
 This information can help 
 users to locate where the problem is and how to fix false sharing problem.
 
 \subsubsection{Detecting Cache Invalidations}
-\Defaults{} reports those global variables or heap objects on those cache lines 
+\Predator{} reports those global variables or heap objects on those cache lines 
 having a large amount of cache invalidations. 
 Thus, it is critical to capture invalidations effectively. 
-\Defaults{} achieves this goal by introducing a  
+\Predator{} achieves this goal by introducing a  
 two-entries-cache-history table for each cache line, which is 
 shown in Table~\ref{table:cachehistory}. 
 
@@ -130,20 +130,20 @@ $T$ to decide whether there is a cache invidation based on following rules:
 \subsubsection{Reporting False Sharing}
 After those individual cache lines having a large amount of cache
 invalidations are detected,
-\defaults{} needs further analysis to differentiate actual false sharing from true sharing. 
+\Predator{} needs further analysis to differentiate actual false sharing from true sharing. 
 True sharing, e.g. mulitple threads updating 
 the same counter in a cache line, can also causes a large amount of cache invalidations.
 
 In order to report false sharing precisely and accurately,  
-\Defaults{} employs the following mechanisms. 
+\Predator{} employs the following mechanisms. 
 \begin{itemize}
 \item
-\defaults{} keeps track of access information for each word on those
+\Predator{} keeps track of access information for each word on those
 cache lines involved in false sharing: 
 how many reads or writes to each word by which thread. 
 When a word is accessed by multiple threads,
 we marked the access as a shared access. This information 
-allows \defaults{} to accurately distinguish false sharing from true sharing 
+allows \Predator{} to accurately distinguish false sharing from true sharing 
 in the reporting phase.
 It is also helpful to locate where 
 actual false sharing occurs when there are multiple fields or multiple objects 
@@ -151,12 +151,12 @@ in the same cache line, thus can greatly reduce manual overhead to fix false sha
 correspondingly. 
 
 \item
-In order to precisely report origins of false sharing heap objects, \defaults{}
+In order to precisely report origins of false sharing heap objects, \Predator{}
 keeps callsite information for each heap object and reports the source code level
-information about each heap object. To obtain those callsite information, \defaults{}
+information about each heap object. To obtain those callsite information, \Predator{}
 intercepts all memory allocations and de-allocations, and relies on \texttt{backtrace()} 
 function of \texttt{glibc} library to obtain the callsite stack. 
-\defaults{} also avoids pseudo false sharing (false positives) caused by memory re-usages 
+\Predator{} also avoids pseudo false sharing (false positives) caused by memory re-usages 
 by handling correspondingly in memory de-allocations, whereas those heap objects with false 
 sharing is not re-used at all.
 
@@ -165,45 +165,45 @@ To keep tracking of reads and writes on each word for those problematic cache li
 the bookkeeping information lookup must be efficient.
 Similar to 
 AddressSanitizer~\cite{Addresssanitizer} and other systems~\cite{qinzhaodetection}~\cite{Valgrind}. 
-\defaults{} uses shadow memory mechanism 
+\Predator{} uses shadow memory mechanism 
 where each cache line of user space has a corresponding entry in the shadow memory. 
-Based on address of an access, \defaults{} can quickly locate
+Based on address of an access, \Predator{} can quickly locate
 the metadata for the corresponding cache line.
 
 \item
-In order to support shadow memory mechanism, \defaults{} uses predefined starting address and 
+In order to support shadow memory mechanism, \Predator{} uses predefined starting address and 
 fixed size for heap. It also contains a customized memory allocator, which is built on 
 Heaplayers~\cite{heaplayers} based on a ``per-thread-heap'' mechanism firstly introduced 
 by Hoard~\cite{Hoard}. Memory allocations from different threads 
 are not coming from the same physical cache line, which automatically avoids false sharing 
 introduced by memory allocator.
 However, it also brings a shortcoming that those false sharings caused by the default memory 
-allocator can not be detected by \defaults{}. 
+allocator can not be detected by \Predator{}. 
 
 \end{itemize} 
  
 \subsection{Optimizations}
 \label{optimization}
 Tracking every memory access can be extermely expensive, thus 
-\defaults{} also utilizes the following mechanisms to further improve performance.
+\Predator{} also utilizes the following mechanisms to further improve performance.
 %, where main improvement has been evaluated in Section~\ref{}.
 
 \subsubsection{Threshold-Based Tracking Mechanism}
 \label{sec:thresholdtracking}
-\Defaults{} aims to detect performance degrading false sharing.
+\Predator{} aims to detect performance degrading false sharing.
 Since cache invalidations are the root cause of performance degrading and only writes 
 can possibly introduce cache invalidations, 
 those cache lines with a small amount of writes are never being our target.
-For this reason, \defaults{} starts to track cache invalidations, reads and word accesses 
+For this reason, \Predator{} starts to track cache invalidations, reads and word accesses 
 of a cache line only after the number of writes on this cache line is above a
 pre-defined threshold, called {\it Tracking-Threshould}. 
-Before this threshold is reached, \defaults{} only tracks writes on a cache line 
+Before this threshold is reached, \Predator{} only tracks writes on a cache line 
 while skipping those reads operations. 
 This mechanism helps to filter out
 those impossible cache lines, reducing performance and memory overhead
 in the same time.
 
-In the actual implementation, \defaults{} maintains two mappings in shadow memory: 
+In the actual implementation, \Predator{} maintains two mappings in shadow memory: 
 {\it CacheWrites}, which tracks memory writes on every cache line, 
 and {\it CacheTrackings}, which tracks detailed information 
 on each cache line when the number of writes on a cache line is larger than
@@ -238,11 +238,11 @@ void HandleAccess(unsigned long addr, bool isWrite) {
 \caption{Pseudo-code to handle an access.\label{fig:algorithm}}
 \end{figure}
 
-To avoid expensive lock operations, \defaults{} uses atomic instruction to increment 
+To avoid expensive lock operations, \Predator{} uses atomic instruction to increment 
 {\it CacheWrites} counters for each cache line. 
 When the number of writes of a cache line reaches the predefined threshold,
 it allocates space to track detailed cache invalidations and word accesses.
-For performance reason, \defaults{} also 
+For performance reason, \Predator{} also 
 uses atomic \texttt{compare-and-swap} instruction to set cache tracking address for this cache line in
 the shadow mapping.
 After {\it CacheWrites} on a cache line reaches predefined {\it Tracking-Threshold}, 
@@ -252,28 +252,28 @@ cache line, shown in Table~\ref{table:cachehistory}.
 
 
 \subsubsection{Selective Compiler Instrumetation}
-\defaults{} relies on instrumentation to provide memory access information to the runtime system 
+\Predator{} relies on instrumentation to provide memory access information to the runtime system 
 and detects false sharing based on sequences of memory accesses. 
 Thus the amount of instrumentation can largely affect the performance overhead: more 
 instrumentation always means more performance overhead. 
-Thus, \defaults{} provides a very flexible framework to instrument programs 
+Thus, \Predator{} provides a very flexible framework to instrument programs 
 depending on performance requirements. 
 
-Currently, \Defaults{} only instruments once for one type of memory access on each address 
+Currently, \Predator{} only instruments once for one type of memory access on each address 
 in the same basic block. 
 We argue that this selective instrumentation does not affect the effectiveness of detection. 
-Because \Defaults{} targets to detect those false sharing with a large amount of cache invalidations,
+Because \Predator{} targets to detect those false sharing with a large amount of cache invalidations,
 less tracking of accesses inside one basic block can induce less cache invalidations 
 but it won't affect the overall behavior of cache invalidations. 
 
 % detection will not cause performance problem. 
 For performance reason, 
-\defaults{} can be easily extended to support more selective instrumentation as follows:
+\Predator{} can be easily extended to support more selective instrumentation as follows:
 \begin{itemize}
 \item
-\Defaults{} can selectively instrument reads-and-writes or writes-only. Fo example, instrumenting writes-only can help to detect write-write false sharing, as Sheriff does. 
+\Predator{} can selectively instrument reads-and-writes or writes-only. Fo example, instrumenting writes-only can help to detect write-write false sharing, as Sheriff does. 
 \item
-\Defaults{} can be set to instrument or skip one specific kind of targets. For example, user can provide a black list so that those modules,
+\Predator{} can be set to instrument or skip one specific kind of targets. For example, user can provide a black list so that those modules,
 functions or variables are not instrumented. 
 Also, user can provide a red list so that only specified functions or variables are instrumented. 
 \end{itemize}
@@ -290,7 +290,7 @@ updating those counters can greatly exacerbate performance problems caused by fa
 sharing: not only there is an cache invalidation of original cache line, but also there is
 at least another cache invalidation caused by updating these bookkeeping information.
 
-To reduce the performance overhead caused by this, \defaults{} only samples the first specified
+To reduce the performance overhead caused by this, \Predator{} only samples the first specified
 number of accesses of each sampling interval for those problematic cache lines. 
 Note that we originally keep a global counter for all accesses and uses the number of 
 all accesses to compuate sample intervals. However, this creates 
@@ -310,7 +310,7 @@ while not missing any performance-degrading false sharing.
 
 \begin{comment}
 \subsubsection{Updating-In-Place}
-%During the development of \defaults{}, we discover over $2\times$ performance overhead for those benchmarks 
+%During the development of \Predator{}, we discover over $2\times$ performance overhead for those benchmarks 
 %without any false sharing problems. 
 
 Originally, all memory accesses are instrumented with a library call to notify the runtime system. However, this creates
@@ -321,24 +321,24 @@ This can introduce significant performance overhead for some simple logic listed
 \begin{itemize}
 \item
 When total writes on a cache line is less than the pre-defined threshold, if an access is a write, 
-\defaults{} simply incrementes the counter of writes for this cache line. If an access is a read,
-\defaults{} does not do  anything. 
+\Predator{} simply incrementes the counter of writes for this cache line. If an access is a read,
+\Predator{} does not do  anything. 
 \item
 When total writes on a cache line is larger than the pre-defined threshold, then this cache line is under 
-tracking. As described in last section, \defaults{} only sample certain number of accesses (1\%) for every 
+tracking. As described in last section, \Predator{} only sample certain number of accesses (1\%) for every 
 sample interval. Most accesses (99\%) only needs to increment an access counter of corresponding cache line.
 \end{itemize}
 
 These simple logic only invokes several circles of useful work, either checking or updating a counter. 
 Thus, the overhead of function calls or library
 calls can be much more than this. 
-In order to avoid these overhead, \defaults{} implements these simple logic in places where these
+In order to avoid these overhead, \Predator{} implements these simple logic in places where these
 memory accesses are instrumented. 
 This brings another problem: how to choose shadow mapping addresses. 
 We borrow the idea of AddressSanitizer~\cite{Addresssanitizer} by 
-choosing these addresses statically. \defaults{} pre-allocated the address space between $0x40000000$ and
-$0xC0000000$ for the heap. Also, \defaults{} chooses $0x200000000000$ as the starting address for the shadow mapping of cache writes 
+choosing these addresses statically. \Predator{} pre-allocated the address space between $0x40000000$ and
+$0xC0000000$ for the heap. Also, \Predator{} chooses $0x200000000000$ as the starting address for the shadow mapping of cache writes 
 $0x200080000000$ as the starting address for the shadow mapping of cache tracking. 
-Also, \defaults{} intentionally stores the access counter in the first word of cache tracking so that 
+Also, \Predator{} intentionally stores the access counter in the first word of cache tracking so that 
 those checking and updating can be executed in-place when an memory access is instrumented. 
 \end{comment}

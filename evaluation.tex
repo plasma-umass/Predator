@@ -19,14 +19,14 @@ because \texttt{llvm} forcing a much stricter rule for C++ syntax. \texttt{canne
 Our evaluations aim to answer the following questions:
 \begin{itemize}
 \item
-  How effective is \defaults{} on detecting and predicting false sharing problem (Section ~\ref{sec:effective})?
+  How effective is \Predator{} on detecting and predicting false sharing problem (Section ~\ref{sec:effective})?
 
 \item
-  What is the performance overhead of \defaults{} with and without prediction
+  What is the performance overhead of \Predator{} with and without prediction
   (Section ~\ref{sec:perfoverhead})?
 
 \item
-  What is the memory overhead of \defaults{}~ (Section~\ref{sec:memoverhead})?
+  What is the memory overhead of \Predator{}~ (Section~\ref{sec:memoverhead})?
 \end{itemize}
 
 
@@ -35,11 +35,11 @@ Our evaluations aim to answer the following questions:
 
 \subsubsection{Benchmarks}
 To compare with state-of-the-art false sharing detection work~\cite{sheriff, OSdetection}, 
-we also executes \defaults{} on two existing benchmark suites 
+we also executes \Predator{} on two existing benchmark suites 
 suites Phoenix~\cite{phoenix-hpca} and PARSEC~\cite{parsec}, 
 and results are listed in the Table~\ref{table:detection}. 
 
-%Our results show that \defaults{} not only capture previously-discovered
+%Our results show that \Predator{} not only capture previously-discovered
 %false sharing, but also many detect new false sharing places. The results
 %are listed in Table~\ref{table:detection}. 
 
@@ -66,16 +66,16 @@ and results are listed in the Table~\ref{table:detection}.
 \small \textbf{linear\_regression} & {\small linear\_regression-pthread.c:133} & \xmark{} & 1206.93\%\\
 \hline
 \end{tabular}
-\caption{Detection results of \defaults{} on Phoenix and PARSEC benchmark suites. \label{table:detection}}
+\caption{Detection results of \Predator{} on Phoenix and PARSEC benchmark suites. \label{table:detection}}
 }
 \end{table*}
 
 In this table, the first column lists those programs with false sharing problems. 
 The second column shows precisely where the problem is. Actually, all false sharing found
-are internal object false sharing on heap objects, although \defaults{} has no 
+are internal object false sharing on heap objects, although \Predator{} has no 
 problem to find intern-objects and global false sharing. So the memory allocation site 
 are listed in the table.
-The third column ``New'' marks whether this false sharing is newly found by \defaults{} or not.
+The third column ``New'' marks whether this false sharing is newly found by \Predator{} or not.
 False sharing found by previous work are marked as cross mark(\xmark{}) and those 
 newly found false sharing are identified using a tick mark(\cmark{}). 
 The last column ``Improvement'' shows the performance improvement after fixing false sharing 
@@ -84,7 +84,7 @@ The improvement rate is calculated by substracting $1$ from normalized runtime. 
 \texttt{histogram} for an example here, original runtime of \texttt{histogram} is $0.75s$
 and new runtime is $0.51s$, then the performance improvement is $(0.75/0.51) - 1$.
 
-Seen from the table, \defaults{} reveals several unknown false sharing problems. \defaults{} detects 
+Seen from the table, \Predator{} reveals several unknown false sharing problems. \Predator{} detects 
 false sharing in \texttt{histogram} and additional false sharing in line 1908 of
 \texttt{streamcluster}. 
 In \texttt{histogram}, multiple threads repeatedly modify different locations of the same heap object. 
@@ -114,14 +114,14 @@ Actually, if we do not enable prediction then
 we can not detect false sharing problem inside because false sharing behavior is 
 very sensitive to the starting address of false sharing object. 
 We are going to explore this more detailed in Section~\ref{sec:predicteval}.
-Since \defaults{} are using a customized memory manager, which may
+Since \Predator{} are using a customized memory manager, which may
 bring us different allocation metadata and different memory map for allocation,
 false sharing problem may not manifest with ``-O1'' optmization flag of \texttt{clang}.
 %http://tex.stackexchange.com/questions/42619/x-mark-to-match-checkmark
 %\begin{comment}
 
 \subsubsection{Real Applications}
-To verify its practicability, we further evaluate \defaults{} 
+To verify its practicability, we further evaluate \Predator{} 
 on several widely-used real applications, which none of previous work has considered.  
 These real applications include a server application \texttt{MySQL}~\cite{mysql}, 
 a common C++ library \texttt{boost}~\cite{libfalsesharing} 
@@ -139,13 +139,13 @@ computer performance...'', ''the fruit of the meeting ... were able to
 improve \texttt{MySQL} performance by 6$\times$ with those scalability fixes''. 
 The false sharing of boost library is caused by the special usage of \texttt{spinlock} pool and fixing
 it brings 40\% performance improvement. 
-\defaults{} is able to succesfully detect false sharing locations
+\Predator{} is able to succesfully detect false sharing locations
 in \texttt{MySQL} and \texttt{boost} library. 
-For the other four applications, \defaults{} doest not find serere false sharing problems.
+For the other four applications, \Predator{} doest not find serere false sharing problems.
 
 \subsubsection{Prediction Effectiveness}
 \label{sec:predicteval}
-We evaluates the prediction effectiveness of \defaults{} on the \texttt{linear\_regression} benchmark.
+We evaluates the prediction effectiveness of \Predator{} on the \texttt{linear\_regression} benchmark.
 We choose this benchmark for two reasons:
 \begin{enumerate}
 \item
@@ -188,7 +188,7 @@ the offset between the starting address of potential false sharing object
 and starting of cache line is actually $56$ bytes,
 that explain why we can not detect false sharing problem without prediction enabled.
 
-\defaults{} can predict false sharing problem precisely for all of these cases. This explains
+\Predator{} can predict false sharing problem precisely for all of these cases. This explains
 the effectiveness of prediction tool.
 
 \subsection{Performance Overhead}
@@ -199,7 +199,7 @@ the effectiveness of prediction tool.
 \includegraphics[width=6.5in]{fig/perf}
 \end{center}
 \caption{
-Performance overhead of \defaults{} with and without prediction.
+Performance overhead of \Predator{} with and without prediction.
 \label{fig:perf}}
 \end{figure*}
 
@@ -208,9 +208,9 @@ are based on the average of 10 runs excluding the maximum and minimum values.
 Actual performance overhead can be seen in the following figure~\ref{fig:perf}. 
 
 From this figure, we can see for all $16$ benchmarks among Phoenix and PARSEC
-benchmark suites, normalized runtime for \defaults{} (with prediction) is around $6.7\times$.
-Also, there is no much performance difference for \defaults{} with and without prediction. 
-This also means that prediction part of \defaults{} only adds very minimum performance overhead. 
+benchmark suites, normalized runtime for \Predator{} (with prediction) is around $6.7\times$.
+Also, there is no much performance difference for \Predator{} with and without prediction. 
+This also means that prediction part of \Predator{} only adds very minimum performance overhead. 
 
 Among these benchmarks, there are $5$ benchmarks running slower than $8\times$, 
 including \texttt{histogram, kmeans, bodytrack, ferret} and \texttt{swaptions}. 
@@ -218,21 +218,21 @@ including \texttt{histogram, kmeans, bodytrack, ferret} and \texttt{swaptions}.
 program. 
 \texttt{histogram} has a severe false sharing problem inside, thus tracking detailed access for those
 problematic cache lines greately exacerbate the false sharing effect (see more discussion on this in Section~\ref{sec:sample}). 
-For \texttt{bodytrack} and \texttt{ferret}, \defaults{} detected a large amount of cache lines with 
+For \texttt{bodytrack} and \texttt{ferret}, \Predator{} detected a large amount of cache lines with 
 writes larger than {\it Tracking-Threshold}. Tracking all detailed access for these cache lines 
 introduce significant performance overhead. 
-Currently, we have no idea about why \texttt{kmeans} runs slow in \defaults{}. 
+Currently, we have no idea about why \texttt{kmeans} runs slow in \Predator{}. 
 
 We also see from Figure~\ref{fig:perf}, \texttt{matrix\_multiply, blackscholes} and \texttt{x264} do not
 introduce significant performance here. Maybe there are signficant portion of operations 
 are working on stack variables. 
-Since \defaults{} do not instrument stack variables, 
+Since \Predator{} do not instrument stack variables, 
 operations on stack variables will not introduce any
 additional performance overhead. 
 
 \subsection{Memory Overhead}
 \label{sec:memoverhead}
-Since \defaults{} pre-allocates a huge block of memory using \texttt{mmap} system call for 
+Since \Predator{} pre-allocates a huge block of memory using \texttt{mmap} system call for 
 its heap usage, 
 virtual memory can not be used to tell actual memory overhead imposed by our tool. 
 Hence, we only evaluate the physical memory overhead used by an application only. 
@@ -244,13 +244,13 @@ corresponding \texttt{smaps} files periodically.
 The maximum number of total physical memory usage is selected for calculation.
 %It is noted that we remove the physical memory usage of   
 Results of memory usage is shown in Figure~\ref{fig:memusage}. As we can see,
-\defaults{} does not increase memory usage substantially in all cases except for \texttt{swaptions}. 
+\Predator{} does not increase memory usage substantially in all cases except for \texttt{swaptions}. 
 Specifically, removing \texttt{swaptions} from calculation reduces 
 the average memory overhead from 64\% to 22\%. 
 
 The reason of \texttt{swaptions} using a large amount of memory is that 
 its original memory usage is too small (only 3KB), and 
-the additional memory added by \defaults{} in detection, prediction and
+the additional memory added by \Predator{} in detection, prediction and
 reporting yields a large number in percentage calculation. 
 
 \begin{figure*}

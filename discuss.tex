@@ -1,45 +1,49 @@
 \label{sec:discussion}
 
-\subsection{Prediction Limitation}
-As discussed in Section~\ref{sec:intro}, there are a lot of dynamic properties
-which can affect manifestness of false sharing problems. 
-\defaults{} can predict potential false sharing problems caused by when cache line size
-or an object's starting address changes.
-However, \defaults{} can not predict false sharing between two different objects
-if they are caused by different compiler and different memory manager. 
-Different compiler can generate different layout of programs for global variables. 
-If global variables $A$ and $B$ are located in the same cache line, they can create severe false 
-sharing problems. 
-If current compiler, $llvm$, happens to put these two varibles into two different cache lines, 
-\defaults{} can not predict this type of potential false sharing. 
+\subsection{Limitation on Prediction}
+As discussed in Section~\ref{sec:intro}, many dynamic properties
+can affect occurrences of false sharing. 
+\Predator{} can predict potential false sharing caused by cache line size 
+or an object's starting address change for the same binary.
+However, it can not predict false sharing in the case of  
+memory layout change made by different compiler. 
+For example,  two global variables $A$ and $B$, which do not fit into 
+the same cache line when compiled using $llvm$, may be placed close to each
+other by another compiler, and thus lead to false sharing. 
+\Predator {} does not consider such kind of false sharing, because
+it is impossible to predict the behavior of different compilers.
 
-\subsection{Extention}
-Although \defaults{} conceptually can be used to detect false sharing in different levels of 
+\subsection{Application to Kernel and Hypervisor}
+\begin{comment}
+Although \Predator{} conceptually can be used to detect false sharing in different levels of 
 software stack, currently it can not be applied to those levels directly. 
-Some components, like customized memory manager, can only work in user level. Also, \defaults{}
+Some components, like customized memory manager, can only work in user level. Also, \Predator{}
 has to identify the source of accesses using some system specfic calls. For example, it uses
 gettid() to identify accesses from different threads.   
-Extending \defaults{} to different levels of software stack will be the future work for us.
+Extending \Predator{} to different levels of software stack will be the future work for us.
+\end{comment}
 
 \subsection{Performance Improvement}
-\defaults{} runs around $6.6$ slower averagely in all of evaluated benchmarks. 
-Currently, all memory accesses are instrumented with a library call to notify the runtime system. 
-However, this creates some unnecessary performance overhead from function calls and library calls. 
-A library call invokes normal function call overhead plus another indirection overhead through 
-a Global Offset Table (GOT) and Procedure Linkage Table (PLT).
-This can introduce significant performance overhead for some simple logic listed in the following:
+\Predator{} runs around $6.6$X slower on average for all evaluated benchmarks. 
+In our current implementation, all memory accesses are instrumented with a library call to 
+invoke the runtime system for tracking. 
+This long jump from user code to library call entails large performance overhead
+since it needs to go through Global Offset Table (GOT) and Procedure Linkage Table (PLT).
+However, certain logic implemented in library are as simple as reading or
+incrementing counters. Two identifed places are shown below:
+
 \begin{itemize}
 \item
-When total writes on a cache line is less than {\it Tracking-Threshold}, 
-\defaults{} simply incrementes the counter of writes for this cache line for a write access. 
-If an access is a read, \defaults{} does nothing. 
+Upon an access to a cache line, 
+\Predator{} simply incrementes this line's write counter for write and
+ignore read until the counter value reaches {\it Tracking-Threshold}. 
 \item
 In sampling mechanism discussed in Section~\ref{sec:sample}, 
-most accesses (99\%) only needs to increment an access counter of corresponding cache line.
+most accesses (99\%) only needs to increment access counters of cache lines.
 \end{itemize}
 
-These simple logic only invokes several circles of useful work, either checking or updating a counter.
-Acutally, the overhead of function calls or library calls can be much more than the useful work.
-Thus, in the future, \defaults{} should avoid expensive library and function calls by 
-extending all these simple instructions directly when an access is instrumented.
+Implementing such logic only needs a few low latency instructions instead of expensive
+library calls. In the future, \Predator{} should 
+selectively expand library calls so that for simple logic, instructions are inserted 
+directly into user code. This will certainly improve the performance.
 

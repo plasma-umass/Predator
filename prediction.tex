@@ -32,7 +32,7 @@ None of existing detection tools considers this possibility caused by alignments
 Thus, existing tools can only report those manifested false sharing at best. 
 For this example, they may miss a very severe false sharing problem if the offset of starting 
 address is actually $0$ bytes or $56$ bytes in their test environment.
-\defaults{} overcomes this shortcoming by predicting potential false sharing accurately. 
+\Predator{} overcomes this shortcoming by predicting potential false sharing accurately. 
 
 \begin{figure*}
 \begin{center} 
@@ -55,7 +55,7 @@ address is actually $0$ bytes or $56$ bytes in their test environment.
 \caption{Manifestness of false sharing changes under different environment}
 \label{fig:potentialfalsesharing}
 \end{figure*}
-The prediction of \defaults{} focuses on {\it potential false sharing}, the type of
+The prediction of \Predator{} focuses on {\it potential false sharing}, the type of
 false sharing that does not 
 manifest in current execution but may appear and greatly affect the performance of programs
 in a slightly different environment.
@@ -84,7 +84,7 @@ which causes false sharing (Figure~\ref{fig:fsnoalignment}).
 %is not aligned with the starting address of the first cache line, 
 \end{itemize} 
 
-\defaults{} predicts whether there are false sharing 
+\Predator{} predicts whether there are false sharing 
 in any of these two cases, which can
 be caused by those dynamic properties discussed in Section~\ref{sec:intro}.
 For example, all dynamic properties except change of cache line size 
@@ -96,7 +96,7 @@ explores many possibilities caused by all dynamic properties.
 \label{sec:predictionmechanism} 
 
 Similar to the detection part, 
-\defaults{} only precticts those potential false sharing that can 
+\Predator{} only precticts those potential false sharing that can 
 cause performance problem.
 The implementation is based on
 two important observations. First, only accesses to 
@@ -106,7 +106,7 @@ or an object's starting address changes.
 Second, false sharing can greatly degrade performance when 
 there are a large amount of cache invalidations.
 
-Based on these two observations, \defaults{} develops 
+Based on these two observations, \Predator{} develops 
 the following workflow to capture potential false sharings.
 Those optimizations listed in Section~\ref{optimization} also apply
 here, although we do not repeat these optimizations in
@@ -138,25 +138,25 @@ Otherwise, go back to Step 2 to track more detailed accesses.
 
 \subsection{Evaluating Potential False Sharing}
 \label{sec:evaluatingfs}
-%For simplicity, \defaults{} do not evaluate potential false sharing if a cache line 
+%For simplicity, \Predator{} do not evaluate potential false sharing if a cache line 
 %has actual false sharing.
 To describe easily, we first introduce a {\it virtual line} concept:
 A virtual line is {\it a memory range with certain size}.
 When the number of writes on a cache line $L$ reaches the {\it Predicting-Threshold},
-\defaults{} evaluates potential false sharing by computing the number of possible cache 
+\Predator{} evaluates potential false sharing by computing the number of possible cache 
 invalidations on a virtual line. Specifically, if the number of cache
 invalidations is larger than the average number of accesses
 on each word of $L$, a potential false sharing is considered to
-be identified by \defaults{}.
+be identified by \Predator{}.
 
-\defaults{} computes the number of possible cache invalidations based on a 
+\Predator{} computes the number of possible cache invalidations based on a 
 similar observation as detection~\ref{sec:overview}: 
 {\it if a thread writes a virtual line after other threads 
 have accessed the same virtual line, this write operation most likely causes at least a cache 
 invalidation}. 
 However, it is impossible to know exactly how many cache invalidations occur on a virtual
 line without knowing actual access sequence of different threads.  
-\defaults{} makes a conservative assumption that 
+\Predator{} makes a conservative assumption that 
 accesses from different threads are issued in an interleaving way and
 continues to verify the evaluation result after prediction (See Section~\ref{sec:tracking}).
 This ensures we don't miss any potential false sharing as well as 
@@ -166,10 +166,10 @@ To compute possible cache invalidations, a way is to compute possible
 cache invalidations of $L$ word by word and then sum up all possible cache invalidations 
 of every word in cache line $L$. 
 However, it is slow and can largely over-estimate possible cache invalidations.
-To address this problem, \defaults{} only cares about those cache invalidations caused by
+To address this problem, \Predator{} only cares about those cache invalidations caused by
 {\it hot accesses}. A hot access in a cache line refers to the word whose number of read or write accesses 
 is larger than the averaged number of accesses on each word in the same cache line.
-For every hot access $X$ in cache line $L$, \defaults{} searches another
+For every hot access $X$ in cache line $L$, \Predator{} searches another
 hot access $Y$ in $L$'s previous cache line or next cache line satifying with
 the following conditions: 
 
@@ -186,14 +186,14 @@ $X$ and $Y$ are issued by different threads.
 \end{itemize}
 
 Whenever it finds an pair of $X$ and $Y$, 
-\defaults{} computes the number of cache invalidations caused by $X$ and $Y$.
+\Predator{} computes the number of cache invalidations caused by $X$ and $Y$.
 Based on our observation and conservative assumption,
 this pair of $X$ and $Y$ should at least cause cache invalidations 
 larger than the average number of accesses to each word of $L$ since both of them 
 are hot accesses.
-Thus \defaults{} identifies a potential false sharing place and stops searching.
+Thus \Predator{} identifies a potential false sharing place and stops searching.
 
-Note that \defaults{} has different specification for a virtual line in
+Note that \Predator{} has different specification for a virtual line in
 different scenarios. 
 For the case of double cache line size, a virtual line has twice
  as large as original size and forms by two original 
@@ -211,12 +211,12 @@ object on a real cache line.
 \subsection{Verifying Potential False Sharing}
 \label{sec:tracking}
 
-\defaults{} verifies potential false sharing by tracking 
+\Predator{} verifies potential false sharing by tracking 
 cache invalidations on those virtual lines. 
 
 For potential false sharing caused by double cache line size, as described in
 last section~\ref{sec:evaluatingfs}, a virtual line is composed of 
-cache line with index $2*i$ and $2*i+1$. \defaults{} verifies cache invalidations
+cache line with index $2*i$ and $2*i+1$. \Predator{} verifies cache invalidations
 on a virtual line on which false sharing has been discovered.
 
 However, for the case with starting address change, 
@@ -233,7 +233,7 @@ So there is an additional step to determine which virtual line to be tracked.
 \end{figure}
 
 Given two words having hot accesses showed in Figure~\ref{fig:trackpotential}, 
-\defaults{} leaves the same space before $X$ and after $Y$ in determining a virtual line. 
+\Predator{} leaves the same space before $X$ and after $Y$ in determining a virtual line. 
 That is, the virtual line starting 
 at location $X-((sz-d)/2)$ and ending at $Y+((sz-d)/2)$ is tracked. 
 This adjustment allows to track more possible cache invalidations caused by
@@ -241,8 +241,8 @@ accesses to $X$ and $Y$ and adjacent accesses.
 Since adjusting the starting address of a virtual line has the same effect of
 adjusting the starting address of an object in detecting false sharing, thus
 all cache lines related to the same object must be adjusted in the same time.
-\defaults{} then tracks cache invalidations based on these adjusted virtual lines.
+\Predator{} then tracks cache invalidations based on these adjusted virtual lines.
 \begin{comment}
-In the end, \defaults{} can report to users how to adjust the starting address of an
+In the end, \Predator{} can report to users how to adjust the starting address of an
 object can manifest all hided false sharing.
 \end{comment}
