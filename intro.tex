@@ -18,7 +18,7 @@ False sharing, because of cache coherence protocol, can severely degrade softwar
 performance, as much as an order of magnitude~\cite{falseshareeffect}.
 Originally cache coherence protocol is used to ensure correctness of program executions: 
 if some data in a cache line (e.g. $64$ bytes) on one core has been updated, 
-duplicates of this cache line in aother core's private 
+duplicates of this cache line in other cores' private 
 cache must be invalidated. 
 In false sharing case, those cache invalidations are totally unnecessary and only
 cause performance issue. 
@@ -51,7 +51,7 @@ communicate across different threads.
 %false sharing problems in real applications.
 
 Despite their different features and limitations, all existing detection tools 
-share two more common drawbacks.
+share two common drawbacks.
 Firstly, existing techniques can not be applied for 
 the entire software stack.
 % although they might work on a specific level of software stack.

@@ -31,9 +31,9 @@ the compiler instruments every memory access and
 the runtime system collects and analyzes memory accesses to detect false sharing problems.
 \Predator{} detects false sharing accurately and precisely: it reports no 
 false positives and pinpoints exact objects having false sharing problems.
-Also, unlike previous work, this method can be extended to
-identify false sharing problems across the entire software stack, including 
-hypervisors, operating systems, libraries and applications. 
+%Also, unlike previous work, this method can be extended to
+%identify false sharing problems across the entire software stack, including 
+%hypervisors, operating systems, libraries and applications. 
 \Predator{} have successfully detected false sharing of real applications,
 including \texttt{mysql} server application and \texttt{boost} library. Fixing these found
 false sharing problems improves performance by $6\times$ and $40\%$ correspondingly.
@@ -45,9 +45,9 @@ memory allocation order, cache line size or different target binary
 may change alignments, and thus affect occurrences of false sharing, 
 which leaves many of them undetected by existing tools.
 \Predator{} is the first tool which can accurately predict possible false sharing 
-with the need of occurrences. 
+without the need of occurrences. 
 It can report all false sharing problems with only one execution and with reasonable overhead, 
-around $7\times$ performance overhead on average.
+around $6.7\times$ performance overhead on average.
 
 %What is novel in our work?
 %How is the performance overhead?
