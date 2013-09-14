@@ -9,26 +9,24 @@
 \label{sec:intro} 
 
 Parallelism is a general approach to fully utilize multi-core resources in the modern architecture. 
-However, it is hard to achieve high performance and scalability because of contention for 
-shared resources among different computing units, e.g. processes, tasks, threads.
-False sharing is an example of resource contention: {\it false sharing occurs when 
-different computing units running on different cores with its private caches 
-simultaneously access independent data residing on the same cache line}.
-False sharing, because of cache coherance protocol, can severely degrade software 
+However, it is hard to achieve high performance and linear scalability because of shared 
+resource contention among different computing units, e.g. processes, tasks, threads.
+False sharing is an example of resource contention: false sharing occurs when 
+different computing units running on different cores with their own private caches 
+simultaneously access independent data residing on the same cache line.
+False sharing, because of cache coherence protocol, can severely degrade software 
 performance, as much as an order of magnitude~\cite{falseshareeffect}.
-Cache coherence protocol is used to ensure correctness of program executions originally: 
-if some data on a core has been updated, the duplicated data in any other core's private 
-cache must be invalidated at cache-line level (e.g. 64 Bytes). 
-But in the case of false sharing, those cache invalidations are totally unnecessary and only
+Originally cache coherence protocol is used to ensure correctness of program executions: 
+if some data in a cache line (e.g. $64$ bytes) on one core has been updated, 
+duplicates of this cache line in aother core's private 
+cache must be invalidated. 
+In false sharing case, those cache invalidations are totally unnecessary and only
 cause performance issue. 
 When a cache line is marked as invalid, 
 later accesses must retrieve an up-to-date copy of the whole cache line 
 from main memory or another core's cache.
-%This is true even for reads that only access an unmodified portion of the cache line.
-%updated by other computing unit running on other cores, it has 
-%to stall and wait for the data to be reloaded despite a lack of logical necessity, 
 This wastes both the CPU time and memory bandwidth in the same time. 
-Unfortunately, the hardware trend of building more cores
+Unfortunately, hardware trend of building more cores
 or with larger cache line size makes false sharing increasingly common.
 
 False sharing has been found in different levels of software stack, including
@@ -48,36 +46,35 @@ or require special OS support~\cite{OSdetection}.
 Sheriff~\cite{sheriff} does not have these shortcomings but has its own limitations: 
 it can only detect write-write type false sharing in programs using pthreads library,
 and can break correctness of programs using ad-hoc synchronizations or using stack variables to 
-communicate among different threads. 
+communicate across different threads. 
 %Also, none of these existing approaches  has been verified to find actual 
 %false sharing problems in real applications.
 
 Despite their different features and limitations, all existing detection tools 
-have two more common drawbacks.
-Firstly, existing techniques can not detect false sharing for 
+share two more common drawbacks.
+Firstly, existing techniques can not be applied for 
 the entire software stack.
 % although they might work on a specific level of software stack.
 Secondly, existing tools can only detect those false sharing occurring in current execution.
 However, as pointed out by Nanavati et al.~\cite{OSdetection}, 
-some dynamic properties of a system can easily change manifestness of false sharing problems,
-more discussion about this can be seen in Section~\ref{sec:predictoverview}.
+many dynamic properties can easily change manifestness of false sharing problems.
 They also give an example that 
 {\it "GCC fixes false sharing in the Phoenix linear\_regression benchmark 
 at -O2 and -O3 optimization, while clang fails to even at the highest
 optimization level".}
-To our understanding, those dynamic properties include 
+To our understanding, dynamic properties include 
 choosing different compiler, 
 enabling different compiler optimizations, 
 using different memory management schemes,
 and changing different target platforms such as address mode (32-bit or 64-bit) and cache line
 size (64 Bytes or 128 Bytes) and so on. 
-Unfortuantely, existing detection tools do not consider these dynamic properties, and
+Existing detection tools do not take into account these dynamic properties, and
 therefore are unable to identify potential performance-degrading false
 sharing problems that may occur in an execution under a different set of 
 dynamic properties.
 
-In this paper, we propose a new false sharing detector, \Predator{}, aiming to
-not only {\it detect} all existing false sharing problems accurately and precisely,
+In this paper, we propose a new false sharing detector, \Predator{}.
+It aims to not only {\it detect} all existing false sharing problems accurately and precisely,
 but {\it predict} those potential 
 false sharing problems that may appear in a slightly different environment. 
 %To be more specific, 
@@ -90,7 +87,7 @@ false sharing problems that may appear in a slightly different environment.
 \textbf{General Detection Method:}\Predator{} provides a novel false sharing detection method by
 combining compiler instrumentation with runtime system.
 %, which can avoid the shortcomings of existing tools. 
-Since \Predator{} neither relies on the support of specific hardware and OS ,
+Since it neither relies on the support of specific hardware and OS ,
 nor binds to specific threading library, 
 this method is suitable for the entire software stack, 
 i.e., hypervisors, operating systems, libraries and applications.
@@ -106,7 +103,7 @@ problems accurately and precisely
 with reasonable overhead, around $7\times$ performance overhead and $22\%$ memory overhead. 
 It reveals some unknown false sharing problems in those benchmark suites evaluated by 
 previous approaches.
-It is also the first false sharing tool to uncover performance problems existing in real applications, e.g.,
+It is also the first false sharing tool to uncover false sharing problems of real applications, e.g.,
 \texttt{mysql} server application and \texttt{boost} library. Fixing these problems 
 improves performance about $6\times$ and $40\%$ correspondingly.
 % combine compiler instrumentation with runtime system, so that it can 
@@ -144,7 +141,7 @@ Section~\ref{sec:prediction} discusses how to predict potential false sharing ac
 without occurrence. 
 Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to 
 reveal unknown false sharing problems in several benchmarks and real applications. 
-Section~\ref{sec:discussion} discuesses limitations of prediction and presents our future work.
+Section~\ref{sec:discussion} discuesses prediction limitations and presents our future work.
 Finally, 
 Section~\ref{sec:relatedwork} describes key related work and Section~\ref{sec:conclusion} concludes.
 

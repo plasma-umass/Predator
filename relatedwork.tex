@@ -1,11 +1,7 @@
 \label{sec:relatedwork}
 
-False sharing problem has drawn a lot of researcher's attention in past
-decades.  
-Many efforts have been made on false sharing detection or prevention or both.
-This section describes most prominent approaches. It worth noting that none 
-of these approaches is capable of false sharing predcition, which is one of
-the advantages of \Predator{}.
+Since none of existing approaches can predict potential false sharing without occurrence, 
+we only talk about those related work false sharing detection or prevention or both in the following.
 
 \subsection{False Sharing Detection}
 Based on the SIMICS functional simulator, Schindewolf et al. designed a tool 
@@ -16,33 +12,32 @@ events on different threads and reports a worst-case estimation of
 possible false sharings~\cite{falseshare:binaryinstrumentation1}.
 Similarly, Liu uses Pin to collect memory access information and
 reports total false sharing caused miss information~\cite{falseshare:binaryinstrumentation2}.
-While these tools can detect false sharing, 
-they impose about 100x-200x performance overhead on executions.  
+These tools can only report the possiblity of false sharing without precise information of each
+actual false sharing problem.  
+Also, they impose about 100x-200x performance overhead on executions.  
 
 Zhao et al.\ developed a dynamic instrumentation based approach to 
 detect false sharing and other cache contention problems
 for multithreading programs~\cite{qinzhaodetection}. 
-This tool instruments memory reference dynamically using Umbra~\cite{Umbra} to
-track the ownership of cache lines. It uses shadow memory technique to 
+This tool instruments those memory references dynamically using Umbra~\cite{Umbra}, 
+in order to track the ownership of cache lines. It uses shadow memory technique to 
 maintain memory access history and thus deduces thread interleaving information.
-However, it can only support at most 32 threads and its memory overhead 
-is above 2x due to cache line ownership bookkeeping. 
+However, it can only support at most $8$ threads and its memory overhead 
+is above 2x due to cache line ownership bookkeeping. Besides, they can not differentiate
+cold cache misses with actual false sharing problems due to their instrumentation limitation. 
 
 Intel's performance tuning utility (PTU)~\cite{detect:ptu, detect:intel} uses Precise
 Event Based Sampling (PEBS) hardware support to detect false sharing problems. 
-It can point out the physical cache addresses 
-and identify individual functions that cause false sharings.
-However, PTU cannot differentiate true sharing from
+It can only point out those functions that might cause false sharings.
+Also, PTU cannot differentiate true sharing from
 false sharing. Besides, PTU aggregates memory accesses without considering the memory re-usage and
 access interleavings, thus it reports a lot of
 false sharings without actual performance impact.
 
-
 In addition to their individual disadvantages,
-the above approaches share a common shortcoming, that is,
-they cannot pinpoint and report the exact location of false sharing in the source code, 
-so programmers have to examine the source code and identify problems
-manually.
+all above approaches share a common shortcoming. 
+They cannot pinpoint and report the exact location of false sharing in the source code, 
+so programmers have to examine the source code and identify problems manually.
 
 Pesterev et al.\ develop a tool, DProf, to help programmers identify cache misses based on
 AMD's instruction-based sampling hardware~\cite{DProf}.
@@ -64,25 +59,31 @@ by making different threads use different heaps~\cite{Hoard}.
 The drawback of Hoard is that it can not avoid the false sharings of globals and inside one heap object.
 
 \subsection{False Sharing Detection and Prevention}
-\sheriff{}~\cite{sheriff} system has been lately proposed, and is comprised of two tools about false sharing based on 
-their running-threads-as-processes framework: by turning threads into processes with separate address space, \sheriff{} relies on page protection mechanism and twinning-and-diffing mechanism 
-to find out local modifications of different threads and merge them into the 
-global mapping at explicit synchronization points of calling \pthreads{} APIs. 
-\SheriffDetect{} can report false sharing accurately and precisely.
+\sheriff{}~\cite{sheriff} provides two tools to handle false sharing based on 
+their ``threads-as-processes'' framework that turns threads with processes for applications using 
+\pthreads{} libraries.
+\Sheriff{}'s detection tool 
+can report false sharing accurately and precisely with only $20\%$ performance overhead.
 However, it can only detect write-write type of false sharing for those programs 
-using \pthreads{} library. On the contrary, our work can detect all kinds of false sharing for different
-thread libraries with minimum changes. 
-
- \SheriffProtect{} is a prevention tool that aims to prevent false sharing
- from happening. Unfortunately, it is only suitable for improving the performance of
-programs having small amount of synchronizations. For those programs with very significant 
-amount of synchronizations, it slows down the execution. 
-Both \SheriffDetect{} and \SheriffProtect{} assumes the correct usage of \pthreads{} APIs,  
-so they may not work correctly for those programs having ad-hoc
-synchronizations (e.g., flag synchronizations) or using stack variables to communicate among threads.
+using \pthreads{} library and it can break correctness for those programs using 
+stack variables or ad hoc synchornizations (e.g. self-defined variables)
+to communication across different threads.
+These shortcomings greatly limit their usage on real-world applications.  
+On the contrary, our work can detect all kinds of false sharing and has no limitations on applicaitons.
+\Predator{} has been utilized to find actual false sharing in \texttt{MySQL} server applications 
+and \texttt{boost} libraries.
+\Sheriff{}'s prevention tool prevents false sharing  from happening. 
+Unfortunately, it only improves performance for programs having small amount of synchronizations. 
+For those programs with very significant 
+amount of synchronizations, it might slow down the execution instead.
+%Both \SheriffDetect{} and \SheriffProtect{} assumes the correct usage of \pthreads{} APIs,  
+%so they may not work correctly for those programs having ad-hoc
+%synchronizations (e.g., flag synchronizations) or using stack variables to communicate among threads.
 
 Plastic~\cite{OSdetection} leverages the {\it sub-page granularity memory remapping facility}
 provided by Xen hypervisor to detect and tolerate false sharing automatically.
 However, the sub-page memory remapping mechanism is not supported by most existing operating 
 system currently, making it a non-universal solution. Moreover, like other
-detction tools, Plastic cannot locate the exact source of false sharing, which also greatly limits its usage.
+detction tools, Plastic cannot locate the exact source of false sharing.  
+In order to utilize their prevention, the programs has to run on Xen hypervisor, 
+which make it not appealing any more.

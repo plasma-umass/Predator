@@ -1,12 +1,12 @@
 \label{sec:conclusion}
-This paper presents a novel method to detect false sharing problem by combining
+This paper presents a novel approach to detect false sharing problems by combining
 compiler instrumentation technique and a runtime system. 
 Compiler instruments every read and write access of global variables
 and heap objects by inserting a function call to invoke the runtime
 system. 
 By collecting and analyzing information passed through instrumented function calls, the runtime system 
-can detect false sharing based on calculating the number of cache invalidations: those 
-false sharing causing severe performance degradation has a great amount of 
+detects false sharing based on cache invalidations: those 
+false sharing causing severe performance degradation has a large amount of 
 cache invalidations. To differentiate false sharing with true sharing, 
 \Predator{} further provides word accesses information for those cache lines involved in false sharing, 
 which can help users debug and fix the problem.
@@ -14,7 +14,13 @@ which can help users debug and fix the problem.
 \Predator{} further predicts potential false sharing caused by the change of cache line size 
 or starting addresses of objects. It helps to prevent the predicament of existing tools:
 problems may occur in a real environment rather than test environment due to environmental changes.
-Our evaluation shows \Predator{} can effectively detect several unknown false sharing problems in two popular benchmark
-suites, \texttt{Phoenix} and \texttt{PARSEC}. 
-We also evaluate \Predator{} on $6$ different real applications. The results
-show that it successfully detects false sharing problems inside \texttt{MySQL} and \texttt{boost} libraries. 
+
+Our evaluation shows \Predator{} can effectively detect and predict several 
+unknown and existing false sharing problems 
+in two popular benchmark suites, \texttt{Phoenix} and \texttt{PARSEC}. 
+We also evaluate \Predator{} on $6$ different real applications. 
+It successfully detects two known false sharing problems inside 
+\texttt{MySQL} and \texttt{boost} libraries.
+Fixing these fals sharing problems improves the performance by $6\times$ and
+$40\%$ respectively.
+\Predator{} is ready to be used in real-world deployment environments. 

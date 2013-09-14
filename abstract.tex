@@ -16,8 +16,8 @@ performance of multithreaded programs.
 \end{comment} 
 
 False sharing is a notorious performance issue for different software stacks, 
-which can dramatically degrade the performance and seriously affect the scalability 
-of software.
+which can dramatically degrade the performance and seriously affect the scalability of 
+systems.
 
 %Many reserach efforts have been made to detect false sharing. 
 Unfortunately, previous approaches to detect false sharing
@@ -28,26 +28,26 @@ to report false sharing accurately and precisely, or have different limitations 
 We propose a novel method, \Predator{}, to combine compiler instrumentation
 and runtime system to detect false sharing: 
 the compiler instruments every memory access and 
-runtime system collects memory accesses to detect false sharing problems.
+the runtime system collects and analyzes memory accesses to detect false sharing problems.
 \Predator{} detects false sharing accurately and precisely: it reports no 
-false positives and pinpoints those exact objects having false sharing problems.
-Also, unlike previous work, this method can
-identify false sharing problems across the entire software stack including 
+false positives and pinpoints exact objects having false sharing problems.
+Also, unlike previous work, this method can be extended to
+identify false sharing problems across the entire software stack, including 
 hypervisors, operating systems, libraries and applications. 
-\Predator{} have been utilized successfully to detect false sharing of real applications,
+\Predator{} have successfully detected false sharing of real applications,
 including \texttt{mysql} server application and \texttt{boost} library. Fixing these found
-false sharing problems brings us around $6\times$ and $40\%$ improvement.
+false sharing problems improves performance by $6\times$ and $40\%$ correspondingly.
 
-Moreoever, existing tools can only detect those manifested false sharing.
-However, the manifestness of false sharing can be affected by alignments between
+Moreoever, existing tools can only detect those manifested false sharing problems.
+However, manifestness of false sharing can be affected by alignments between
 objects and cache lines: any change of compiler optimization, compiler, memory manager, 
 memory allocation order, cache line size or different target binary 
-may change alignments of objects and thus affect manifestness of false sharing, 
+may change alignments and thus affect manifestness of false sharing, 
 which leaves many of them undetected by existing tools.
-\Predator{} is the first tool which can predict possible false sharing 
-accurately by examining word accesses and verifying possible cache invalidations.   
-It can report all false sharing problems with only one execution and reasonable overhead, totally 
-around $7\times$ performance overhead.
+\Predator{} is the first tool which can accurately predict possible false sharing 
+with the need of occurrence. 
+It can report all false sharing problems with only one execution and with reasonable overhead, 
+around $7\times$ performance overhead on average.
 
 %What is novel in our work?
 %How is the performance overhead?

@@ -16,15 +16,14 @@ and the starting of cache line
 \label{fig:perfsensitive}}
 \end{figure}
 
-Manifestness of false sharing highly depends on 
+Occurrence of false sharing highly depends on 
 alignments between objects and corresponding cache lines.
 We can see an example in Figure~\ref{fig:perfsensitive}, one benchmark evaluated in
 Section~\ref{sec:evaluation}. 
 For this \texttt{linear\_regression} benchmark,
 when the offset of starting address between false sharing object and corresponding cache lines 
 is $0$ or $56$ bytes, 
-we do not see any false sharing effect. That is, we can achieve perfect scalability under
-these cases.  
+there is no false sharing problem in this benchmark. 
 When the offset is $24$ bytes, we see the most severe performance effect caused 
 by false sharing problem. 
 The performance difference between these two can be as large as $15\times$.
@@ -55,9 +54,10 @@ address is actually $0$ bytes or $56$ bytes in their test environment.
 \caption{Manifestness of false sharing changes under different environment}
 \label{fig:potentialfalsesharing}
 \end{figure*}
+
 The prediction of \Predator{} focuses on {\it potential false sharing}, the type of
 false sharing that does not 
-manifest in current execution but may appear and greatly affect the performance of programs
+manifest in current execution but may appear and greatly affect programs' performance
 in a slightly different environment.
 
 Figure~\ref{fig:potentialfalsesharing} shows a simplified example.
