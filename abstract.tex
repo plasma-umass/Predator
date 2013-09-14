@@ -39,13 +39,13 @@ including \texttt{mysql} server application and \texttt{boost} library. Fixing t
 false sharing problems improves performance by $6\times$ and $40\%$ correspondingly.
 
 Moreoever, existing tools can only detect those manifested false sharing problems.
-However, occurrence of false sharing can be affected by alignments between
+However, occurrences of false sharing can be affected by alignments between
 objects and cache lines: any change of compiler optimization, compiler, memory manager, 
 memory allocation order, cache line size or different target binary 
-may change alignments, and thus affect occurrence of false sharing, 
+may change alignments, and thus affect occurrences of false sharing, 
 which leaves many of them undetected by existing tools.
 \Predator{} is the first tool which can accurately predict possible false sharing 
-with the need of occurrence. 
+with the need of occurrences. 
 It can report all false sharing problems with only one execution and with reasonable overhead, 
 around $7\times$ performance overhead on average.
 

@@ -3,15 +3,15 @@
 All evaluations are performed on a quiescent Intel Core 2 dual-processor system equipped with 
 16GB RAM. 
 Each processor is a 4-core 64-bit Intel Xeon running at 2.33 GHz with a 4MB
-shared L2 cache and 32KB private L1 data cache. 
+shared L2 cache and 32KB private L1 cache. 
 The underlying operating system is unmodified CentOS 5.5, running with Linux kernel
 version 2.6.18-194.17.1.el5. The glibc version is 2.5. 
 In order to compare the performance fairly, all benchmarks were built as 64-bit executables 
-using LLVM compiler (version 3.2). The compiler optimization level is set to ``-O1'' 
+using LLVM compiler (clang-3.2). The compiler optimization level is set to ``-O1'' 
 so memory allocation callsites can be reported precisely.
 %since we can not report line number of source code with optimization level larger than
 %``-O2''.
-In our evaluations of this section, 
+In our evaluations, 
 we choose two popular benchmark suites, Phoenix~\cite{phoenix-hpca} 
 and PARSEC~\cite{parsec}. 
 Some programs of PARSEC cannot be compiled or run succesfully with LLVM are excluded here.
@@ -51,21 +51,20 @@ are listed in the Table~\ref{table:detection}.
 \begin{table*}[ht!]
 {
 \centering
-\begin{tabular}{l|r|r|r}
+\begin{tabular}{l|r|r|r|r}
 \hline
-{\bf \small Benchmark} & {\bf \small Source Code} & {\bf \small New} & {\bf \small Improvement} \\
-%{\bf \small Benchmark} & {\bf \small Source Code} & {\bf \small Type of False Sharing} & {New} & {\bf \small Improvement} \\
+{\bf \small Benchmark} & {\bf \small Source Code} & {\bf \small New} & {\bf \small Prediction} & {\bf \small Improvement} \\
 \hline
-\small \textbf{histogram} & {\small histogram-pthread.c:213} & \cmark{} & 46.22\%\\
-\small \textbf{reverse\_index} & {\small reverseindex-pthread.c:511} & \xmark{} & 0.09\%\\
-\small \textbf{word\_count} & {\small word\_count-pthread.c:136} & \xmark{} & 0.14\%\\
+\small \textbf{histogram} & {\small histogram-pthread.c:213} & \cmark{} &\xmark{} & 46.22\%\\
+\small \textbf{reverse\_index} & {\small reverseindex-pthread.c:511} & \xmark{} & \xmark{} & 0.09\%\\
+\small \textbf{word\_count} & {\small word\_count-pthread.c:136} & \xmark{} & \xmark{} & 0.14\%\\
 \hline
-\small \textbf{streamcluster} & {\small streamcluster.cpp:985} & \xmark{} & 7.52\% \\
-\small \textbf{streamcluster} & {\small streamcluster.cpp:1907} & \cmark{} & 4.77\%\\
+\small \textbf{streamcluster} & {\small streamcluster.cpp:985} & \xmark{} & \xmark{} &7.52\% \\
+\small \textbf{streamcluster} & {\small streamcluster.cpp:1907} & \cmark{} & \xmark{} & 4.77\%\\
 %\small \textbf{bodytrack} & {\small TrackingModel.cpp:59} & 0 & \cmark{} & \\
 \hline
 \hline
-\small \textbf{linear\_regression} & {\small linear\_regression-pthread.c:133} & \xmark{} & 1206.93\%\\
+\small \textbf{linear\_regression} & {\small linear\_regression-pthread.c:133} & \xmark{} & \cmark{} & 1206.93\%\\
 \hline
 \end{tabular}
 \caption{Detection results of \Predator{} on Phoenix and PARSEC benchmark suites. \label{table:detection}}
@@ -74,23 +73,16 @@ are listed in the Table~\ref{table:detection}.
 
 In this table, the first column lists those programs with false sharing problems. 
 The second column shows precisely where the problem is. Since all found false sharing 
-occurs inside the same heap object, we listed callsite source code information in this column.
+occur inside the same heap object, we list callsite source code information in this column.
 The third column ``New'' marks whether this false sharing is newly found by \Predator{} or not.
 False sharing problems found by previous work are marked with a crossmark(\xmark{}) and those 
-newly found ones are marked with a tick mark(\cmark{}). 
+newly found ones are marked with a tick mark(\cmark{}).
+The fourth column ``Prediction'' identifies whether this false sharing is detected using prediction.
 The last column ``Improvement'' shows the performance improvement after fixing false sharing. 
-The number is based on the average runtime of $10$ runs. 
-
-\begin{comment}
-\textbf{Tongping: how to say the following sentences}\\
-The improvement rate is calculated by substracting $1$ from normalized runtime of orignal
-runtime and new runtime. 
-Taking \texttt{histogram} for an example here, original runtime of \texttt{histogram} is $0.75s$
-and new runtime is $0.51s$, then the performance improvement is $(0.75/0.51) - 1$.
-\end{comment}
+%The number is based on the average runtime of $10$ runs. 
 
 As shown in the table, \Predator{} reveals several unknown false sharing problems. 
-It is the first tool to detect two false sharing problems: one in \texttt{histogram} 
+It is the first tool to detect these two false sharing problems: one in \texttt{histogram} 
 and one in line $1908$ of \texttt{streamcluster}. 
 In \texttt{histogram}, multiple threads repeatedly modify different locations of the same heap object. 
 Padding the data structure \texttt{thread\_arg\_t} fixes the false sharing problem and 
@@ -101,11 +93,14 @@ By simply changing this array to \texttt{long} type contributes to about 4.7\% p
 
 %, although it is not a complete fix of false sharing. 
 %None of these two false sharing problems has been reported by previous tools.
-All other false sharing problems have been discovered by one of previous tools, 
-\sheriff{}~\cite{sheriff}. 
-Same as \sheriff{}, we do not see much performance improvement for \texttt{reverse\_index} and 
-\texttt{word\_count} since the number of updates inside them is not significantly large. But they
-are actual false sharing problems that have been verified manually by us.
+All other false sharing problems have been discovered by previous tools~\cite{sheriff}.
+We do not see much performance improvement for \texttt{reverse\_index} and 
+\texttt{word\_count} benchmarks, but the number of cache invalidations 
+among them reaches our predfined threshold so they are reported by \predator{}.
+Making reporting threshold higher can avoid the report of insignificant false sharing problems.
+It is worth noting that these two benchmarks definitely have false sharing problems,
+which has been confirmed by \Sheriff~\cite{sheriff}. 
+We also confirm this manually. 
 
 \texttt{streamcluster} has another false sharing problem at line $985$. 
 Different threads change the same object (\texttt{work\_mem}) simultaneously. 
@@ -117,8 +112,9 @@ improvement.
 
 \texttt{linear\_regression} has a severe false sharing problem, 
 while fixing it improves the performance more than $12\times$.
-In this benchmark, different threads constantly update their thread specific locations 
-inside a heap object(\texttt{tid\_args}), causing a huge amount of cache invalidations. 
+In this benchmark, different threads update their thread specific locations 
+inside a heap object(\texttt{tid\_args}) in a tight loop, 
+causing a huge amount of cache invalidations. 
 As pointed out by Nanavati et al.~\cite{OSdetection}, false sharing 
 occurs when using \texttt{clang} compiler and disappears when using \texttt{GCC} with optimization
 -O2 and -O3.  
@@ -126,16 +122,13 @@ During our evaluation, because our customized memory manager has different alloc
 metadata for each heap object, this false sharing do not 
 occur at all when we are compiling this program
 using \texttt{clang-3.2} at ``-O1'' optmization level.
-Detailed reason of this can be seen in Section~\ref{sec:predicteval}.
 Thus, \Predator{} actually can not detect this false sharing problem without enabling 
-prediction mechanism. Also, none of existing tools can detect false sharing without occurence.
-Using the prediction mechanism discussed in Section~\ref{sec:prediction}, 
-\Predator{} can always capture false sharing problems in this benchmark.
-This also examplify the importance of prediction tool. 
+prediction mechanism. 
+The reason is discussed in detail in Section~\ref{sec:predicteval}.
 
 \subsubsection{Real Applications}
 To verify its practicability, we further evaluate \Predator{} 
-on several widely-used real applications, which none of previous work has evaluated.  
+on several widely-used real applications, which none of previous work has done this.  
 These real applications include a server application \texttt{MySQL}~\cite{mysql}, 
 a common C++ library \texttt{boost}~\cite{libfalsesharing} 
 and a distributed memory object caching system \texttt{memcached}, a network retriver \texttt{aget}, 
@@ -143,23 +136,25 @@ a parallel bzip2 file compressor \texttt{pbzip2} and a parallel file scanner \te
 For \texttt{MySQL} and \texttt{boost},
 we evaluate their specific versions, \texttt{MySQL-5.5.32} and
 \texttt{boost-1.49.0}, which are known to have some false sharing problems.
+The versions of Other applications includes \texttt{memcached-1.4.15},
+\texttt{aget-0.4.1} and \texttt{pbzip2-1.1.6}.
 
-The false sharing problem in \texttt{MySQL} has caused significant scalability problem and
+The false sharing problem of \texttt{MySQL} has caused significant scalability problem and
 it was very difficult to be identified. 
 According to the architect of \texttt{MySQL} Mikael Ronstrom, ``we had gathered specialists on 
 InnoDB..., participants from MySQL support... and a number of generic specialists on 
 computer performance...'', ``the fruit of the meeting ... were able to 
-improve \texttt{MySQL} performance by 6$\times$ with those scalability fixes''. 
+improve \texttt{MySQL} performance by 6$\times$ with those scalability fixes''~\cite{mysql}. 
 The false sharing of boost library is caused by the special usage of \texttt{spinlock} pool and fixing
 it brings 40\% performance improvement. 
 \Predator{} is able to succesfully detect false sharing locations
 in both \texttt{MySQL} and \texttt{boost} library. 
-For the other four applications, \Predator{} doest not find serere false sharing problems.
+For the other four applications, \Predator{} doest not find severe false sharing problems.
 
 \subsubsection{Prediction Effectiveness}
 \label{sec:predicteval}
 For prediction effectiveness, we evaluate whether \Predator{} can always capture a false sharing
-problem without occurrence.
+problem without occurrences.
 \texttt{linear\_regression} benchmark is selected here because of the following two reasons:
 \begin{enumerate}
 \item
@@ -183,7 +178,7 @@ experiencing false sharing.
 The size of this data structure, \texttt{lreg\_args}, is $64$ bytes 
 when we use \texttt{clang} compiler to compile $64$bit binary at ``-O1'' optimization level.
 For this false sharing problem, the main thread allocates an array with the number of elements equals
-to that  of underlying hardware cores.
+to that of underlying hardware cores.
 Each element is a \texttt{lreg\_args} type with $64$ bytes. 
 Then this array is passed to different threads (\texttt{lreg\_thread}) 
 so that each thread only updates its thread-dependent area, see Figure~\ref{fig:linearregression}.
@@ -204,12 +199,12 @@ than its optimal performance.
 When we eveluate detection effectiveness on its original code, 
 our customized memory manager happens to make the offset $56$ bytes. 
 As a result, \Predator{} can not detect false sharing in this benchmark 
-without enabling prediction because of no occurrence of false sharing problem.
+without enabling prediction because of no occurrences of false sharing problem.
 This situation happens to all existing tools: they can only detect false sharing problems when
 they occur. 
 
 In contrast, the prediction mechanism designed in \predator{} 
-amis to address this problem.  Results of our evaluations shows 
+amis to address this problem.  Results of our evaluations show 
 that \Predator{} can always predict the false sharing problem in this
 benchmark no matter what the offset value is. 
 This explains the effectiveness of \Predator{}.
