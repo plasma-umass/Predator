@@ -302,7 +302,7 @@ number of accesses of each sampling interval for those problematic cache lines.
 %all accesses to compuate sample intervals. However, this creates 
 %extereme performance overhead caused by cache invalidations of updating the same counter
 %for all accesses. 
-Currently, we maintain an access counter for each cache line 
+Currently, \Predator{} maintains an access counter for each cache line 
 and only tracks the first $10000$ accesses out of  every 1 million accesses 
 (sampling interval) on a cache line.
 The sampling rate is only 1\% here.
