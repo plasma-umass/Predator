@@ -40,7 +40,7 @@ to detect and report false sharing (see Section~\ref{sec:runtime}).
 \subsection{Compiler Instrumentation}
 \label{sec:compiler}
 
-\Predator{} relies on LLVM to perform instrumentation on Intermediate Representation(IR) level~\cite{llvm}.
+\Predator{} relies on LLVM to perform instrumentation at the intermediate representation level~\cite{llvm}.
 It traverses all functions one by one and 
 searches for memory accesses on global and heap variables. 
 For each memory access, \Predator{} instruments a function call to 
@@ -60,14 +60,14 @@ This  technique is very similar to the one used in AddressSanitizer~\cite{Addres
 The runtime system of \Predator{} collects every memory access by handling 
 those functions calls inserted during compiler instrumentation phase and analyzes
 possible cache invalidations based on the basic observation discussed in Section~\ref{sec:overview}.
-In the end, \Predator{} precisely reports performance-degrading false sharing problems:
+Finally, \Predator{} precisely reports performance-degrading false sharing problems.
 For global variables involved in false sharing, their name, address and size
 information are reported; For heap objects, the callsite stack for their allocations, 
 their address and size information are reported.
-In addition, \Predator{} provides word accesses information for those cache lines 
+In addition, \Predator{} provides word granularity access information for those cache lines 
 involved in false sharing, including which threads access which words. 
 These information can further help 
-users to diagnose where are problems and how to fix these problems.
+users diagnose where problems lie and how to fix them.
 
 \subsubsection{Tracking Cache Invalidations}
 \Predator{} only reports those global variables or heap objects on 
@@ -128,10 +128,10 @@ replace this table with current write access.
 \end{itemize}
 
 \subsubsection{Reporting False Sharing}
-After those cache lines with a large amount of cache invalidations are detected,
+After those cache lines with a large number of cache invalidations are detected,
 \Predator{} needs further analysis to differentiate actual false sharing from true sharing. 
 True sharing, e.g. multiple threads updating 
-the same counter in a cache line, can also causes a large amount of cache invalidations.
+the same counter in a cache line, can also causes a large number of cache invalidations.
 
 In order to report false sharing precisely and accurately,  
 \Predator{} employs the following mechanisms. 
@@ -194,7 +194,7 @@ Tracking every memory access can be extremely expensive, thus
 \Predator{} aims to detect performance degrading false sharing.
 Since cache invalidations are the root cause of performance degradation and only writes 
 can possibly introduce cache invalidations, 
-those cache lines with a small amount of writes are never being our target.
+those cache lines with a small number of writes are never being our target.
 For this reason, \Predator{} only tracks cache invalidations, reads and word accesses 
 of a cache line after the number of writes on this cache line is above a
 pre-defined threshold, called {\it Tracking-Threshould}. 
@@ -256,7 +256,7 @@ all read and write accesses on this cache line are started to be tracked.
 \Predator{} relies on instrumentation to provide memory access information to the runtime system 
 and detects false sharing based on sequences of memory accesses on every cache line. 
 Performance overhead of a specific program is always proportional to 
-the amount of instrumentation: more 
+the degree of instrumentation: more 
 instrumentation always means more performance overhead. 
 Thus, \Predator{} provides a very flexible framework to instrument programs 
 depending on performance requirements. 
@@ -264,36 +264,36 @@ depending on performance requirements.
 Currently, \Predator{} only instruments once for one type of memory access on each address 
 in the same basic block. 
 We argue that this selective instrumentation does not affect the effectiveness of detection. 
-Because \Predator{} targets to detect those false sharing with a large amount of cache invalidations,
+Because \Predator{} aims to detect those false sharing with a large number of cache invalidations,
 less tracking of accesses inside one basic block can induce less cache invalidations 
-but it won't affect the overall behavior of cache invalidations. 
+but it does not affect the overall behavior of cache invalidations. 
 
 % detection will not cause performance problem. 
-For performance reason, 
+To improve performance,
 \Predator{} can be easily extended to support more flexible instrumentation as follows:
 \begin{itemize}
 \item
-\Predator{} can selectively instrument reads-and-writes or writes-only. 
-For example, instrumenting writes-only can help to detect write-write type of false sharing, 
+\Predator{} could selectively instrument both reads and writes or only writes.
+Instrumenting only writes reduces overhead while detecting write-write false sharing, 
 as \Sheriff{} does. 
 \item
-\Predator{} can be set to instrument or skip one specific kind of targets. 
-For example, user can provide a black list so that those modules,
+\Predator{} can be set to instrument or skip specific code or data. 
+For example, the user could provide a black list so that given modules,
 functions or variables are not instrumented. 
-Also, user can provide a red list so that only specified functions or variables are instrumented. 
+Conversely, the user could provide a white list so that only specified functions or variables are instrumented. 
 \end{itemize}
 
 \subsubsection{Sampling Mechanism}
 \label{sec:sample}
 According to Section~\ref{sec:thresholdtracking}, 
 when the number of writes on a cache line is larger than {\it Tracking-Threshold}, 
-every access must be tracked to store word accesses information, update access counter and 
-cache access history table of this cache line, etc. 
+every access must be tracked to store details such as word access information, update access counter and the
+cache access history table of this cache line. 
 When a cache line actually has false sharing or true sharing problems inside,
 updating those counters can exacerbate performance problems caused by false sharing or true
 sharing: 
-not only there is an invalidation on application cache line, 
-but also there is
+not only is there an invalidation on an application cache line, 
+but there is also
 at least another cache invalidation caused by updating these metadata of corresponding cache lines.
 
 To further reduce the performance overhead, \Predator{} only samples the first specified
@@ -303,7 +303,7 @@ number of accesses of each sampling interval for those problematic cache lines.
 %extereme performance overhead caused by cache invalidations of updating the same counter
 %for all accesses. 
 Currently, \Predator{} maintains an access counter for each cache line 
-and only tracks the first $10000$ accesses out of  every 1 million accesses 
+and only tracks the first $10,000$ accesses out of  every 1 million accesses 
 (sampling interval) on a cache line.
 The sampling rate is only 1\% here.
 By doing this, we might miss false sharing with an access pattern like this:
