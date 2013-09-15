@@ -25,17 +25,22 @@ either introduce significant performance overhead, or fail
 to report false sharing accurately and precisely, or have different limitations of usage. 
 %\sheriff{}, the prior state-of-the-art tool, 
 %can only detect write-write false sharing in applications using \pthreads{} library.
-We propose a novel method, \Predator{}, to combine compiler instrumentation
-and runtime system to detect false sharing: 
-the compiler instruments every memory access and 
-the runtime system collects and analyzes memory accesses to detect false sharing problems.
-\Predator{} detects false sharing accurately and precisely: it reports no 
-false positives and pinpoints exact objects having false sharing problems.
+This paper presents a novel approach, \Predator{}, to combine compiler instrumentation
+and runtime system to detect false sharing. 
+%the compiler instruments every memory access and 
+%the runtime system collects and analyzes memory accesses to detect false sharing problems.
+Since it does not rely on any hardware, OS or threading library, this approach can be
+applied to the entire software stack without any limitation. 
+\Predator{} can detect false sharing accurately and precisely: it reports no 
+false positives and pinpoints exact objects with false sharing problems.
 %Also, unlike previous work, this method can be extended to
 %identify false sharing problems across the entire software stack, including 
 %hypervisors, operating systems, libraries and applications. 
-\Predator{} have successfully detected false sharing of real applications,
-including \texttt{mysql} server application and \texttt{boost} library. Fixing these found
+Experimental results on two popular benchmark suites 
+show that \Predator{} not only detected all known false sharing problems but also revealed 
+two unknown false sharing problems.
+Besides, \Predator{} have successfully detected false sharing of real applications,
+including \texttt{mysql} server application and \texttt{boost} library. Fixing these
 false sharing problems improves performance by $6\times$ and $40\%$ correspondingly.
 
 Moreoever, existing tools can only detect those manifested false sharing problems.

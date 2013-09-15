@@ -9,7 +9,6 @@ can affect occurrences of false sharing.
 or an object's starting address.
 However, it cannot predict false sharing problems possibly caused by two random objects,
 either global variables or heap objects, if they are not placed in the same or adjacent cache lines.
-
 In fact, different compilers and memory managers can create 
 different memory layout for global variables and heap objects. 
 For example, two global variables $A$ and $B$, which are not placed 
@@ -24,7 +23,7 @@ Hence, it is applicable to detect and predict false sharing in different levels 
 software stack in theory, including hypervisors, operating systems, libraries or 
 applications using different threading libraries.
 However, some components of \Predator{} has to be 
-modified correspondingly instead of applying \Predator{} to them directly.
+modified correspondingly instead of applying to them directly.
 For example, \Predator{} has to identify computing unit of all memory accesses, 
 e.g., different virtual machines, tasks or threads. 
 Different system has their own specific calls and must be adjusted correspondingly.
@@ -39,22 +38,22 @@ In our current implementation, every memory access is instrumented with a librar
 in order to notify the runtime system for tracking.
 A library call entails not only normal function call overhead but also 
 overhead related to Global Offset Table(GOT) and/or Procedure Linkage Table (PLT) look-up. 
-It is too heavy for simple computations such as the following:
+It is too heavy for simple computations, such as the following:
 
 \begin{itemize}
 \item
 As discussed in Section~\ref{sec:thresholdtracking}, 
 before the number of writes on a cache line reaches {\it Tracking-Threshold}, 
 \Predator{} simply increments this cache line's write counter for writes
-and ignore reads.
+and ignores reads.
 \item
 In sampling mechanism discussed in Section~\ref{sec:sample}, 
 most accesses (99\%) only needs to increment access counters of cache lines.
 \end{itemize}
 
-These computations only involves check or update operations,
+These computations only involve in checking or updating operations,
 normally taking only a few CPU cycles to finish. 
 In the future, we plan to further improve the performance of \Predator{} 
 by instrumenting those simple computations directly, 
-instead of library calls to notify runtime system.
+instead of using library calls to notify runtime system.
 

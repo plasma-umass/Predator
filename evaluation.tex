@@ -115,20 +115,25 @@ while fixing it improves the performance more than $12\times$.
 In this benchmark, different threads update their thread specific locations 
 inside a heap object(\texttt{tid\_args}) in a tight loop, 
 causing a huge amount of cache invalidations. 
-As pointed out by Nanavati et al.~\cite{OSdetection}, false sharing 
-occurs when using \texttt{clang} compiler and disappears when using \texttt{GCC} with optimization
--O2 and -O3.  
+For this benchmark, Nanavati et al.~\cite{OSdetection} have observed that 
+false sharing occurs when using \texttt{clang} compiler and 
+disappears when using \texttt{GCC} with optimization -O2 and -O3.  
+But their observation is different with our evaluation. 
 During our evaluation, because our customized memory manager has different allocation 
 metadata for each heap object, this false sharing do not 
 occur at all when we are compiling this program
 using \texttt{clang-3.2} at ``-O1'' optmization level.
 Thus, \Predator{} actually can not detect this false sharing problem without enabling 
-prediction mechanism. 
-The reason is discussed in detail in Section~\ref{sec:predicteval}.
+prediction mechanism, which is discussed in detail in Section~\ref{sec:predicteval}.
+Actually, none of existing tools can detect false sharing without occurrence.
+This also examplify the importance of prediction tool.
+
+Using the prediction mechanism discussed in Section~\ref{sec:prediction},
+\Predator{} can detect false sharing problems in this benchmark.
 
 \subsubsection{Real Applications}
 To verify its practicability, we further evaluate \Predator{} 
-on several widely-used real applications, which none of previous work has done this.  
+on several widely-used real applications, whereas none of previous work has done this.  
 These real applications include a server application \texttt{MySQL}~\cite{mysql}, 
 a common C++ library \texttt{boost}~\cite{libfalsesharing} 
 and a distributed memory object caching system \texttt{memcached}, a network retriver \texttt{aget}, 
@@ -136,7 +141,7 @@ a parallel bzip2 file compressor \texttt{pbzip2} and a parallel file scanner \te
 For \texttt{MySQL} and \texttt{boost},
 we evaluate their specific versions, \texttt{MySQL-5.5.32} and
 \texttt{boost-1.49.0}, which are known to have some false sharing problems.
-The versions of Other applications includes \texttt{memcached-1.4.15},
+The versions of other applications includes \texttt{memcached-1.4.15},
 \texttt{aget-0.4.1} and \texttt{pbzip2-1.1.6}.
 
 The false sharing problem of \texttt{MySQL} has caused significant scalability problem and
@@ -145,16 +150,17 @@ According to the architect of \texttt{MySQL} Mikael Ronstrom, ``we had gathered 
 InnoDB..., participants from MySQL support... and a number of generic specialists on 
 computer performance...'', ``the fruit of the meeting ... were able to 
 improve \texttt{MySQL} performance by 6$\times$ with those scalability fixes''~\cite{mysql}. 
-The false sharing of boost library is caused by the special usage of \texttt{spinlock} pool and fixing
-it brings 40\% performance improvement. 
+The false sharing of boost library is caused by the special usage of \texttt{spinlock} pool.
+Different threads may utilize different spinlock located in the same cache line in this case.
+Fixing it brings 40\% performance improvement. 
 \Predator{} is able to succesfully detect false sharing locations
 in both \texttt{MySQL} and \texttt{boost} library. 
 For the other four applications, \Predator{} doest not find severe false sharing problems.
 
 \subsubsection{Prediction Effectiveness}
 \label{sec:predicteval}
-For prediction effectiveness, we evaluate whether \Predator{} can always capture a false sharing
-problem without occurrences.
+We have discussed that prediction helps to reveal the false sharing problems inside \texttt{linear\_regression} benchmark. In this section, we furth verify whether prediction can always identify 
+false sharing problems even without occurrences.
 \texttt{linear\_regression} benchmark is selected here because of the following two reasons:
 \begin{enumerate}
 \item
@@ -177,7 +183,7 @@ Figure~\ref{fig:linearregression} shows the data structure and source code
 experiencing false sharing.
 The size of this data structure, \texttt{lreg\_args}, is $64$ bytes 
 when we use \texttt{clang} compiler to compile $64$bit binary at ``-O1'' optimization level.
-For this false sharing problem, the main thread allocates an array with the number of elements equals
+For this false sharing problem, the main thread allocates an array with the number of elements equalling
 to that of underlying hardware cores.
 Each element is a \texttt{lreg\_args} type with $64$ bytes. 
 Then this array is passed to different threads (\texttt{lreg\_thread}) 
@@ -195,16 +201,16 @@ offsets of the starting address between the false sharing object and correspondi
 When the offset is $0$ or $56$ bytes, this benchmark achieves its optimal performance 
 and has no false sharing at all.
 When the offset is $24$ bytes, this benchmarks runs around $15$ times slower 
-than its optimal performance.
-When we eveluate detection effectiveness on its original code, 
+than its optimal performance because of false sharing problem.
+When we eveluate detection effectiveness on its original code in Section~\ref{sec:benchmarks}, 
 our customized memory manager happens to make the offset $56$ bytes. 
 As a result, \Predator{} can not detect false sharing in this benchmark 
-without enabling prediction because of no occurrences of false sharing problem.
+without enabling prediction because false sharing does not occur.
 This situation happens to all existing tools: they can only detect false sharing problems when
 they occur. 
 
 In contrast, the prediction mechanism designed in \predator{} 
-amis to address this problem.  Results of our evaluations show 
+amis to address this problem. Results of our evaluations show 
 that \Predator{} can always predict the false sharing problem in this
 benchmark no matter what the offset value is. 
 This explains the effectiveness of \Predator{}.
@@ -224,7 +230,7 @@ Performance overhead of \Predator{} with and without prediction.
 To avoid the effect caused by extreme outliers, all performance data shown in this section
 are based on the average result of $10$ runs while excluding the maximum and minimum values.
 Actual performance overhead with and without prediction 
-can be seen in the following figure~\ref{fig:perf}. 
+can be seen in Figure~\ref{fig:perf}. 
 
 From this figure, we can see for all $16$ benchmarks from Phoenix and PARSEC
 benchmark suites that \Predator{} with prediction imposes around $6.7\times$
@@ -266,8 +272,9 @@ To get PSS data, we start a script program to save
 corresponding \texttt{smaps} files periodically.
 For each \texttt{smaps} file, we calculate the sum of PSSs for different
 memory mappings and uses it as total physical memory usage for this application.
-Among all collected \texttt{smaps} files, we choose the maximum number of
-different files for comparison since it represents the maximum memory overhead to run this application.
+Among all collected \texttt{smaps} files, we choose the maximum value computed from
+different files for comparison 
+since it represents the maximum memory overhead to run this application.
 %It is noted that we remove the physical memory usage of   
 Results of maximum memory usage is shown in Figure~\ref{fig:memusage}. As we can see,
 \Predator{} does not introduce substantial memory usage overhead 

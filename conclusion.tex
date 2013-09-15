@@ -5,9 +5,9 @@ Compiler instruments every read and write access of global variables
 and heap objects by inserting a function call to invoke the runtime
 system. 
 By collecting and analyzing information passed through instrumented function calls, the runtime system 
-detects false sharing based on cache invalidations: those 
-false sharing causing severe performance degradation has a large amount of 
-cache invalidations. To differentiate false sharing with true sharing, 
+detects false sharing based on cache invalidations and only reports those ones  
+causing severe performance degradation.
+To differentiate false sharing with true sharing, 
 \Predator{} further provides word accesses information for those cache lines involved in false sharing, 
 which can help users debug and fix the problem.
 
