@@ -44,7 +44,7 @@ or require special OS support~\cite{OSdetection}.
 % or they can only detect one kind of
 %false sharing problem on a specific multithreading library~\cite{sheriff}.
 Sheriff~\cite{sheriff} does not have these shortcomings but has its own limitations: 
-it can only detect write-write type false sharing in programs using pthreads library,
+it can only detect write-write type false sharing in programs using \pthreads{} library,
 and can break correctness of programs using ad-hoc synchronizations or using stack variables to 
 communicate across different threads. 
 %Also, none of these existing approaches  has been verified to find actual 
@@ -141,7 +141,7 @@ Section~\ref{sec:prediction} discusses how to predict potential false sharing ac
 without occurrence. 
 Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to 
 reveal unknown false sharing problems in several benchmarks and real applications. 
-Section~\ref{sec:discussion} discuesses prediction limitations and presents our future work.
+Section~\ref{sec:discussion} discusses prediction limitations and presents our future work.
 Finally, 
 Section~\ref{sec:relatedwork} describes key related work and Section~\ref{sec:conclusion} concludes.
 

@@ -110,7 +110,7 @@ Second, only those false sharing introducing a large amount of cache invalidatio
 can degrade performance.
 
 Based on these two observations, \Predator{} develops 
-the following workflow to capture potential false sharings.
+the following workflow to capture potential false sharing.
 Those detection optimizations listed in Section~\ref{optimization} can also be applied
 to prediction part. We do not repeat these optimizations in
 this whole section.
@@ -148,7 +148,7 @@ is composed of two original
 contiguous cache lines and the first cache line has an even index number.
 Thus, only cache line $2*i$ and $2*i+1$ can form a virtual line.
 In the case of different starting address,
-a virtual line has the same cache line size as orignal lines, but
+a virtual line has the same cache line size as original lines, but
 flexible starting address.
 Its starting address does not need to be multiple of cache line size.
 For instance, a virtual line can be consisted of $[0,64)$ bytes or $[8,72)$ bytes 
@@ -160,7 +160,7 @@ by analyzing detailed word access information collected in Step 2.
 A hot access in a cache line refers to the word whose number of read or write accesses 
 is larger than the average number of accesses on each word of cache line $L$.
 For every hot access $X$ in cache line $L$, \Predator{} searches another
-hot access $Y$ in $L$'s previous cache line or next cache line satifying with
+hot access $Y$ in $L$'s previous cache line or next cache line satisfying with
 the following conditions: 
 
 \begin{itemize}
@@ -193,8 +193,8 @@ not reporting false positives.
 
 According to above observation and assumption, 
 a pair of hot accesses, $X$ and $Y$, if accesses are issued in an interleaving 
-way, can generate the number of cache invalidations equalling to 
-the smaller number of acccesses of $X$ and $Y$.
+way, can generate the number of cache invalidations equaling to 
+the smaller number of accesses of $X$ and $Y$.
 Thus a false sharing problem is to be identified by \Predator{}.
   
 After identifying possible false sharing, \Predator{} goes to Step 4 to 
@@ -218,7 +218,7 @@ However, for the case with starting address change,
 two hot accesses with distance less than cache line size 
 can form multiple virtual lines. 
 So there is an additional step to determine which virtual line to be tracked.
-Although the virtual line to be choosed here is never be a real cache line of actual hardware
+Although the virtual line to be chose here is never be a real cache line of actual hardware
 due to unaligned addresses,
 we utilizes this virtual line to simulate the effect of changing the 
 starting addresses of objects.

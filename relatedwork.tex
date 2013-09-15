@@ -9,10 +9,10 @@ to report different kinds of cache usage information,
 such as cache miss and cache invalidations~\cite{falseshare:simulator}.
 Pluto utilizes Valgrind to track the sequence of memory read and write
 events on different threads and reports a worst-case estimation of
-possible false sharings~\cite{falseshare:binaryinstrumentation1}.
+possible false sharing~\cite{falseshare:binaryinstrumentation1}.
 Similarly, Liu uses Pin to collect memory access information and
 reports total false sharing caused miss information~\cite{falseshare:binaryinstrumentation2}.
-These tools can only report the possiblity of false sharing without precise information of each
+These tools can only report the possibility of false sharing without precise information of each
 actual false sharing problem.  
 Also, they impose about 100x-200x performance overhead on executions.  
 
@@ -32,8 +32,8 @@ Event Based Sampling (PEBS) hardware support to detect false sharing problems.
 It can only point out those functions that might cause false sharings.
 Also, PTU cannot differentiate true sharing from
 false sharing. Besides, PTU aggregates memory accesses without considering the memory re-usage and
-access interleavings, thus it reports a lot of
-false sharings without actual performance impact.
+access interleaving, thus it reports a lot of
+false sharing problems without actual performance impact.
 
 In addition to their individual disadvantages,
 all above approaches share a common shortcoming. 
@@ -49,14 +49,14 @@ sharing when multiple objects reside on the same cache line.
 Jeremiassen and Eggers use a compiler transformation to automatically adjust the
 memory layout of applications through padding and alignment~\cite{falseshare:compile}.
 Chow et al.\ describe an approach to alter parallel loop scheduling to avoid
-sharings~\cite{falseshare:schedule}.
+sharing~\cite{falseshare:schedule}.
 These static analysis based approaches only works for regular,
 array-based scientific codes.
 
 Berger et al.\ describes Hoard, a scalable memory allocator that can reduce
 the possibility of false sharing
 by making different threads use different heaps~\cite{Hoard}.
-The drawback of Hoard is that it can not avoid false sharing problems of globals variables 
+The drawback of Hoard is that it can not avoid false sharing problems of global variables 
 and a single heap object.
 Actually, most of found significant false sharing problems are coming from a single heap object. 
 
@@ -68,10 +68,10 @@ their ``threads-as-processes'' framework that turns threads to processes for app
 can report false sharing accurately and precisely with only $20\%$ performance overhead.
 However, it can only detect write-write type of false sharing for those programs 
 using \pthreads{} library and it can break correctness for those programs using 
-stack variables or ad hoc synchornizations (e.g. self-defined variables)
+stack variables or ad hoc synchronizations (e.g. self-defined variables)
 to communication across different threads.
 These shortcomings greatly limit their usage on real-world applications.  
-On the contrary, our work can detect all kinds of false sharing and has no limitations on applicaitons.
+On the contrary, our work can detect all kinds of false sharing and has no limitations on applications.
 \Predator{} has been utilized to find actual false sharing in \texttt{MySQL} server applications 
 and \texttt{boost} libraries.
 
@@ -87,6 +87,6 @@ Plastic~\cite{OSdetection} leverages the {\it sub-page granularity memory remapp
 provided by Xen hypervisor to detect and tolerate false sharing automatically.
 However, the sub-page memory remapping mechanism is not supported by most existing operating 
 system currently, making it a non-universal solution. Moreover, like other
-detction tools, Plastic cannot locate the exact source of false sharing.  
+detection tools, Plastic cannot locate the exact source of false sharing.  
 In order to utilize their prevention, the programs has to run on Xen hypervisor, 
 which make it not appealing any more.
