@@ -47,9 +47,9 @@ only report \emph{observed} cases of false sharing. As Nanavati et
 al\. observe, because false sharing is sensitive to where objects are
 placed in cache lines, it is affected by a wide range of
 factors~\cite{OSdetection}. For example, using the gcc compiler
-(accidentally) eliminates false sharing in the Phoenix
+\emph{accidentally} eliminates false sharing in the Phoenix
 linear\_regression benchmark at certain optimization levels, while
-LLVM does not at any optimization level.  A slightly different memory
+LLVM does not do so at any optimization level.  A slightly different memory
 allocation sequence (or different memory allocator) can reveal or hide
 false sharing, depending on where objects end up in memory; using a
 different hardware platform with different addressing or cache line
@@ -78,7 +78,7 @@ environments, and on different hardware platforms.
 This paper presents \Predator{}, a novel software-only false sharing
 detector that not only \emph{detects} all existing false sharing
 problems accurately and precisely, but also \emph{predicts} potential
-false sharing problems that could appear in a slightly different
+false sharing problems that could appear in a  different execution
 environment.
 
 \subsection*{Contributions}
