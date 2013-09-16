@@ -339,7 +339,7 @@ When total writes on a cache line is less than the pre-defined threshold, if an 
 \item
 When the total writes on a cache line is larger than the pre-defined threshold, then this cache line is 
 tracked. As described in last section, \Predator{} only samples a small number of accesses (1\%) during every 
-sample interval. Most accesses (99\%) only need to increment an access counter of corresponding cache line.
+sample interval. Most accesses (99\%) only need to increment an access counter for the corresponding cache line.
 \end{itemize}
 
 This simple logic only involves a few cycles of useful work, either checking or updating a counter, which is swamped by the overhead of function calls or library
