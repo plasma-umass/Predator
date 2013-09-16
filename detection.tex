@@ -74,12 +74,12 @@ users diagnose where problems lie and how to fix them.
 those cache lines having a large amount of cache invalidations. 
 Thus, it is critical to track cache invalidations effectively. 
 \Predator{} achieves this goal by introducing a  
-two-entries-cache-history table for each cache line, which is 
-shown in Table~\ref{table:cachehistory}. 
+two-entries-cache-history table for each cache line. 
 In this table, each entry has two fields: thread ID and access type (read or write).
 Thread ID is used to identify origins of an access. Based on our basic observation,
 only accesses from a different thread can cause a possible cache invalidations. 
 
+\begin{comment}
 \begin{table}
 \centering
   \begin{tabular}{ l | r }
@@ -91,6 +91,7 @@ only accesses from a different thread can cause a possible cache invalidations.
   \end{tabular}
   \caption{Two-entries-cache-history table for every cache line. \label{table:cachehistory}}
 \end{table} 
+\end{comment}
 
 
 For every new access on a cache line $L$, we check $L$'s history table
@@ -285,16 +286,15 @@ Conversely, the user could provide a white list so that only specified functions
 
 \subsubsection{Sampling Mechanism}
 \label{sec:sample}
-According to Section~\ref{sec:thresholdtracking}, 
-when the number of writes on a cache line is larger than {\it Tracking-Threshold}, 
-every access must be tracked to store details such as word access information, update access counter and the
-cache access history table of this cache line. 
-When a cache line actually has false sharing or true sharing problems inside,
-updating those counters can exacerbate performance problems caused by false sharing or true
-sharing: 
-not only is there an invalidation on an application cache line, 
-but there is also
-at least another cache invalidation caused by updating these metadata of corresponding cache lines.
+According to Section~\ref{sec:thresholdtracking}, when the number of
+writes on a cache line is larger than {\it Tracking-Threshold}, every
+access must be tracked to store details such as word access
+information, update access counter and the cache access history table
+of this cache line.  When a cache line is involved in false or true
+sharing, updating those counters can exacerbate the impact of sharing
+on performance: not only is there an invalidation on an application
+cache line, but there is also at least another cache invalidation
+caused by updating the metadata of the corresponding cache lines.
 
 To further reduce the performance overhead, \Predator{} only samples the first specified
 number of accesses of each sampling interval for those problematic cache lines. 

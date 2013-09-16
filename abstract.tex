@@ -4,25 +4,15 @@
 %mulithreading programs and seriously affect the scalability. 
 %So detecting false sharing accurately and precisely can be helpful for user to fix corresponding performance problem. 
 
-\begin{comment}
-... performance degradation in multithreaded
-programs. It apprears when two or more threads running on different cores periodically access 
-different portions of data that can fit into one cache line. Since caching
-system in a multicore processor needs to ensure a coherent view of memory
-accross all cores, it has to grant an exclusive access
-for each write operation by invidating duplicate copies in other cores. As a
-result, frequent cache invalidation can seriously affect the scalability and
-performance of multithreaded programs.
-\end{comment} 
 
 False sharing is a notorious problem for multithreaded applications
 that can drastically degrade both performance and
 scalability. Existing false sharing detectors can precisely identify
-the sources of false sharing, but are limited to reporting instances
-of false sharing actually observed during execution. In other words,
-they do not generalize across executions. Because false sharing is
-extremely sensitive to object layout, these detectors can easily miss
-false sharing due to slight differences in memory allocation order or
+the sources of false sharing, but are limited to reporting false
+sharing actually observed during execution: they do not generalize
+across executions. Because false sharing is extremely sensitive to
+object layout, these detectors can easily miss false sharing problems
+that can arise due to slight differences in memory allocation order or
 object placement decisions by the compiler. In addition, they cannot
 predict the impact of false sharing on hardware with different cache
 line sizes.
@@ -32,20 +22,21 @@ line sizes.
 %may change alignments, and thus affect occurrences of false sharing, 
 %which leaves many of them undetected by existing tools.
 
-This paper presents \Predator{}, a predictive false sharing
-detector. \Predator{} employs a combination of compiler
-instrumentation and a runtime system that lets it generalize from a
-single execution to precisely predict false sharing across executions.
-\predator{} tracks accesses within windows of \emph{virtual cache
-  lines}, contiguous memory ranges that span actual hardware
-cache lines. It reports the exact location and source of predicted
-false sharing problems, ranked by their projected impact on
-performance. We evaluate \Predator{} across a suite of benchmarks and
-actual applications: \Predator{} identifies problems undetectable with
-previous tools, including two previously-unknown false sharing
-problems, with no false positives. \Predator{} located false sharing
-problems in MySQL and the Boost library that had
-eluded detection for years.
+This paper presents \Predator{}, a predictive software-based false
+sharing detector. \Predator{} generalizes from a single execution to
+precisely predict false sharing. \predator{} tracks accesses within
+one cache line worth of bytes that could lead to false sharing given
+different object placement. It also tracks accesses within
+\emph{virtual cache lines}, contiguous memory ranges that span actual
+hardware cache lines, to predict sharing on hardware platforms with
+larger cache line sizes. For each, it reports the exact program
+location of predicted false sharing problems, ranked by their
+projected impact on performance. We evaluate \Predator{} across a
+range of benchmarks and actual applications: \Predator{} identifies
+problems undetectable with previous tools, including two
+previously-unknown false sharing problems, with no false
+positives. \Predator{} located false sharing problems in MySQL and the
+Boost library that had eluded detection for years.
 
 %\Predator{} identified two unknown false sharing problems 
 %Besides, \Predator{} have successfully detected false sharing of real applications,

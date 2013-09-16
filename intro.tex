@@ -91,9 +91,17 @@ This paper makes the following contributions:
 % prediction
 \item
 \textbf{Predictive False Sharing:} \Predator{} is the first system that can \emph{predict} potential false sharing that does
-not manifest in an execution but may appear and greatly degrade the performance of programs 
-in a slightly different environment. 
-Predictive false sharing detection overcomes a key limitation of previous detection tools, which can miss problems that can easily occur due to minor changes in the execution environment.
+not manifest in an execution but may appear and greatly degrade the
+performance of programs in a slightly different
+environment. Predictive false sharing generalizes from a single
+execution to identify potential false sharing instances that are
+within one cache line of each other, which could be exposed by slight
+changes in object placement and alignment. It also can predict false sharing
+in hardware platforms with larger cache line sizes by tracking
+accesses within \emph{virtual cache lines} that span multiple physical
+lines. Predictive false sharing detection thus overcomes a key
+limitation of previous detection tools.
+
 %Existing approaches is based on specific hardware,
 %runtime environment(using specific libraries and compilers) and specific cache line size, which is OK to detect those 
 %existing false sharings. But they fail to capture those variables or objects which can greately slow down performance 
