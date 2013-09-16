@@ -15,7 +15,7 @@ applications running slower as the number of threads increases.
 
 False sharing is a particularly insidious form of resource contention.
 It occurs when two threads inadvertently contend because the objects
-they are using happen to reside on the same cache line. When at least
+they are accessing happen to reside on the same cache line. When at least
 one of the threads frequently updates its object, the resulting cache
 coherence traffic can degrade performance by up to an order of
 magnitude~\cite{falseshareeffect}. Worse, false sharing is generally
@@ -44,7 +44,7 @@ support~\cite{OSdetection}.
 
 In addition, all of these systems share one key limitation: they can
 only report \emph{observed} cases of false sharing. As Nanavati et
-al\. observe, because false sharing is sensitive to where objects are
+al.\ observe, because false sharing is sensitive to where objects are
 placed in cache lines, it is affected by a wide range of
 factors~\cite{OSdetection}. For example, using the gcc compiler
 \emph{accidentally} eliminates false sharing in the Phoenix
@@ -53,7 +53,7 @@ LLVM does not do so at any optimization level.  A slightly different memory
 allocation sequence (or different memory allocator) can reveal or hide
 false sharing, depending on where objects end up in memory; using a
 different hardware platform with different addressing or cache line
-sizes can have the same effect. All of this means that using existing
+sizes can have the same effect. All of this means that existing
 tools cannot root out potentially devastating cases of false sharing
 that could arise with different inputs, in different execution
 environments, and on different hardware platforms.
