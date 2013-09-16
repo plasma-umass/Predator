@@ -36,10 +36,29 @@ In this section, our evaluations aim to answer the following questions:
 \subsection{Detection and Prediction Effectiveness}
 \label{sec:effective}
 
+As discussed in Section~\ref{sec:runtime}, \Predator{} can precisely report origins of 
+false sharing problems. 
+Figure~\ref{fig:lrreport} shows a report example of \Predator{} for the \texttt{linear\_regression} 
+benchmark. From this report, we can see that this false sharing is caused by a heap object, which
+has a large number of cache invalidations (0x2abac). 
+The callsite stack is also listed in this report. Also, user can further check word level information
+of this object. From that, we can see that this false sharing object actually do not false sharing
+problem at all since different threads are accessing different cache lines. However, this program may
+have a false sharing problem if the starting address of this object is different. 
+
+\begin{figure*}[!h]
+{\centering
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/linearregression.report}}
+\caption{False sharing report for the \texttt{linear\_regression} benchmark.
+\label{fig:lrreport}}
+}
+\end{figure*}
+
+
+
 \subsubsection{Benchmarks}
 \label{sec:benchmarks}
-Results on two benchmark suites, Phoenix and PARSEC, 
-are listed in the Table~\ref{table:detection}. 
+Results on two benchmark suites, Phoenix and PARSEC, are listed in the Table~\ref{table:detection}. 
 
 %Our results show that \Predator{} not only capture previously-discovered
 %false sharing, but also many detect new false sharing places. The results
