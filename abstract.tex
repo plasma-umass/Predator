@@ -25,7 +25,7 @@ line sizes.
 This paper presents \Predator{}, a predictive software-based false
 sharing detector. \Predator{} generalizes from a single execution to
 precisely predict false sharing. \predator{} tracks accesses within
-one cache line worth of bytes that could lead to false sharing given
+a range that could lead to false sharing given
 different object placement. It also tracks accesses within
 \emph{virtual cache lines}, contiguous memory ranges that span actual
 hardware cache lines, to predict sharing on hardware platforms with
