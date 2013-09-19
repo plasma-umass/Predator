@@ -37,8 +37,8 @@ falseshare:binaryinstrumentation1,falseshare:binaryinstrumentation2}. Most
 do not report false sharing precisely and
 accurately~\cite{qinzhaodetection, detect:ptu, detect:intel,
 falseshare:binaryinstrumentation1, DProf,
-falseshare:binaryinstrumentation2}, or require special OS
-support~\cite{OSdetection}.
+falseshare:binaryinstrumentation2}, require special OS
+support~\cite{OSdetection} or have different limitations of usage~\cite{sheriff} .
 % or they can only detect one kind of
 %false sharing problem on a specific multithreading library~\cite{sheriff}.
 
@@ -118,7 +118,8 @@ sharing problems in benchmark suites evaluated by previous approaches. It
 is also the first false sharing tool able to automatically and precisely uncover
 false sharing problems in real applications, including 
 MySQL and the Boost library. Fixing these problems 
-dramatically improves performance (by $6\times$ in the benchmarks, and $40\%$ in the actual applications).
+dramatically improves performance, by $12\times$ for a benchmark and by $6\times$ for \texttt{MySQL}.
+%in the benchmarks, and $40\%$ in the actual applications).
 
 
 \item
