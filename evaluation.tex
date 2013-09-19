@@ -39,7 +39,7 @@ The callsite stack is also listed in this report. \Predator{} also reports word 
 of this object. This information lets us see that there is no \emph{current} false sharing problem, because different threads are accessing different cache lines. However, \Predator{} has predicted that this program does 
 have a latent false sharing problem, which would be exposed if the starting address of this object were different. 
 
-\begin{figure*}[!h]
+\begin{figure*}[!ht]
 {\centering
 \subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/linearregression.report}}
 \caption{False sharing report for the \texttt{linear\_regression} benchmark.
@@ -180,7 +180,7 @@ False sharing severely degrades performance when it actually occurs.
 Hence, it is a serious problem that should always be detected. 
 \end{enumerate}
 
-\begin{figure}[!h]
+\begin{figure}[!ht]
 {\centering
 \subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/linearregression.psedocode}}
 \caption{False sharing problem inside \texttt{linear\_regression} benchmark.
@@ -226,7 +226,7 @@ benchmark no matter what the offset value is, demonstrating its effectiveness.
 \subsection{Performance Overhead}
 \label{sec:perfoverhead}
 
-\begin{figure*}[!ht]
+\begin{figure*}[ht]
 \begin{center}
 \includegraphics[width=6.5in]{fig/perf}
 \end{center}
