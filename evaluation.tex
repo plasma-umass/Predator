@@ -61,36 +61,31 @@ Results on two benchmark suites, Phoenix and PARSEC, are listed in the Table~\re
 %http://tex.stackexchange.com/questions/42619/x-mark-to-match-checkmark
 %\begin{comment}
 \begin{table*}[ht!]
-{
-\centering
-\begin{tabular}{l|r|r|r|r}
+{\centering\begin{tabular}{l|r|r|r|r|r}\hline
+{\bf \small Benchmark} & {\bf \small Source Code} & {\bf \small New} & {\bf \small Without Prediction} &{\bf \small With Prediction} & {\bf \small Improvement} \\
 \hline
-{\bf \small Benchmark} & {\bf \small Source Code} & {\bf \small New} & {\bf \small Prediction} & {\bf \small Improvement} \\
+\small \textbf{histogram} & {\small histogram-pthread.c:213} & \cmark{} &\cmark{} & \cmark{} & 46.22\%\\
+\small \textbf{linear\_regression} & {\small linear\_regression-pthread.c:133} & & & \cmark{} & 1206.93\% \\
+\small \textbf{reverse\_index} & {\small reverseindex-pthread.c:511} & & \cmark{} & \cmark{} & 0.09\%\\
+\small \textbf{word\_count} & {\small word\_count-pthread.c:136} & & \cmark{} & \cmark{} & 0.14\%\\
 \hline
-\small \textbf{histogram} & {\small histogram-pthread.c:213} & \cmark{} &\xmark{} & 46.22\%\\
-\small \textbf{reverse\_index} & {\small reverseindex-pthread.c:511} & \xmark{} & \xmark{} & 0.09\%\\
-\small \textbf{word\_count} & {\small word\_count-pthread.c:136} & \xmark{} & \xmark{} & 0.14\%\\
-\hline
-\small \textbf{streamcluster} & {\small streamcluster.cpp:985} & \xmark{} & \xmark{} &7.52\% \\
-\small \textbf{streamcluster} & {\small streamcluster.cpp:1907} & \cmark{} & \xmark{} & 4.77\%\\
-%\small \textbf{bodytrack} & {\small TrackingModel.cpp:59} & 0 & \cmark{} & \\
-\hline
-\hline
-\small \textbf{linear\_regression} & {\small linear\_regression-pthread.c:133} & \xmark{} & \cmark{} & 1206.93\%\\
+\small \textbf{streamcluster} & {\small streamcluster.cpp:985} &  & \cmark{} & \cmark{} &7.52\% \\
+\small \textbf{streamcluster} & {\small streamcluster.cpp:1907} & \cmark{} & \cmark{} & \cmark{} & 4.77\%\\
 \hline
 \end{tabular}
 \caption{Detection results of \Predator{} on Phoenix and PARSEC benchmark suites. \label{table:detection}}
 }
 \end{table*}
 
-In this table, the first column lists those programs with false sharing problems. 
-The second column shows precisely where the problem is. Since all discovered false sharing 
-occurs inside the same heap object, we list callsite source code information in this column.
-The third column ``New'' marks whether this false sharing is newly discovered by \Predator{} or not.
-False sharing problems identified by previous work are marked with a cross (\xmark{}) and those 
-newly found by \Predator{} are marked with a check (\cmark{}).
-The fourth column,``Prediction'', identifies whether this false sharing is detected using prediction.
-The last column, ``Improvement'', shows the performance improvement after fixing false sharing. 
+In this table, the first column lists those programs with false
+sharing problems.  The second column shows precisely where the problem
+is. Since all discovered false sharing occurs inside the same heap
+object, we list callsite source code information in this column.  The
+third column ``New'' marks whether this false sharing was newly
+discovered by \Predator{} or not.  A checkmark in the appropriate
+column indicates whether the false sharing was identified without
+prediction and/or with prediction.  The final column, ``Improvement'',
+shows the performance improvement after fixing false sharing.
 %The number is based on the average runtime of $10$ runs. 
 
 As shown in the table, \Predator{} reveals several unknown false sharing problems. 

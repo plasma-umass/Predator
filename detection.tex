@@ -272,14 +272,14 @@ and detects false sharing based on the sequences of memory accesses on every cac
 The performance overhead of a specific program is always proportional to 
 the degree of instrumentation: more 
 instrumentation means more performance overhead. 
-Thus, \Predator{} provides a very flexible framework to instrument programs 
+Thus, \Predator{} provides a flexible framework to instrument programs 
 depending on the performance requirements of the user.
 
-Currently, \Predator{} only instruments once for one type of memory access on each address 
-in the same basic block. 
+Currently, \Predator{} only adds instrumentation once for each type of memory access on each address 
+to the same basic block. 
 This selective instrumentation does not normally affect the effectiveness of detection. 
-Because \Predator{} aims to detect those false sharing with a large number of cache invalidations,
-less tracking of accesses inside one basic block can induce fewer cache invalidations 
+Because \Predator{} aims to detect false sharing cases with a large number of cache invalidations,
+less tracking of accesses inside a basic block can induce fewer cache invalidations 
 but it does not affect the overall behavior of cache invalidations. 
 
 % detection will not cause performance problem. 
@@ -309,7 +309,7 @@ on performance: not only is there an invalidation on an application
 cache line, but there is also at least another cache invalidation
 caused by updating the metadata of the corresponding cache lines.
 
-To further reduce the performance overhead, \Predator{} only samples the first specified
+To further reduce performance overhead, \Predator{} only samples the first specified
 number of accesses of each sampling interval for those problematic cache lines. 
 %Note that we originally keep a global counter for all accesses and uses the number of 
 %all accesses to compuate sample intervals. However, this creates 

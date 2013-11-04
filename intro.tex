@@ -28,24 +28,21 @@ problem. False sharing has been found across the software stack,
 including inside the Linux kernel~\cite{OSfalsesharing}, the Java
 virtual machine~\cite{JVMfalsesharing}, common
 libraries~\cite{libfalsesharing} and several real
-applications~\cite{appfalsesharing, mysql}.
+applications~\cite{mysql,appfalsesharing}.
 
 Recent efforts to false sharing detection fall short in a number of
 dimensions. Some introduce excessive performance overhead, making them
-too slow to use in practice~\cite{falseshare:simulator,
-falseshare:binaryinstrumentation1,falseshare:binaryinstrumentation2}. Most
+too slow to use in practice~\cite{falseshare:binaryinstrumentation1,falseshare:binaryinstrumentation2,falseshare:simulator}. Most
 do not report false sharing precisely and
-accurately~\cite{qinzhaodetection, detect:ptu, detect:intel,
-falseshare:binaryinstrumentation1, DProf,
-falseshare:binaryinstrumentation2}, require special OS
-support~\cite{OSdetection} or have different limitations of usage~\cite{sheriff} .
+accurately~\cite{falseshare:binaryinstrumentation1,detect:ptu,detect:intel,falseshare:binaryinstrumentation2,DProf,qinzhaodetection}, require special OS
+support~\cite{OSdetection} or impose limits on their use~\cite{sheriff}.
 % or they can only detect one kind of
 %false sharing problem on a specific multithreading library~\cite{sheriff}.
 
 In addition, all of these systems share one key limitation: they can
 only report \emph{observed} cases of false sharing. As Nanavati et
-al.\ observe, because false sharing is sensitive to where objects are
-placed in cache lines, it is affected by a wide range of
+al.\ point out, false sharing is sensitive to where objects are
+placed in cache lines and so can be affected by a wide range of
 factors~\cite{OSdetection}. For example, using the gcc compiler
 \emph{accidentally} eliminates false sharing in the Phoenix
 linear\_regression benchmark at certain optimization levels, while
