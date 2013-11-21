@@ -1,0 +1,241 @@
+\label{sec:multithreading}
+
+This section describes the mulithreading support of \doubletake{}.
+A thread is a basic execution unit from the point of view of underlying operating system. 
+The order of an execution, greatly affecting memory usage, 
+is highly depending on timing, synchronization order and internal scheduling algorithm.   
+Thus, it is much more difficult to achieve the target of repeatable memory 
+usage for multithreading programs, which is crucial to 
+precisely detect buffer overflows or other memory errors.
+This section first discusses how to handle epochs in multithreading programs.
+After this, it describes the design of heap allocator, suitable for repeatable memory usage.
+It then discusses how to handle thread creation and exits specially. 
+In the end, it describes how to guarantee deterministic synchronization in the re-execution phase,
+which is also crucial for repeatable memory usage.
+
+
+\subsection{Overview}
+\label{sec:mtoverview}
+
+As described in Section~\ref{sec:overview}, \doubletake{} uses irrevocable system calls as 
+boundaries for epochs for multithreading programs. 
+To simplify description in the following sections, a thread encountering an irrevocalbe system call is 
+called as the ``Triggering-Thread''. 
+
+When encountering an irrevocable system call, this Triggering-Thread 
+has to stop all existing threads so that all other threads are in a quiecent state, which
+has been described in Section~\ref{sec:stopepoch}.
+Then it performs memory checkings on the heap as described in Section~\ref{sec:epochend}. 
+If there is no buffer overflow, it can perform this irrevocable system call and 
+start a new epoch after this system call. 
+Before waking up other threads, the Triggering-Thread takes a snapshot for the shared memory at first,
+including the heap and globals. 
+After a thread is waken up, it only needs to take a snapshot on its own state, 
+including its stack and its hardware registers. 
+
+If there are buffer overflows, the Triggering-Thread sets up the shared memory 
+for all threads at first.
+It recovers the heap and globals by copying from the saved snapshot. 
+Then it can wake up other threads. 
+However, if the Triggering-Thread is spawed newly in current epoch, 
+it has to wait for its parent to start its execution. 
+
+\subsubsection{Epoch}
+\label{sec:stopepoch}
+
+It is the duty of a Triggering-Thread to close an epoch.
+Whenever this thread meets an irrevocable system call, it has to stop other threads.
+\doubletake{} utilizes the ``signal'' mechanism to stop other threads asynchronously.
+It signals other threads using SIGUSR2 signal when a thread is in a safe state. 
+A thread is considered to be in a unsafe state before this thread finishs a snapshot for itself,
+discussed in Section~\ref{sec:threadcreation}.
+After sending out all signals, this thread is waiting on a internal conditional variable.
+The Triggering-Thread only starts checking buffer overflows after all threads are in quiescence.
+
+However, this SIGUSR2 signal can also be used by user programs. 
+In order to differentiate this, \doubletake{} specifically marks on 
+a shared flag before signalling so that signal handler can check this in the beginning. 
+If this flag is marked, this signal is issued by \doubletake{}. Otherwise, it is issued by
+a user program and we can call user registered program instead. 
+
+When other threads receive the signal from the Triggering-Thread, 
+they are waiting on an internal conditional variable for instructions from the Triggering-Thread:
+it can move forward to next epoch or rollback.
+It is worthy noting that inside signal handler we have to utilize a different lock that has not been
+used by other places. Otherwise, it is easy to cause deadlock. 
+
+\subsubsection{Customized Heap Allocator}
+\label{sec:mtheap}
+In order to achive the target of repeatable memory usage, the heap allocator must be designed 
+carefully. \doubletake{} first borrows a ``per-thread-heap'' idea from Hoard~\cite{Hoard}. 
+\doubletake{} keeps a 1-to-1 mapping between threads and sub-heaps of customized memory allocator. 
+The total number of threads and sub-heaps are pre-defined. 
+A thread can only allocate memory from its own sub-heap, 
+where those sub-heaps can get the memory from a pre-allocated heap 
+by allocating a huge block of memory each time. 
+After a sub-heap gets a block of memory, its corresponding thread always owns all objects
+of this block, called as ``owner'' of this block.
+This surely can cause memory blowup problem resolved by Hoard. However, it is 
+not the focus of \doubletake{}.   
+
+The ``per-thread-heap'' idea is not enough to guarantee the repeatable memory usage. 
+\doubletake{} imposes several additional rules besides this.
+Firstly, when \doubletake{} acquires a block of memory from the global pre-allocated heap, it must 
+acquire a lock at first, which is guaranteed to be deterministic according to mechanisms 
+discussed in Section~\ref{sec:sync}.
+This guarantee that every new blocks of each sub-heap is repeatable for re-execution. 
+Secondly, when there is a memory deallocation, this freed object can only be returned back  
+to its original owner in a safe state. 
+If this memory deallocation is issued by the same thread as the owner, then this freed object
+can be putted into the owner's free list and be utilized immediately. 
+If this memory deallocation is issued by a different thread with the owner, 
+which indicates a cross-thread communication,  
+then this memory
+deallocation are cached into a global list, which only issued in the end of this epoch after 
+all threads has been stopped. 
+By doing this, we can guarantee all memory usage inside an epoch is repeatable in re-execution phase.
+ 
+\subsection{Thread Creation and Exit}
+\label{sec:threadcreation}
+Tracking creations and exits of threads is very important because of the following reasons.
+First, \doubletake{} has to take snapshots for different threads in the beginning. 
+Second, terminination of a thread invokes \texttt{munmap} system calls directly by \pthreads{}, which
+can not be intercepted.  
+Third, thread creation is considered as a synchronization and has to be recorded. 
+Thus, \doubletake{} intercepts \texttt{pthread\_create} calls and changes its start routine 
+to a customized function. 
+In this customized function, \doubletake{} can record thread creation, take a snapshot and delay thread exit to the end of current epoch. 
+
+\subsubsection{Normal Execution}
+
+\doubletake{} makes \texttt{pthread\_create} to call its customized function as the start routine. 
+In this start routine, \doubletake{} first puts this new thread into a global map, which maintains
+status of all threads. 
+Then it takes a snapshot for this new thread, including stack and hardware registers. 
+After this, \doubletake{} can invoke the original routine to actually perform user-defined 
+thread function. 
+
+After this user-defined thread function finishes, the control flow returns back to \doubletake{}. 
+Basically, \doubletake{} should check whether this thread's parent is joining on this thread or not. 
+If this thread's parent is already waiting for its termination, it simply marks the status of 
+this thread to be joined and wakes up the joining thread. 
+If not, this thread can wait on a thread-private conditional variables. 
+\doubletake{} delays a thread exit to the end of current epoch.
+
+\subsubsection{Re-execution}
+A thread is waiting for its turn to run if a thread is created in current epoch.    
+
+\subsection{Thread Synchronizations}
+
+\label{sec:sync}
+
+Different order of thread synchronizations can lead to totally different memory uage. 
+In order to guarantee deterministic replay of thread synchronizations, previous work
+actually forces threads to do synchronizations in a global order and
+recordes both lock and unlock operations ~\cite{TERN, PRES}. 
+However, forcing a global order of synchronizations can greatly 
+reduce parallelism and introduce significant performance overhead.
+Also, it is unnecessary to record unlock order too.
+
+Unlike previous approaches, \doubletake{} only records local orders of synchronizations.
+Synchronizations on two different synchronization variables can be performaed
+in parallel. From a thread's point of view, if a program do not have a race and
+all synchronizations of a thread are repeated deterministically, then
+\doubletake{} can guarantee memory usage of this thread, which also guarantees to 
+repeat the same buffer overflows in re-execution phase. 
+If a program do have a race, forcing a global order of synchronizations in the production 
+run also can not completely avoid races. This also implies that a global order 
+can not always guarantee determinstic memory uage.   
+\doubletake{} prefers performance for racey programs, while relying on multiple re-executions 
+to repeat buffer overflows if a program does have a race problem. 
+
+\doubletake{} records the order of \texttt{pthread\_mutex\_lock}, conditional wakenup and
+different signalling functions.
+Signalling functions actually calls system calls, which are handled by the procedure discussed 
+in Section~\ref{sec:inepoch}.
+ Conditional wakenup is actually related to \texttt{pthread\_cond\_wait},
+which actually includes conditional wait and conditional wakenup phases. 
+Conditional wait atomically releases mutex and waits on corresponding conditional variable, while conditional wakenup actually locks corresponding mutex before returning. 
+Thus, we can turn \texttt{pthread\_cond\_wait} to two operations, \texttt{pthread\_mutex\_unlock} and
+\texttt{pthread\_mutex\_lock} correspondingly. So we only record the order of conditional wakenup in
+production runs. 
+ 
+\doubletake{} also provides an option to record the order of passing a specified barrier, which it is 
+not necessary to do this by default.
+It is noted that \doubletake{} do not record the order of unlock operations
+and conditional signal operations.
+It is totally unnecessary to record unlock operations since recording the order of actual 
+lock aquiring operations is enough to guarantee a deterministic replay of critical sections.  
+Conditional signal and broadcast operations are skiped for the same reason. 
+
+%why two different synchronization is not important?
+How to replay this?
+How to handle nested locks? 
+The replaying is considerred to be two steps: we first advance thread's entry when we met a .
+
+Maybe pseudo code for this.
+ 
+\subsubsection{Normal Execution}
+In production runs, \doubletake{} intercepts all synchronizations and 
+records orders of synchronizations, such as lock, conditional waken up and signals, 
+based on different synchronization variables. 
+It maintains a list for each synchronization variable and records synchronization
+events on its corresponding list. 
+In order to quickly locate its list when a synchronization is intercepted, \doubletake{}
+utilizes original synchronization variables to store addresses of list and actual synchronization
+variable. 
+
+For a synchronization event like lock, \doubletake{} records the following information:
+which thread issues this synchronization event; what is the result of this synchronization.
+A naive implementation is to allocate memory from internal memory allocator every time. 
+However, for some applications having significant amount of synchronizations,
+memory allocations to record synchronization events contributes much performance overhead. 
+For example, \texttt{fluidanimate} runs several times slower because of huge amounts
+of synchronizations inside. \doubletake{} uses a pre-allocated list for those recordings. 
+More specifically, each thread has a pre-allocated list in the beginning of an epoch. 
+When a synchronization occurs on this thread, it can get an entry from this thread and 
+record a synchronization event on this entry.
+Since \doubletake{} always gets an entry from current thread issuing a synchronization,
+there is no need to utilize a lock, which also helps reducing overhead. 
+By doing this, \doubletake{} greatly reduce performance overhead of logging synchronization
+events. For example, performance overhead of \texttt{fludidanimate} are reduced to around 40\%.
+
+ 
+\subsubsection{Re-execution}
+As described above, for a synchronization event in a thread,
+\doubletake{} allocates an entry from current thread to record this synchronization event 
+and inserted it into synchronization variable's corresponding list. 
+This implies that a synchronization event belongs to two lists, 
+a list for all synchronizations of this synchronization variable (SyncVariableList) and 
+a list for all synchronizations in a thread (ThreadSyncList). 
+
+\begin{figure}[!ht]
+{\centering
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{figure/lockunlock.pseudocode}}
+\caption{Lock and unlock of reproduction runs. \label{fig:lockunlock}}
+}
+\end{figure}
+
+Reproducing synchronizations involves in manipulating these two lists using 
+{\it sempaphore replay}, similar to TERN ~\cite{TERN}.
+We listed the pseudocode of ``lock'' of reproduction runs in Figure~\ref{fig:lockunlock}.
+\doubletake{} assigns a semaphore for each thread and controls the order 
+of synchronizations based on semaphores: in lock acquisitions, 
+a thread waits on its semaphore and advances ThreadSyncList after this semaphore; 
+In lock releases, a thread increments the semaphore of next thread on the same 
+synchronization variable.
+However, \doubletake{} only records local synchronization order, instead of global order,
+synchronizations replaying of \doubletake{} is much more subtle.
+In order to handle those unsuccessful lock acquisitions, \doubletake{} only waits for a semaphore 
+if this lock is successfully acquired in the production run. 
+Also, to support nesting locks, in lock acquisitions after {\it advanceThreadSyncList()}, 
+\doubletake{} signals current thread if next event of this thread is already 
+in its pending list, which means that this thread should have its turn.
+For lock releases, \doubletake{} adds next event of SyncVariableList to corresponding thread's 
+pending list if the event is not the first event of corresponding thread instead of incrementing
+its semaphore directly. 
+Since performance of reproduction runs is not the main focus, only occurring for those programs 
+having buffer overflows, \doubletake{} are using the same lock for all lists' manipulations to
+avoid races.  
+
+

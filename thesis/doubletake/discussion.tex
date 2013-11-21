@@ -1,0 +1,38 @@
+\subsection{Limitations}
+\doubletake{} can detect those heap buffer overflows overwritting ``guard zones'', 
+either caused by direct memory access or caused by
+incorrect library calls (e.g. \texttt{memcpy} or \texttt{strcpy}). 
+\doubletake{} can detect most of heap underflows: they can be detected if they are
+aligned by \texttt{power of 2} or they are freed in the end of program. 
+For those objects that they are not freed and not aligned, \doubletake{} can not detect them.
+ 
+\doubletake{} can not detect buffer overflows on the globals and the stack 
+since \doubletake{} can not change the layout of globals by inserting guard zones around them.
+AddressSanitizer is a complementary approach for this: we can rely on AddressSanitizer 
+to put guard zones for globals, then \doubletake{} can check the overflow of the globals accumulatively. 
+
+\doubletake{} can not detect the usage-after-free memory error, which already implemented by 
+AddressSanitizer. But their mechanism can be implemented in our framework easily and provide
+this detection probability. 
+
+\textbf{We need multiple runs for programs with race conditions}.
+Although the idea of using re-execution and watch point can be applied to multithreaded programs,
+\doubletake{} has not targeted for multithreaded programs currently. 
+
+\doubletake{} can not detect those non-continguous buffer overflows. 
+\subsection{Future Work} 
+The first possible work of \doubletake{} is to extend it on multithreaded programs because
+multithreaded programs is universal these days. 
+However, there are some challenges to do this: how we can repeat the execution of 
+a multithreaded program given random memory accesses from different threads;
+how to handle those synchronizations without violating the shared-memory
+semantics. 
+
+Another possible work is to extend \doubletake{} to find more memory errors, such as dangling pointer 
+errors, memory usage-after-free errors.
+We possibly have to change the memory allocator in order to achieve memory usage-after-free errors
+since we are utilizing the first words of freed memory blocks in the free list management. 
+
+The last but not least, we can combine the \doubletake{} mechanism and \texttt{gdb} mechanism
+to provide an interactive debugging system without actually using \texttt{gdb}. It can invoke this 
+interactive debugging mechanism whenever bugs are found. 

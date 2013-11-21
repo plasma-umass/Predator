@@ -1,0 +1,61 @@
+Dynamic analysis tools can be helpful for debugging, but are often too
+expensive to use in deployed applications. We present \doubletake{}, a
+system that enables extremely lightweight dynamic
+analyses. \doubletake{} lets execution proceed at full speed until the
+end of an epoch (e.g., a system call). It then examines program state
+to find evidence that a relevant event occurred \emph{at some time}
+during that epoch. To make sure evidence is always
+available, \doubletake{} can install \emph{tripwires} for later
+examination. An example tripwire is a word of memory with a known
+value placed between heap objects; if the value changed, a buffer
+overflow occurred. When it discovers evidence of an
+event, \doubletake{} rolls back execution and re-executes with
+hardware watchpoints or other instrumentation to pinpoint the exact
+location of the violation. We demonstrate \doubletake{}'s efficiency
+and generality by building tools to precisely locate buffer
+overflows, dangling pointer errors, and memory leaks. \doubletake{}
+runs with just 5\% overhead on average, making it the fastest such
+memory checker to date.
+
+% \emph{FIXME: note - dangling pointer checking is easy -- put canaries in freed objects, at least at the head. leak detection: scan the heap, store marked objects -- look for unfreed ``garbage objects'' at next epoch.}
+
+\punt{
+Buffer overflow continues to be a serious problem even after decades of research in this field. 
+Existing tools that can pinpoint exact locations 
+of overflows, introduce more than 30\% performance overhead caused by checking every memory access. 
+This high overhead precludes the usage of these tools in deployment.
+In addition, existing tools can not detect overflows caused by un-instrumented components, 
+such as third-party libraries, system calls or legacy software. 
+
+We present \stopgap{}, a drop-in library, to precisely and efficiently 
+detecting heap buffer overflows, on average 8\% slowdown for multi-threading programs and 4\%
+for single-threading programs.
+Unlike existing tools, \stopgap{} greatly reduces the number of memory checks:
+it only checks buffer overflows accumulatively before irrevocable system calls 
+or in the end of an execution. 
+In order to locate buffer overflows precisely,    
+\stopgap{} rolls back a program with buffer overflows 
+to a previous state and re-executes it 
+after installing hardware watchpoints on overflowing addresses.  
+By handling exceptions caused by accesses on overflowing addresses, 
+\stopgap{} can report source code information causing buffer overflows.
+Since it doesn't relying on instrumentation, \stopgap{} can report buffer overflows
+caused by all components.  
+\stopgap{} is ready to be used in real deployment because of its extremely low overhead. 
+}
+
+\punt{
+Utilizing the watchpoint mechanism, \stopgap{} can report all accesses on chosen problematic 
+addresses, helping the user to figure out problems for some complex overflow problems or      
+other memory errors. 
+\textbf{MENTION the effectives here too, with this neligible overhead, we can still
+detect the same amount of problems too}.
+For programs with no buffer overflows, \stopgap{} only introduces the overhead    
+of snapshotting a program in the beginning and checking the overflow on all heap objects 
+in the end or at boundaries of specific system calls, thus it can keep the overhead to a minimum.
+Utilizing the watchpoint mechanism, \stopgap{} can report all accesses on chosen problematic 
+addresses, helping the user to figure out problems for some complex overflow problems or      
+other memory errors. 
+In the future, \stopgap{} can be easily extended to be an interactive debugger
+which allows users to debug their programs without the usage of a debugger.
+}

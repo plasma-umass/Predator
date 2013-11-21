@@ -1,0 +1,138 @@
+% Dynamic analysis
+% Super awesome
+
+Dynamic analysis tools are widely used to find bugs in
+applications. They are popular among programmers because of their
+precision---for many analyses, they report no false positives---and
+can pinpoint the exact location of errors, down to the individual line
+of code.
+
+Perhaps the most prominent and widely used dynamic analysis tool for
+C/C++ binaries is Valgrind~\cite{}. Valgrind's most popular use case
+is to check memory errors, including buffer overflows, dangling
+pointer errors, and memory leaks.
+
+% Used for lots of tasks.
+
+
+
+% BUT: expensive. Can't really use it all the time.
+% Makes debugging a bitch.
+% So now what?
+
+
+
+
+Buffer overflows are still one of dominant errors 
+even after decades of research in this field~\cite{}: 
+Four types of the CWE/SANS "Top 25 Most Dangerous Software Errors" 
+~\cite{overflows1} and 
+over one-third valnuerabilites of 1818 high serverity problems
+reported from NIST~\cite{overflows2} are related to buffer overflows.
+
+% What is the state-of-the-art? Why it is necessary to have our tool?
+Since it is impossible to for programmers to write error-free programs, 
+existing these problems are mainly caused by imperfection
+of detection tools, which preventing the usage of them: 
+either existing tools are not easy-to-use or they can not provide precise information 
+or their performance
+overhead are too high to be used.
+A lot of tools needs programs to be annotated~\cite{} or to be recompiled~\cite{}, 
+which is inconvenient for legacy software or software using third-party libraries.
+Besides that, they can not provide enough information to fix problems: they can
+at best point out those statements with buffer overflow problems, but without the context
+why those statements are executed~\cite{}. 
+Also, the performance overhead of existing tools are still too high to be
+used in the production environment: two state-of-the-art tools~\cite{} are imposing over 25\%
+performance overhead. 
+
+\subsection{Contribution}
+\doubletake{} is designed to tackle all these problems simultaneously for \textbf{single-threaded}
+programs and it has the following contributions:
+
+\begin{itemize}
+\item \textbf{Easy-to-use}:
+\doubletake{} is a drop-in library: there is no need to change the
+existing operating system, to change the source code or to recompile a program,
+we can simply link a program to \doubletake{} library directly or 
+use the LD\_PRELOAD mechanism to link \doubletake{} beforehand.
+
+\item \textbf{Efficiency}:
+\doubletake{} designes to reduce the performance overhead for 
+programs with no buffer overflows (the common case). For those programs with buffer overflows, 
+\doubletake{} rollbacks and re-execute a program to locate the problems. 
+With averagely 8\% performance overhead, the performance of \doubletake{} is much better than 
+that of state-of-the-art tools, where imposing at least 25\% performance overhead.
+
+\begin{comment}
+Existing tools normally stop the program when an overflow is detected so that they can report 
+where a problem occurs. But to detect a overflow immediately,
+they instrument every memory access and introduce significant 
+performance overhead (by more than 23\%). 
+Completely different with these tools, \doubletake{} designes to reduce the performance overhead for 
+programs with no buffer overflows (the common case) and re-executes a program deterministically
+after installing watch point for those programs with buffer overflows. 
+With averagely 2\% performance overhead, the performance of \doubletake{} is even better than   
+that of Cruiser~\cite{overflow:Cruiser} (5\% slowdown): Cruiser utilizes an additional CPU 
+to run an overflow checking thread simulataneously but can not report the locations of problems.
+\end{comment} 
+
+\item \textbf{Precision}:
+\doubletake{} can report very precise and detailed information about buffer overflow problems:  
+\doubletake{} reports the context of problematic memory addresses, 
+which existing tools at best point out those statements with buffer overflow problems.
+
+\item \textbf{Reliability}:
+\doubletake{} does not report any false positive: all buffer overflow problems reported 
+are actual buffer overflow problems. 
+Besides, \doubletake{} can still work correctly even facing with segmentation fault errors.
+Most of tools if not all crash unexpectedly and silently, 
+without providing any useful information in case of segmentation faults 
+caused by some buffer overflow and dangling pointers.
+%\doubletake{} can survive these memory errors by intercepting the segmentation fault: \doubletake{}
+%can even report the reason causing the segmenation fault.
+\doubletake{} can find out all possible buffer overflows at a time. 
+There is no need to find buffer overflows one by one: current tools
+always stopped at the first error.
+
+\item \textbf{Completeness}:
+Approaches checking every memory access (relying on compiler or binary instrumentation)
+may miss some buffer overflows caused by uninstrumented libraries and system calls. 
+\doubletake{} can detect all kinds of buffer overflows, including those overflows caused by
+system call and libraries.
+  
+\end{itemize} 
+
+
+In order to detect a overflow immediately and report to users where a problem occurs,
+existing tools instrument every memory access and introduce significant 
+performance overhead (by more than 23\%). 
+Completely different with these tools, \doubletake{} designes to reduce the performance overhead for 
+programs with no buffer overflows (the common case) and re-executes a program when necessary to locate 
+programs. 
+%whenever buffer overflows or other memory errors are captured, 
+%\doubletake{} rollbacks this program to its previous state 
+%and re-executes it after installing hardware watchpoints 
+%on problematic memory addresses~\cite{}.
+
+In the beginning, \doubletake{} snapshots the state of a program by saving program counter,
+registers, stack, heap state and globals. 
+When buffer overflows or other memory errors are detected, \doubletake{} rollbacks a program
+to its previous state: it recovers the stack, heap and globals from the saved state,
+then it sets the context to saved registers (including program counter),
+ making the program to be re-executed.
+In order to detect those memory accesses causing buffer overflows or other errors, 
+\doubletake{} installs watch points on those problematic memory addresses. 
+  
+For programs with no overflows(the common case), \doubletake{} only introduces the overhead 
+of snapshotting a program in the beginning and checking overflows on all heap objects 
+in the end, program running in the full speed most of time,  
+thus it keeps the overhead to a minimum.
+By using the watchpoint mechanism, \doubletake{} can report the context of buffer overflows, by presenting the whole accesses on problematic addresses, helping the user to figure out reasons for memory errors.
+
+\subsection{Outline}
+This paper talks about those related works in next section. Section 3 discusses specific mechanisms 
+used by \doubletake{}. Section 4 describes some implementation details worth noting. 
+Section 5 evaluates the performance and effectiveness of \doubletake{} and Section 6
+discusses some problems and extending possibilities of \doubletake{}.
+Section 7 concludes this paper. 

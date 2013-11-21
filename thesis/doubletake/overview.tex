@@ -1,0 +1,226 @@
+\label{sec:overview}
+
+\DoubleTake{} improves performance for dynamic analysis by utilizing a record-and-replay idea, 
+which is discribed in Figure~\ref{fig:overview} {\bf FIGGGURE}.. 
+\DoubleTake{} divides an execution of a program into multiple epochs, at the boundaries of irrevocable
+system calls (discussed in Section~\ref{sec:syscall}) or different types of exits, e.g., 
+segmentation faults, aborts or normal exit.
+In the beginning of an epoch, \doubletake{} takes a snapshot of program state, 
+including changeable memory and registers.
+During an epoch, a program proceeds at full speed with extremely light-weight recording on results of
+certain system calls, in order to facilitate re-execution. 
+In the end of an epoch, \doubletake{} checks the evidence for errors. 
+We have implemented checks for three types of errors (discussed in Section~\ref{sec:applications}), 
+including heap buffer overflows, memory usage-after-free errors, and memory leaks. 
+If an error is detected, 
+\doubletake{} switches to re-execution mode (described in Section~\ref{sec:re-execution}) 
+to gather detailed information of the error.
+If no error is detected and a program ends this epoch because of an irrevocable system call, 
+\doubletake{} will issue the irrevocable system call and start a new epoch.
+Because \doubletake{} only check memory errors in the end of epochs and ends epochs rarely, 
+which amortizes the cost of checking errors over 
+long periods of uninterrupted execution, 
+\doubletake{} achieves extremely light performance overhead.
+
+Checking evidence of errors and gathering detailed error information are application specific. 
+In order to detect buffer overflows and memory usage-after-free errors, \doubletake{} fills 
+memory with canaries, which is discussed in Section~\ref{sec:canaries}.
+In order to precisely identifying the instruction reponsible for these two errors, 
+\DoubleTake{} installs hardware watch points (see Section~\ref{sec:watchpoints}) before 
+actual re-executions. 
+In order to reproduce those found memory errors deterministically, 
+it is crucial for \doubletake{} to have exactly the same memory allocations in re-executions. 
+Because it is difficult to do this in a general memory allocator,
+\DoubleTake{} designs its custom memory allocator for all memory allocations and deallocations, 
+which is discussed in Section~\ref{sec:allocator}. 
+
+\subsection{System Calls}
+\label{sec:syscall}
+
+% Why we need to care about system calls. Because some system calls are irrevocable.
+% However, not all IO are irrevocable. For example, if a file reads twice, as long as 
+% it returns the same result. We do not need to undone the results of IO operations. 
+\doubletake{} ends epochs on irrevocable system calls: the execution before
+and after irrecocable system calls belong to different epochs.
+Irrevocable here has a different meaning as that in transactional memory programming. 
+In transactional memory programming, irrevocable actions include IO and system calls whose
+effect cannot be rollbacked or completely invoked in user space~\cite{Irrevocabletrans}.
+\doubletake{} relaxes the definition of irrevocable: only the results of system calls cannot be 
+reproduced are considering to be irrevocable system calls. 
+System calls are classified to the following types.
+
+\begin{table}[t]
+	\centering
+	\small
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabular}{r|p{6cm}}
+		\textbf{Category} & \textbf{Functions} \\
+		\hline
+		
+		Repeatable		& \texttt{getpid}, \texttt{sleep}, \texttt{pause}\\
+		
+		Recordable		& \texttt{mmap}, \texttt{gettimeofday}, \texttt{time}, 
+						  \texttt{clone} , \texttt{open}\\
+		
+		Checkpointed		& \texttt{write}, \texttt{read} \\
+		
+		Delayed			& \texttt{close}, \texttt{munmap} \\
+		
+		Irrevocable		& \texttt{fork}, \texttt{exec}, \texttt{exit}, \texttt{lseek}, \texttt{pipe}, \texttt{flock}, \texttt{socket related system calls}\\
+	\end{tabular}
+	\caption{
+		System calls handled by \doubletake{}. Other calls not listed are treated as irrevocable, and will end the current epoch. Section~\ref{sec:syscalls} describes how \doubletake{} handles calls in each category.
+		\label{tbl:syscalls}
+	}
+\end{table}
+
+\label{sec:syscalls}
+\paragraph{Repeatable system calls} do not modify system state, and will always return the same result.
+This category includes \texttt{sleep}, \texttt{pause}, and system calls to query system's state, e.g. \texttt{getpid()}, \texttt{fstat} and \texttt{stat}. 
+\doubletake{} does not need any special handling for these system calls.
+	
+\paragraph{Recordable system calls} may return different results if they are re-executed. 
+\doubletake{} records the result of these system calls. 
+During re-execution, \doubletake{} will simply return the saved result 
+instead of re-executing the system call. 
+This category includes \texttt{mmap()}, \texttt{gettimeofday()}, \texttt{time()}, and \texttt{clone()}.
+
+\paragraph{Checkpointable system calls} modify system state, 
+but \doubletake{} can save this state beforehand and restore it prior to re-execution. 
+Most of file IO related system calls fall into this category. 
+For example, the \texttt{write()} system call can modify the contents of a file and moves the 
+file positions inside operating system.
+They can be treated as irrevocable system calls, but that can greatly affect performance 
+because of intensive usages in applications.
+\doubletake{} saves those file positions of openning files in the beginning of each epoch and 
+recovers those file positions before re-execution. 
+%Because \texttt{read()} and \texttt{write()} can be used in socket communications, which is considered
+%as irrevocable system calls, \doubletake{} checks whether those file descriptors are related to 
+%actual files. If they are invoked on actual files, there is no other operation on those file related system calls.  
+	
+\paragraph{Delayable system calls} will irrevocably change program state, but can safely 
+be delayed until the end of the current epoch. 
+\doubletake{} delays all calls to \texttt{munmap()} and \texttt{close()}.
+	
+\paragraph{Irrevocable system calls} cannot be replayed. \doubletake{} must end the current epoch 
+before these system calls are allowed to proceed. A system call not belonging to previous categories
+can be conservatively treated as an irrevocable system call.
+
+\vspace*{\baselineskip} 
+During normal execution of an epoch, \doubletake{} intercepts all calls to \pthreads{} 
+library functions that may issue system calls. \doubletake{} actually handles much more function calls
+than the listed number of system calls. For example, \texttt{open()}, \texttt{fopen()}, \texttt{fdopen}, \texttt{freopen()}, and \texttt{creat()} can possibly call \texttt{open} system calls. 
+Then all of these library functions should be intercepted. 
+%We assume that other libraries are built 
+%on this library: there is no direct system call from other libraries or applications.
+
+To reduce overhead, we should reduce the amount of epochs as much as possible by 
+recording, checkpointing and delaying system calls since starting and ending an epoch 
+involves large performance overhead, as discussed in Section~\ref{sec:implementation}, 
+Currently, \doubletake{} only optimizes those system calls invoked by evaluated applications.
+Current category of system calls can be seen in Table~\ref{tbl:syscalls}. Other system calls
+not mentioned here belong to the category of irrevocable system calls. 
+
+\begin{comment}
+To support multithreading programs, \DoubleTake{} has to record the order of synchronizations 
+and replay them in the same order (Section~\ref{sec:multithreading}) and design memory allocator specially (Section~\ref{sec:mtheap}).
+
+The basic idea of \DoubleTake{} is to greatly {\em reduce the number of checkings}:  
+instead of checking a possible out-of-bounds error before every memory access, 
+\DoubleTake{} checks all possible out-of-bounds errors of the whole program 
+before those irrevocable system calls or in the end of an execution.
+By checking buffer overflows accumulatively, \DoubleTake{} amortizes 
+checking overhead over long executions and achieves much better performance. 
+As showed in Figure~\ref{fig:diagram}, if a program does not have buffer overflows, 
+it continues to perform those system calls and 
+starts a new epoch after them by snapshotting state of this execution. 
+If a program is found to have buffer overflows, \DoubleTake{} re-executes it by rolling back 
+to last good state after installing hardware watchpoints on those overflowing addresses.
+By handling exceptions, 
+\DoubleTake{} can pinpoint precisely those memory accesses causing memory overflows without
+actually instrumenting every access. 
+\end{comment}
+
+
+\subsection{Canary Mechanism}
+\label{sec:canaries}
+Canaries, also called as sentinels, are normally put before or after each actual object.
+They are initialized to a special value in the beginning so that modifications of those values
+indicates the problems.
+Canaries have been used by many previous works to
+detect buffer overflows ~\cite{overflow:purify, exterminator, overflow:lbc}.
+Similarly, \stopgap{} puts canaries before and after heap objects, which can be used .
+to detect buffer underflows and overflows.
+The size of canary is a balance between memory overhead and precision.
+As discusssed by Hasabnis et al. ~\cite{overflow:lbc}, larger size helps to detect more
+buffer overflows, but increasing memory overhead.
+\stopgap{} chooses the size of a pointer as the size of each word-based canary:
+4 bytes for 32 bit binaries and 8 bytes for 64 bit binaries.
+For those objects with size not aligned by words, \stopgap{} filles byte-based canaries before a
+word-based canary.
+
+\stopgap{} maintains a global bitmap to mark placements of those canaries:
+if a word includes canaries, either a word-based canary or multiple
+byte-based canaries, its corresponding bit is set to $1$.
+Since \stopgap{} only uses a bit for each word, this helps to reduce memory overhead of the bitmap.
+Previous works use a bit for each byte in order to capture one-byte buffer overflow~\cite{overflow:lbc, AddressSanitizer}.
+However, it is uncessary to do this since \stopgap{} embeds size information of each heap object
+into the header, thus by coming with size information and byte-based canaries \stopgap{} doesn't
+loose the precision of detecting one-byte buffer overflows.
+Reducing the size of bitmap helps improving the speed of heap integrity checking too.
+
+\subsection{Watch Point Mechanism}
+\label{sec:watchpoints}
+Watch point mechanism relies on hardware debug registers to monitor memory accesses on
+specific addresses. Previous work has used this mechanism for their specific 
+targets \cite{fastboundschecking, Kivati}.
+
+Debug registers are universally supported by most if not all existing CPUs, such as
+X86 and X86-64 architecture, PowerPC, MIPS, ARM, etc. 
+The main target of debug registers is to support software debuggers, e.g. gdb. 
+In X86 and X86-64 architectures, there are four debug address registers, one debug 
+status register and one debug control register. 
+A user can set up debug address registers to hold those addresses that want to monitor 
+before executions of a program. 
+Then this user can be notified by an exception whenever a memory access matches one of those 
+debugging address in debug registers. 
+
+%\DoubleTake{} installs the addresses of canaries with buffer overflows and watches memory
+%accesses on them in the re-execution phase by handling those exceptions generated by debug registers. 
+%By analyzing the context of signal handler, 
+%\DoubleTake{} can precisely locate those instructions causing buffer overflows and report to users.
+%More implementation details are discussed in Section~\ref{sec:installwatchpoints}. 
+
+\subsection{Customized Heap Allocator}
+\label{sec:allocator}
+A general memory allocator invokes a big number of \texttt{mmap} or \texttt{sbrk} system calls,
+thus it is hard to repeat memory usages of a program without recording all memory allocations. 
+%related system calls and repeating
+%them in re-execution phase.
+\DoubleTake{} utilizes customized memory allocator for its heap allocations to overcome these shortcomings. The memory allocator of \DoubleTake{} is built on Heap Layers ~\cite{heaplayers}, 
+%repeat memory allocations in re-execution phase.
+
+%However, it is normally impossible to do this for multithreading programs.
+\DoubleTake{} pre-allocates a fixed size of memory 
+from its underlying operating system using \texttt{mmap} system calls and 
+satisfies memory allocations from this block of memory.
+All heap objects has the size of {\it power of $2$}, known as block size. 
+When an object is allocated, \doubletake{} adds a object header to each object, including block size,
+actual object size and canary.
+When an object is deallocated, it is put into a corresponding free list of the memory allocator, 
+holding objects with the same block size. 
+\DoubleTake{} never changes size of an object so there is no split and merge operation on heap objects.
+If size of an allocation is less than {\it power of 2}, 
+\DoubleTake{} allocates an object with the size of next {\it power of 2}.
+% but putting canaries
+%right after this actual object in order to detect .
+%The support for multithreading programs can be seen in Section~\ref{sec:mtheap}.
+
+% why it is deterministic?
+Since it is conventient to find out memory usage conditions in the beginning of each epoch 
+and all memory allocation are deterministic according to the order of program execution from the same heap without involving other system calls,  
+it is relatively easy to reproduce memory usage in production runs.
+% Because of this design, it is convenient to take a snapshot in production runs 
+%and repeat memory usage in reproduction runs. 
+
+
