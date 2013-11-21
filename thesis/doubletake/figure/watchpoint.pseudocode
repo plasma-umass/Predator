@@ -1,0 +1,17 @@
+void installWatchpoints(void) {
+  pid_t parent = getpid();
+  WRAP(sigaction)(SIGTRAP, &trap_action, NULL);
+  child = WRAP(fork)();
+  if(child == 0) {
+    ptrace(PTRACE_ATTACH, parent, NULL, NULL);
+    sleep(1); //Wait for the stop of its parent
+    insertWatchpoints();
+    ptrace(PTRACE_DETACH, parent, NULL, NULL);
+    exit(0);
+  }
+  else if(child > 0) {
+    // Wait for the children to sleep
+    waitpid(child, &status, 0); //Wait for the child to exit
+    assert(WEXITSTATUS(status) == true);
+  }
+}

@@ -1,0 +1,106 @@
+\label{sec:related-work}
+
+The area of deterministic multithreading has seen considerable recent
+activity. Due to space limitations, we focus here on software-only,
+non language-based approaches.
+
+% ~\cite{Bocchino:2009:TES:1640089.1640097,Burckhardt:2010:CPR:1869459.1869515,Simpson:1999:SEE:330346.330357}
+
+Grace prevents a wide range of concurrency errors, including
+deadlocks, race conditions, ordering and atomicity violations by imposing
+sequential semantics on threads with speculative execution~\cite{grace}.  \dthreads{} borrows Grace's
+threads-as-processes paradigm to provide memory isolation, but differs from Grace in terms of semantics, generality, and performance.
+
+Because it provides the effect of a serial execution of all threads,
+one by one, Grace rules out all interthread communication, including
+updates to shared memory, condition variables, and barriers. Grace
+supports only a restricted class of multithreaded programs: fork-join
+programs (limited to thread create and join). Unlike
+Grace, \dthreads{} can run most general-purpose multithreaded programs
+while guaranteeing deterministic execution.
+
+\dthreads{} enables far higher performance than Grace for several reasons:
+It deterministically resolves conflicts, while Grace must rollback and re-execute threads that update any shared pages (requiring code modifications to avoid serialization); 
+\dthreads{} prevents false sharing while Grace exacerbates it; and 
+\dthreads{} imposes no overhead on reads.
+
+CoreDet is a compiler and runtime system that represents the current
+state-of-the-art in deterministic, general-purpose software
+multithreading~\cite{Bergan:2010:CCR:1736020.1736029}. It uses
+alternating parallel and serial phases, and a token-based global
+ordering that we adapt for \dthreads{}. Like \dthreads{}, CoreDet
+guarantees deterministic execution in the presence of races, but with
+different mechanisms that impose a far higher cost: on average
+$3.5\times$ slower and as much as $11.2\times$ slower than \dthreads{} (see
+Section~\ref{sec:evaluation}). The CoreDet compiler instruments all
+reads and writes to memory that it cannot prove by static analysis to
+be thread-local.  CoreDet also serializes \emph{all} external library
+calls, except for specific variants provided by the CoreDet runtime.
+
+% \dthreads{} does not serialize library calls unless they perform 
+% synchronization operations, and only traps on the first write to a page during
+% a transaction.  Because of these differences, CoreDet runs 
+
+CoreDet and \dthreads{} also differ semantically. \dthreads{}
+only allows interleavings at synchronization points, but CoreDet relies on
+the count of instructions retired to form quanta. This approach makes
+it impossible to understand a program's behavior by examining the
+source code---the only way to know what a program does in CoreDet (or
+dOS and Kendo, which rely on the same mechanism) is to execute it on
+the target machine. This instruction-based commit schedule is also
+brittle: even small changes to the input or program can cause a
+program to behave differently, effectively ruling out {\tt printf}
+debugging. \dthreads{} uses synchronization operations as
+boundaries for transactions, so changing the code or input does not
+affect the schedule as long as the sequence of synchronization
+operations remains unchanged.  We call this more stable form of determinism {\em robust determinism}.
+
+% The use of synchronization points as commit boundaries also makes \dthreads{}
+% code relatively \emph{robust}: when updates occur after a given number of 
+% instructions retired (as in CoreDet and Kendo), it is impossible for 
+% programmers to know when interleavings can occur. Such boundaries could vary 
+% depending on the underlying architecture and would also be input-dependent, 
+% meaning that slightly different inputs could lead to dramatically different
+% thread interleavings. By contrast, \dthreads{} guarantees that only changes to
+% the sequence of synchronization operations affect the order in which updates 
+% are applied.
+
+dOS~\cite{deterministic-process-groups} is an extension to CoreDet
+that uses the same deterministic scheduling framework.  dOS provides
+deterministic process groups (DPGs), which eliminate all internal
+non-determinism and control external non-determinism by recording and
+replaying interactions across DPG boundaries. dOS is orthogonal and
+complementary to \dthreads{}, and in principle, the two could be
+combined.
+
+Determinator is a microkernel-based operating system that enforces
+system-wide determinism~\cite{efficient-system-enforced}.  Processes
+on Determinator run in isolation, and are able to communicate only at
+explicit synchronization points.  For programs that use condition variables,
+Determinator emulates a legacy thread API with quantum-based determinism similar
+to CoreDet.  This legacy support suffers from the same performance and robustness problems as CoreDet.
+
+Like Determinator, \dthreads{} isolates threads by running them in separate processes, but natively supports all \pthreads{} communication primitives.  \dthreads{} is a drop-in replacement for \pthreads{} that needs no special operating system support.
+
+Finally, some recent proposals provide limited determinism. Kendo
+guarantees a deterministic order of lock acquisitions on commodity
+hardware (``weak determinism''); Kendo only enforces full (``strong'')
+determinism for race-free
+programs~\cite{1508256}. TERN~\cite{stable-deterministic} uses code
+instrumentation to memoize safe thread schedules for applications, and
+uses these memoized schedules for future runs on the same
+input. Unlike these systems, \dthreads{} guarantees full determinism even
+in the presence of races.
+
+% \subsection{Other Related Work}
+
+% Behavior-oriented parallelism (BOP)~\cite{1250760}.
+
+% Transactional memory?
+
+% Deterministic Record/Replay system: it is a different part, most of replay
+% system's target is for debugging. In Deterministic programming language:
+% Race detection.
+
+%Languages.
+

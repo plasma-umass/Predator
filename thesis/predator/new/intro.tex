@@ -1,0 +1,161 @@
+%False sharing problem is a cache usage problem. 
+%Cache, with much faster access speed than main memory, is normally utilized by CPU
+%to accelerate program executions by preloading a fixed size of data into the cache each time, 
+%called as a cache line.  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Why 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{sec:intro} 
+
+While writing correct multithreaded programs is often challenging,
+making them scale can present even greater obstacles. Any source of
+resource contention can impair scalability or even lead to
+applications running slower as the number of threads increases.
+
+False sharing is a particularly insidious form of resource contention.
+It occurs when two threads inadvertently contend because the objects
+they are accessing happen to reside on the same cache line. When at least
+one of the threads frequently updates its object, the resulting cache
+coherence traffic can degrade performance by up to an order of
+magnitude~\cite{falseshareeffect}. Worse, false sharing is generally
+difficult to detect: unlike locks or truly shared objects, there is
+often no obvious culprit in the source code.
+
+As cache lines have grown larger and multithreaded applications have
+become commonplace, false sharing has become an increasingly important
+problem. False sharing has been found across the software stack,
+including inside the Linux kernel~\cite{OSfalsesharing}, the Java
+virtual machine~\cite{JVMfalsesharing}, common
+libraries~\cite{libfalsesharing} and several real
+applications~\cite{mysql,appfalsesharing}.
+
+Recent efforts to false sharing detection fall short in a number of
+dimensions. Some introduce excessive performance overhead, making them
+too slow to use in practice~\cite{falseshare:binaryinstrumentation1,falseshare:binaryinstrumentation2,falseshare:simulator}. Most
+do not report false sharing precisely and
+accurately~\cite{falseshare:binaryinstrumentation1,detect:ptu,detect:intel,falseshare:binaryinstrumentation2,DProf,qinzhaodetection}, require special OS
+support~\cite{OSdetection} or impose limits on their use~\cite{sheriff}.
+% or they can only detect one kind of
+%false sharing problem on a specific multithreading library~\cite{sheriff}.
+
+In addition, all of these systems share one key limitation: they can
+only report \emph{observed} cases of false sharing. As Nanavati et
+al.\ point out, false sharing is sensitive to where objects are
+placed in cache lines and so can be affected by a wide range of
+factors~\cite{OSdetection}. For example, using the gcc compiler
+\emph{accidentally} eliminates false sharing in the Phoenix
+linear\_regression benchmark at certain optimization levels, while
+LLVM does not do so at any optimization level.  A slightly different memory
+allocation sequence (or different memory allocator) can reveal or hide
+false sharing, depending on where objects end up in memory; using a
+different hardware platform with different addressing or cache line
+sizes can have the same effect. All of this means that existing
+tools cannot root out potentially devastating cases of false sharing
+that could arise with different inputs, in different execution
+environments, and on different hardware platforms.
+
+%\textsc{Sheriff} avoids these limitations, but  
+%can only detect write-write type false sharing and 
+%and can break correctness of programs using ad-hoc synchronizations or using stack variables to 
+%communicate across different threads~\cite{sheriff}. 
+%Also, none of these existing approaches  has been verified to find actual 
+%false sharing problems in real applications.
+
+%Despite their different features and limitations, all existing detection tools 
+%share two common drawbacks.
+%Firstly, existing techniques can not be applied for 
+%the entire software stack.
+% although they might work on a specific level of software stack.
+
+%To be more specific, 
+%\Predator{} can report potential false sharing problems with different cache line size and different starting address of an object 
+%without the need of another execution. 
+
+This paper presents \Predator{}, a novel software-only false sharing
+detector that not only \emph{detects} all existing false sharing
+problems accurately and precisely, but also \emph{predicts} potential
+false sharing problems that could appear in a  different execution
+environment.
+
+\subsection*{Contributions}
+
+This paper makes the following contributions:
+
+\begin{itemize}
+
+
+% prediction
+\item
+\textbf{Predictive False Sharing Detection:} \Predator{} is the first system that can \emph{predict} potential false sharing that does
+not manifest in an execution but may appear and greatly degrade the
+performance of programs in a slightly different
+environment. Predictive false sharing generalizes from a single
+execution to identify potential false sharing instances that are
+within one cache line of each other, which could be exposed by slight
+changes in object placement and alignment. It also can predict false sharing
+in hardware platforms with larger cache line sizes by tracking
+accesses within \emph{virtual cache lines} that span multiple physical
+lines. Predictive false sharing detection thus overcomes a key
+limitation of previous detection tools.
+
+%Existing approaches is based on specific hardware,
+%runtime environment(using specific libraries and compilers) and specific cache line size, which is OK to detect those 
+%existing false sharings. But they fail to capture those variables or objects which can greately slow down performance 
+
+%In order to save memory usage, we propose a threshold invoked detection based on the predefined number of writes on a cache line, which
+%can be used to track the .
+
+% effect: can detect all kinds of false sharing problems.
+\item
+\textbf{A Practical and Effective Detection Tool:} \Predator{} detects both observed and predicted false sharing 
+problems accurately and precisely with reasonable overhead (average:
+$7\times$ performance, $20\%$ memory).  It reveals unknown false
+sharing problems in benchmark suites evaluated by previous approaches. It
+is also the first false sharing tool able to automatically and precisely uncover
+false sharing problems in real applications, including 
+MySQL and the Boost library. Fixing these problems 
+dramatically improves performance, by $12\times$ for a benchmark and by $6\times$ for \texttt{MySQL}.
+%in the benchmarks, and $40\%$ in the actual applications).
+
+
+\item
+\textbf{A Fully General Approach to False Sharing Detection:} \Predator{} provides the first completely general false sharing detection method by
+combining compiler-based instrumentation with a runtime system. While this
+paper focuses on user-level multithreaded applications, \Predator{}'s
+approach is broadly applicable across the entire software stack
+because it does not depend on specific hardware, OS, or library
+support.
+%Since compiler can be utilized to do selective instrumentation, 
+%\Predator{} can be utilized to detect all kinds of false sharing problem with ideal overhead. 
+
+% combine compiler instrumentation with runtime system, so that it can 
+%detect all kinds of false sharing problem including write-write false sharing. 
+%avoid the shortcomings of runtime-only system, where Sheriff can not detect the read-writee false sharings. 
+%Also, because of the limit of their implementation, Sheriff can not support the program using the ad hoc synchronization
+%or using the stack variables to communicate among different threads.
+%Also, it looks like that we can provide a evenly performance overhead.
+%Also, sheriff should only work on specific thread library, currently, it can only work on pthreads library. 
+%We are trying to extending the same idea to different thread library. Now we can also run DeFault to detect all 
+%false sharings using other threads libraries.
+
+\end{itemize}
+
+\subsection*{Outline}
+
+The remainder of this paper is organized as follows. 
+Section~\ref{sec:detection} describes \Predator{}'s detection mechanisms and
+algorithms in detail.
+Section~\ref{sec:prediction} discusses how to predict potential false sharing accurately 
+without actually observing false sharing directly. 
+Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to 
+reveal unknown false sharing problems in several benchmarks and real applications. 
+While \Predator{} has no false positives, it cannot predict \emph{all} possible false sharing; Section~\ref{sec:discussion} discusses these limitations and outlines directions for future work.
+Finally, 
+Section~\ref{sec:relatedwork} describes key related work and Section~\ref{sec:conclusion} concludes.
+
+
+%There are two types of false sharings:
+%A. Different threads are accessed different locations according to the definition of flase sahrings. 
+%B. Locations with a large amount of reads is placed in the cache line with a large amount of writes.
+%For the second type, existing tools may tend to miss that.  

@@ -1,0 +1,33 @@
+\label{sec:related-work}
+
+\subsection{Deterministic Runtime Systems}
+
+Determinator is a microkernel operating system that enforces system-wide determinism~\cite{efficient-system-enforced}.  Processes on Determinator run in isolation, and are able to communicate only at explicit synchronization points.  Currently, Determinator is only a proof-of-concept system, and cannot be used for general multithreaded applications without modifications.  Condition variables are not currently supported in Determinator.  \dthreads{} also isolates threads by running them in separate processes, but supports communication with the diffing and twinning mechanism.  \dthreads{} is a drop-in replacement for pthreads--there is no need to modify the operating system.
+
+%paper~\cite{efficient-system-enforced}. dOS~\cite{deterministic-process-groups}
+%(complementary and orthogonal, though low performance because of
+%DMP-O). Schedule memoization~\cite{stable-deterministic}.
+
+Isolator guarantees memory isolation during critical sections using code instrumentation, data replication, and virtual memory protection.  Data accesses that do not follow the application's locking discipline are not visible to threads running in critical sections~\cite{1508266}.  Unlike \dthreads{}, Isolator does not enforce determinism, and cannot prevent all data races.
+
+Kendo guarantees a deterministic order of lock acquisitions on commodity hardware~\cite{1508256}. TERN~\cite{stable-deterministic} uses code instrumentation to memoize thread schedules for applications, and uses memoized schedules for future runs on the same input.  Both Kendo and TERN are only able to guarantee determinism for race-free programs, whereas \dthreads{} guarantees determinism even in the presence of races.
+
+CoreDet uses alternating parallel and serial phases, and a token-based global ordering that was co-opted for use in \dthreads{}~\cite{Bergan:2010:CCR:1736020.1736029}.  Like \dthreads{}, CoreDet guarantees deterministic execution in the presence of races, but at a much higher cost.  All reads and writes to memory that cannot be proven with static analysis to remain thread-local must be instrumented.  Additionally, CoreDet must serialize \emph{all} external library calls, except for specific variants provided by the CoreDet runtime.  \dthreads{} does not serialize library calls unless they perform synchronization operations, and only traps on the first write to a page during a transaction.  Because of these differences, CoreDet runs as much as 8x slower than \dthreads{}.
+
+dOS~\cite{deterministic-process-groups} is an extension to CoreDet, and uses the same deterministic scheduling framework.  dOS provides deterministic process groups (DPGs), which eliminate all internal nondeterminism and control external nondeterminism by recording and replaying interactions across DPG boundaries.  Like Kendo, CoreDet and dOS use retired instruction counts as transaction boundaries.  Because \dthreads{} uses synchronization operations as boundaries for transactions, changing the code or input will not affect the schedule so long as the sequence of synchronization operations is not changed.  Without this guarantee, it is difficult for programmers to reason about or debug multithreaded programs, even if they are deterministic.
+
+Grace prevents a wide range of concurrency errors, including deadlock, race conditions, and atomicity violations by imposing sequential semantics on multithreaded programs~\cite{grace}.  Like \dthreads{}, Grace uses the threads-as-processes paradigm to provide memory isolation.  Unlike \dthreads{}, Grace is limited to fork-join parallelism and does not support inter-thread communication.  When Grace detects multiple threads have written the same page all but one of the threads will be rolled back, which can substantially affect performance.  \dthreads{} does not rely on rollbacks, and therefore can support more general deterministic multithreaded execution with greater performance.
+
+\subsection{Other Related Work}
+
+%Behavior-oriented parallelism (BOP)~\cite{1250760}.
+
+%Transactional memory?
+
+Deterministic Record/Replay system: it is a different part, most of replay system's target is 
+for debugging. In 
+Deterministic programming language:
+Race detection.
+
+Languages.
+

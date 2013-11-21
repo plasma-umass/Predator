@@ -1,0 +1,44 @@
+# clustered graph example from Derek Bruening's CGO 2005 talk
+=cluster;pthreads;Sheriff(runtime);Sheriff(detection)
+#=patterns
+#=harmean
+#meanlabel=harmonic_mean
+max=2
+yformat=%g
+#=norotate
+rotateby=-45
+title=Sheriff Runtime Overhead
+#legendx=right
+#xlabel=Benchmark
+xlabelshift=0,2
+ylabel=Normalized Execution Time
+ylabelshift=1.5,0
+colors=black,light_green,red
+# stretch it out in x direction
+extraops=set label "3.97" at 12.1,1.8 right font "Times,10"
+extraops=set label "4.73" at 13.2,2.1 right font "Times,10"
+extraops=set size 1.2,1
+
+#          				pthreads Sheriff
+=table
+#multimulti=Phoenix
+histogram 				1.0  	0.78	0.80
+kmeans      			1.0  	1.14  	1.15
+linear_regression       1       0.10   	0.10
+matrix_multiply         1       1.04   	1.04
+pca                     1       1.02	1.03
+reverse_index           1       1.48	1.57
+string_match            1       0.99	1.0
+word_count              1       1.00	1.02
+#multimulti=PARSEC
+=table
+blackscholes            1       1.00	1.00
+canneal                 1       1.06 	1.11
+dedup                   1       1.21	1.26
+ferret                  1       3.97    4.73
+fluidanimate            1       1.20    1.27
+freqmine                1       1.02	1.02
+streamcluster           1       0.95    1.05
+swaptions               1       0.93    0.94
+#harmonicmean            1       0.66    0.69
+Geometric_mean          1       0.98    1.02

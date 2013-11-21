@@ -1,0 +1,18 @@
+\label{sec:future-work}
+
+Currently, we haven't handle those external non-determinism, for example, network input or timing,
+which can affect the determinism if the applications are relying on that. 
+One part of our future work wants to support these external non-determinism by using a shim layer to record those
+external non-deterministic events. 
+%Also, in current version, those memory allocation can be non-deterministic, which can potentially introduce some non-determinism if one application includes some un-safe memory operations. So we can easily to avoid this problem
+%by recording those order to allocate one superblock.
+
+Another part of our future-work are trying to handle the performance problem brought by too many dirty pages.
+We can keep track of the ownership of one memory page. If one memory page is owned by one thread, normally
+we don't need to commit those changes to the shared mapping. So page commits can be limitted to 
+those actually shared page, hopefully we can improve the performance by using this mechanism.
+
+%Replace effective single lock with guaranteed ordering on locks.
+%Adopt ownership protocol a la DMP-O?
+%Improve the determinism brought by the memory allocation, then we can fix those problem caused by un-safe memory operations.
+%Support for external non-determinism.

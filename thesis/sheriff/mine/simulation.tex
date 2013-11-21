@@ -1,0 +1,312 @@
+\label{sec:simulation}
+
+This section we are going to talk how to replace threads with processes while still maintain
+the same semantics of multithreaded program.
+
+We are going to answer the following questions in the following subsections:
+\begin{itemize}
+\item How to turn threads into proceses? 
+\item How to maintain the semantics to share the same address space?
+\item How to share file access?
+\item How to handle synchronization among threads?
+\end{itemize} 
+
+In the end, we are going to talk how to simuate the threads in one phase.
+\subsection{Thread Creation and Exit}
+Sheriff intercepts those function calls of \texttt{pthread\_create()} then replaced that with a \texttt{fork()} system call.
+Child processes invokes the routine passed by \texttt{pthread\_create()} calls. 
+In this way, Sheriff fork off new processes instead. 
+
+Sheriff use one explicit \texttt{\_exit()} call to terminal current thread.
+
+\subsection{Share Address Space}
+\label{simulation:sharememory}
+In order to create the illusion of multi-threaded programs that 
+different threads are sharing the same address space, 
+Sheriff uses the memory mapped files to share the heap and globals across different processes.
+It is noted that Sheriff don't try to share the stack across different processes 
+because different threads have their own stacks and 
+it is un-common to use stack to communicate between different threads.
+
+Sheriff creates two different mappings for both the heap and the globals. 
+One is shared mapping, which is working as a backstore using to hold those shared state. 
+Another one is private, copy-on-write(COW) mapping (per-process) that each process works on directly.
+Private working mapping are connecting to the shared mapping through the one memory mapped file.
+
+Read/write operations are worked only on private working mappings. 
+But actually reads or writes on one page have different effects that depending on the state of one page.
+For reads on those pages without private copies, 
+reads are actually accessing those pages in the shared mapping dirtectly with the help of memory mapped file.
+For reads on those pages with private copies, 
+reads can only access those private copies which are guranteed by the separation mechanism of process. 
+Writes have one different senario. Private working mapping are setted to read-only mode in the beginning. 
+First write on one read-only page can invoke a COW operation that can copy the content from 
+corresponding shared mapping. 
+After than, user program can only access those private mapping. 
+It is the duty of Sheriff to commit those changes
+of different processes to the shared mapping in the transaction end (more deatails can be seen in
+section~\ref{simulation:thread}.
+
+The details to create the memory mappings for globals and heap are described in the following.
+\par\vspace{3mm}
+\noindent
+\textbf{Globals}
+\par\vspace{3mm}
+\noindent
+Sheriff uses a fixed-size(larger than normal globals size) file to hold globals. Sheriff checks the size of actual
+globals to guarantee that the specified size is enough to hold all globals, if not, Sheriff can report this anomaly and 
+user can fix that easily.
+Sheriff tries to get the start and size of globals for one program and uses \texttt{mmap()} to create a shared mapping 
+among different threads. That is, user program are still using the address after the compilation.
+Since some global variables may has some initialized value, Sheriff copies all contents 
+from the private mapping to the shared mapping. 
+
+\par\vspace{3mm}
+\noindent
+\textbf{Heap}
+\par\vspace{3mm}
+\noindent
+Sheriff also uses a fixed-size mapping to hold the heap for user application, currently we are using 1.6GB. Memory allocations 
+requirements from user applications are met from this fixed-size private mapping.
+
+Since different threads can get the memory from this fixed-size mapping, the heap data structure are shared among different
+threads and allocations are protected by one process-based mutex.
+In order to avoid the false sharing problems brought by the memory allocator, 
+Sheriff builds a scalable ``per-thread'' heap organization that is loosely based on Hoard~\cite{BergerMcKinleyBlumofeWilson:ASPLOS2000} and built using HeapLayers~\cite{BergerZornMcKinley:2001}. 
+Sheriff divides the heap into a fixed number of sub-heaps(currently 16). Each thread uses a hash of its process id to obtain
+the index of the heap which can be used to satisfy memory allocations. 
+This origranization has two benefits. First, it can minimize the conflicts caused by using only 
+one shared heap between different threads, thus avoiding the performance impact by using the lock to 
+maintain the data consistency.
+Second, it avoids the false sharing problems caused by heap objects. Since each thread are using different pages 
+to satisfy memory allocations, objects allocated by one thread has no chance to be the same 
+cache line with objects from another thread. Thus, runtime system build on that can avoid false sharing problems 
+and have a much better scalability. 
+
+\begin{comment}
+Not all memory allocations are meet from the protected heap to avoid the performance problem. 
+Since those accesses on protected heap, the first write on each transaction should pay the overhead to 
+create the copies and later should do the comparison and commit in the end of transaction.
+Those overhead is additional comparing to normal running of multi-threaded program. 
+We believe that false sharing problem has a greater chance to happen in those small allocations (smaller than cores number 
+times of cache line size). Huge block of memory normally is not a source of false sharing problem. 
+Besides those mapping to work as a shared backstore and a working copy, Sheriff provides an additional MAP\_SHARED mapping 
+which is used to meet the allocation requirements of larger objects.
+\end{comment}
+
+\subsection{Share File Access}
+\label{sec:fileshare}
+\begin{figure}[!t]
+\small
+\begin{lstlisting}[frame=trbl]{}
+int spawnWithShareFiles{
+  return syscall(SYS_clone, 
+   CLONE_FS|CLONE_FILES|SIGCHLD,(void*)0);
+}
+\end{lstlisting}
+\caption{Pseudo-code to create a new process.
+\label{fig:newfork}}
+\end{figure}
+In multi-threaded programs, different threads in the same process share opened files of each thread. 
+But multi-processes is a different senario: 
+each process is assumed to own all of its resources, including memory, file handles, sockets, device handles, and windows. 
+
+Since Sheriff tries to approximate the semantics of multi-threaded programs.
+it is necessary to make different processes to share opened files.
+One naiive way is to create a process to work as the proxy for other processes, this proxy can \texttt{open/close} files 
+or change attributes of files for other processes. 
+After that, the proxy can use a ``Unix domain socket'' to pass the descriptor from the proxy to the initiating process 
+and other processes wanting to share this file ~\cite{passfd}. 
+But it is not easy to do this since we have to wrap up a lot of file system related system calls. 
+Also, there is some additonal overhead of communication.
+
+Sheriff uses a different approach, by setting the flag \texttt{CLONE\_FILES} 
+when creating new processes (Fig.~\ref{fig:newfork}), 
+child processes can share the same physical file descriptor table with the parent process. 
+Then Sheriff can share files among different processes.
+\begin{comment}
+It is noted that using \texttt{clone()} to create new process will affect the getpid() system call.
+Although current thread model is the 1-to-1 model in pthreads library (not n-to-1 model any more), 
+glibc's wrapper will always return the process ID of the parent process via the glibc wrapper function. 
+Sheriff avoid this predicament by intercept getpid() calls then just give the stored pid for different threads.
+\end{comment}
+
+\subsection{Synchronization}
+\label{simulation:syn}
+
+\begin{figure}[!t]
+\small
+\begin{lstlisting}[frame=trbl]{}
+  void sync(var) {
+    closeTransaction();
+
+	realVar = getRealVariable(var);
+	pthread_sync(realVar);
+	
+    startTransaction();
+  }
+\end{lstlisting}
+\caption{Pseudo-code for all synchronization operations.\label{fig:synccode}}
+\end{figure}
+Synchronization are used to coordinate the activities and data accesses among different threads. 
+Synchronization also means that some shared data needs to be changed or be used across different threads. 
+For example, program calls \texttt{mutex\_lock()} when it needs to access some shared data. 
+There are some \textbf{synchronization} mechanisms in multithreaded program, 
+including: \textit{mutex}, \textit{conditional variable}, \textit{barrier} and \textit{join}.
+
+In order to describe things easier, we introduce the ``transaction'' concept here. 
+``transaction'' is used to describe one piece of code which executes in a atomical,  
+separated and consistent way. 
+It is noted that Sheriff is not one traditional transactional memory system.
+Transaction Memory is a concurrency control mechanism 
+attempting to simplify the parallel programming by allowing a group of instructions 
+to execute in an atomic way.
+Traditional transaction memory systems are optimized for short transactions,
+but do not effectively support long-lived transactions. They also provides a rollback mechanism
+when one transaction fails to commit. 
+Sheriff won't support rollback here and supports any length of transaction, 
+longer transaction is better to amortize the overhead,
+and tends to use for general multi-threaded program, 
+no need to annotate the code as ``transaction'' manually.
+Also, Sheriff don't replace the lock usage as some log-based mechanism.
+But transaction concept in Sheriff has the atomicity, isolation and consistency attributes, which is 
+the same as that in transactional memory~\cite{transaction}. 
+
+\begin{comment}
+Sheriff read-protects all pages of memory in the beginning of memory so that any intends to write on one 
+page can be captured by Sheriff by handling the page fault. 
+In the end of transaction, Sheriff tries to publish the modifications
+made by current transaction so that other threads in the same application can see the modifications by one thread.
+\end{comment}
+
+In order to simulate those multithreaded synchronization, Sheriff intercepts those synchronization object 
+initialization function calls, allocates one new synchronization object on a shared mapping (shared by all processes)
+and initializes them to be accessed by different processes. Then the new object's address can be saved 
+in the header of original object. 
+Handling about one synchronization call can be seen in Fig.~\ref{fig:synccode}. 
+
+In order to explain it more clear, we are using the mutex as an example. There are three regions for one mutex usage: 
+the first region is before \texttt{mutex\_lock}; the second region is between \texttt{mutex\_lock} and \texttt{mutex\_unlock}; 
+ the third region is after \texttt{mutex\_unlock}. Sheriff chooses to use three different transactions for these three different regions.
+Although it is unnecessary to do so for the first and third region since they don't need 
+to executed in a atomical and isolated way. But it is better to do so for easiness.
+
+For the first and third region, introduction of transaction here won't cause correctness problem 
+according to Sheriff's assumption(Section~\ref{overview:assumption}). Other threads are not supposed 
+to access the data modified by current process.
+
+For the second region, when there is \texttt{mutex\_lock} and \texttt{mutex\_unlock} call, 
+Sheriff are trying to call corresponding
+pthreads library's functions but worked on a process-based mutex object. 
+According to the semantics of multithreaded program, the modifications happening between \texttt{mutex\_lock} 
+and \texttt{mutex\_unlock}
+are unseen by other threads and modifications can work on shared memory directly (it is also safe to so).  
+In actual implementation, it is relatively expensive to 
+change page mapping between \texttt{MAP\_SHARED} and \texttt{MAP\_PRIVATE} 
+especially when the memory footprint is very large. To avoid those unnecessary overhead, 
+Sheriff starts a new transaction after \texttt{mutex\_lock()} and closes that transaction in case of \texttt{mutex\_unlock()}. 
+
+For conditional variable and barrier, they are using the same mechanism as the example in Fig.~\ref{fig:synccode}.
+\texttt{pthread\_join} is a little different. Sheriff just closes current transaction and calls \texttt{waitpid()} 
+when there is a \texttt{pthread\_join()} call. 
+
+\subsection{Thread Execution}
+\label{simulation:thread}
+As what we described above, Sheriff uses the transaction(atomic execution) to simulate 
+those synchronization mechanism of multithreaded program. 
+The overview of this mechanism can also be seen in Fig.~\ref{fig:overview}.
+ 
+Before the program begins, Sheriff establishes shared and local mappings for the heap and globals. 
+\begin{comment}
+To improve the performance, Sheriff don't do page protection when there is just one thread; read/write operations
+work on shared mappings directly to avoid protection overhead and commit overhead. 
+We implement this in the following two cases:
+First, Sheriff will start page protection until there is a pthread\_create() function call  
+to spawn one child. 
+Second, Sheriff will close page protection when there is just one thread.
+Sheriff always checks whether current thread is the only thread in the system in pthread\_join() function
+and close the page protection timely if it is.
+
+To start the protection, those pages in the protection range will be set to MAP\_PRIVATE and PROT\_READ mode; 
+later access on one protected page should invoke a Copy-On-Write operation in the operating system.
+To stop the protection, those pages in the protection range will be re-set to MAP\_SHARED and readable/writable; later access 
+access on those pages will work on shared mapping directly(through mapping file). 
+\end{comment}
+\subsubsection{Transaction Begin}
+In the beginning of one transaction, Sheriff sets every page in the protection range to \texttt{PROT\_READ} so that
+later writes on those pages can be caught by handling \texttt{SEGV} protection faults.
+In fact, Sheriff don't need to set on every page, only those pages dirtied in last transaction needs to be
+set to \texttt{PROT\_READ}; other clean pages should still in the \texttt{PROT\_READ} 
+since the mode bit of those pages are kept the same
+in the execution if one page is not modified.
+
+Sheriff clears dirty pages sets after it set every dirty page to \texttt{PROT\_READ}.
+
+\subsubsection{Execution}
+\label{simulation:execution}
+When no page under protection is written, Sheriff runs almost the same speed as that of multithreaded program. 
+When those pages under protection are written, that triggers a page fault and Sheriff can
+be involved in by handling \texttt{SEGV} protection faults.
+ 
+The algorithm of page fault handler is listed in the following:
+\begin{enumerate}
+\item 
+Sheriff tries to get the page holding the faulted address and then set this page to write-able so that 
+future accesses on this page can run at a full speed (won't invoke page fault any more). 
+Thus, one page incurs only one page fault in one transaction. 
+Although protection faults and signal faults are expensive, those cost 
+can be amoritized for the whole transaction.
+
+\item 
+Before the creation of ``twin page'', Sheriff force a Copy-On-Write operation on this page by writing to the start of this page 
+with the content getting from the same address. 
+This step is very important to get two identical pages for ``twin'' page and working copy 
+so that comparison of those two can give actual modifications made by this transaction. 
+Since there is a time gap between the creation of ``twin'' pages and that of ``private'' pages, private pages are created 
+by OS's COW after the signal handler. 
+After the force of a COW, Sheriff creates a copy of current page from share area to a local store(called as ``twin'' page). 
+This ``twin'' page mechanism has been discussed in Section~\ref{overview-twinpage}.
+\item 
+In the end of page fault handler, Sheriff adds page address to the \textit{dirty} set so that 
+all dirty pages can be checked in the end of transaction.
+\end{enumerate}
+
+\subsubsection{Transaction End}
+\label{simulation:endtran}
+In the end of each atomically-executed region - the end of each thread, right before and end of those synchronization points, 
+right before a thread spawn, and right before joining another thread - 
+Sheriff commits those changes from ``private'' pages to ``shared'' mapping, 
+then remove those old private pages and twin pages.
+
+Then Sheriff will trying to commit those modifications in current transaction to ``shared'' mapping so that other threads can
+see those changes modified by current transaction. 
+As what we desribed in Section~\ref{overview-twinpage}, those ``twin'' pages and ``working'' (private) pages
+can be compared word by word in order to capture those modifications in current transaction. 
+Those new values on ``working'' pages will be committed to the same offsets of corresponding ``shared'' mapping.
+
+After commits, Sheriff issues a madvise (\texttt{MADV\_DONTNEED}) call to discard current physical pages of ``private'' mapping 
+. Since Sheriff allocates some physical pages to 
+hold those ``twin'' mapping, those pages should be discarded too to avoid the memory leakages. 
+Note here that Sheriff will hold a global lock in order to do commits and updations automically. 
+\begin{comment}
+\begin{figure}[!t]
+\small 
+\begin{lstlisting}[frame=trbl]{}
+//@This function is called by pthread_join
+void uniqueChecking (void) {
+  // Is it the initial thread?
+  if(getpid() == initialPid) {
+	// Using waitpid to check the uniqueness.
+    if(waitpid(-1, NULL, WNOHANG) == -1 
+	   && errno == ECHILD) {
+		// Close protetion here.
+        closeMemoryProtection();
+        _protected = false;
+    }
+  }
+}
+\end{lstlisting}
+\caption{Pseudo-code for unique checking.\label{fig:unique}}
+\end{figure}
+
+\end{comment}

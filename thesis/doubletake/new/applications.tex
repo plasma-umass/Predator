@@ -1,0 +1,75 @@
+\label{sec:applications}
+
+We have implemented three error detection tools with \doubletake{}. These applications are intended to demonstrate \doubletake{}'s generality and efficiency. The mechanisms used for error detection are similar to those used by existing tools, but \doubletake{} lets these mechanisms run with substantially lower overhead than prior tools.
+
+\begin{figure}[!t]
+\begin{center}
+\includegraphics[width=3.3in]{buffer-overflow-diagram}
+\end{center}
+\caption{Heap organization used to provide evidence of buffer overflow errors. Object headers and unrequested space within allocated objects are filled with canaries; a corrupted canary indicates an overflow occurred.
+\label{fig:buffer-overflow}}
+\end{figure}
+
+\begin{figure}[!t]
+\begin{center}
+\includegraphics[width=3.3in]{dangling-pointer-diagram}
+\end{center}
+\caption{Evidence-based detection of dangling pointer (use-after-free) errors. Freed objects are deferred in a quarantine in FIFO order and filled with canaries. A corrupted canary indicates that a write was performed after an object was freed. 
+\label{fig:dangling-pointer}}
+\end{figure}
+
+\subsection{Heap Buffer Overflow Detection}
+\label{sec:applications/overflow}
+% Describe the basic setup, what evidence of an error will look like, and what the tool can report
+Heap buffer overflows occur when programs write outside the bounds of an allocated object. Our buffer overflow detector places canaries between heap objects, and reports an error when canary values have been overwritten. If an overwritten canary is found, the detector uses watchpoints during re-execution to identify the instruction responsible for the overflow.
+
+\subsubsection*{Detection}
+% Describe the implementation of detection
+
+Figure~\ref{fig:buffer-overflow} presents an overview of the approach used to locate buffer overflows. The overflow detector adds 16 bytes to each \texttt{malloc} request, and fills this space with canaries. \doubletake{}'s custom heap rounds allocations up to the next power of two size class, leaving additional space around many objects. The buffer overflow detector also fills this unrequested space with canaries. This approach lets \doubletake{} catch overflows as small as one byte, and ensures that switching to a different allocator that uses different size classes will not expose previously-undetected buffer overflows. At the end of each epoch, \doubletake{} checks whether any canaries have been overwritten. If an overwritten canary is found, a buffer overflow has been detected and re-execution begins.
+
+\subsubsection*{Re-Execution}
+% Describe the procedure for re-executing and reporting additional details
+
+\doubletake{} installs a watchpoint at the address of the corrupted canary before re-execution. When the program is re-executed, any instruction that writes to this address will trigger the watchpoint. The operating system will deliver a \texttt{SIGTRAP} signal to \doubletake{} before the instruction is executed. At the end of the epoch's re-execution \doubletake{} reports the addresses of all trapped instructions, which it converts to the source line(s) responsible for the buffer overflow.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Use-After-Free Detection}
+% Describe the basic setup, what evidence of an error will look like, and what the tool can report
+\label{sec:applications/useafterfree}
+ 
+Use-after-free or dangling pointer overflow errors occur when an application continues to access memory through pointers that have been passed to \texttt{free()} or \texttt{delete}. Writes to freed memory can overwrite the contents of other live objects, leading to unexpected program behavior. Like the buffer overflow detector, our use-after-free detector uses canaries and watchpoints to detect writes to freed memory. When a use-after-free error is detected, \doubletake{} reports the allocation and deallocation sites of the object, and all instruction(s) that wrote to the object after it was freed.
+
+\subsubsection*{Detection}
+% Describe the implementation of detection
+
+Figure~\ref{fig:dangling-pointer} illustrates how use-after-free detection. The use-after-free detector delays the re-allocation of freed memory. Freed objects are placed in a FIFO quarantine list, the same mechanism used by AddressSanitizer~\cite{AddressSanitizer}. Objects are released from the quarantine list when the total size of quarantined objects exceeds 16 megabytes, or when there are 1,024 quarantined objects. This threshold is easily configurable. Objects in the quarantine list are filled with canary values, up to 128 bytes. Filling large objects entirely with canaries introduces overhead during normal execution, and is unlikely to catch any additional errors. 
+
+Before an object can be returned to the heap, \doubletake{} verifies that no canaries have been overwritten. All canaries are checked at epoch boundaries. If a canary has been overwritten, the detector raises an error and begins re-execution.
+
+\subsubsection*{Re-Execution}
+% Describe the procedure for re-executing and reporting additional details
+
+During re-execution, the use-after-free detector interposes on the replay of \texttt{malloc} and \texttt{free} calls to find the allocation and deallocation sites of the overwritten object. The detector records a call stack for both sites using the \texttt{backtrace} function. After the object is freed, the detector installs a watchpoint at the address of the overwritten canary. As with buffer overflow detection, any writes to the watched address will generate a \texttt{SIGTRAP} signal. The allocation and deallocation sites, and the instruction pointer(s) responsible for the use-after-free error are reported at the end of re-execution.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Memory Leak Detection}
+\label{sec:applications/leak}
+% Describe the basic setup, what evidence of an error will look like, and what the tool can report
+Heap memory is leaked when it becomes inaccessible without being freed. Memory leaks can significantly degrade program performance due to increased memory footprint. Our leak detector uses tracing to identify unreachable allocated memory. Allocation site information can help developers fix leaks, but collecting this information for all calls to \texttt{malloc} would unnecessarily slow allocations of properly-freed memory. Instead, \doubletake{} only records the allocation sites of leaked memory during re-execution, and adds no overhead for normal execution.
+
+\subsubsection*{Detection}
+% Describe the implementation of detection
+
+We detect memory leaks using the same marking mechanism as conservative garbage collection~\cite{Wilson:1992:UGC:645648.664824}. The marking phase performs a breadth-first traversal of reachable memory using a work queue. Initially, all values in registers, globals, and the stack that look like pointers are added to the work queue. Any eight-byte aligned value that falls within the range of heap memory is treated as a pointer.
+
+At each step in the scan, the detector takes the first item off the work queue. Using \doubletake{}'s heap metadata, the detector finds the bounds of the heap object. Every object is allocated with a header containing ``marked'' and ``allocated'' bits. If the marked bit is set, the detector moves on to the next item in the queue. If the object is allocated and unmarked, the detector sets the marked bit and adds all pointer values within the object's bounds to the work queue. When the work queue is empty, \doubletake{}'s set of allocated objects is scanned.
+
+If the scan finds any allocated but unmarked objects, a memory leak has been detected and re-execution begins. The detector can also find potential dangling pointers (reachable freed objects). This option is disabled by default because, unlike other applications, potential dangling pointer detection could produce false positives.
+
+\subsubsection*{Re-Execution}
+% Describe the procedure for re-executing and reporting additional details
+
+During re-execution, the leak detector checks the results of each \texttt{malloc} call. When the allocation of a leaked object is found, the detector records the call stack using the \texttt{backtrace} function. At the end of the epoch re-execution, the detector reports the last call stack for each leaked object.

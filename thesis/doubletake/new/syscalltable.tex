@@ -1,0 +1,21 @@
+\begin{table}[t]
+	\centering
+	\small
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabular}{l|p{6cm}}
+		\textbf{Category} & \textbf{Functions} \\
+		\hline
+		
+		Repeatable		& \texttt{getpid}, \texttt{sleep}, \texttt{pause}\\
+		
+		Recordable		& \texttt{mmap}, \texttt{gettimeofday}, \texttt{time}, 
+						  \texttt{clone} , \texttt{open}\\
+		
+		Revocable		& \texttt{write}, \texttt{read} \\
+		
+		Deferrable		& \texttt{close}, \texttt{munmap} \\
+		
+		Irrevocable		& \texttt{fork}, \texttt{exec}, \texttt{exit}, \texttt{lseek}, \texttt{pipe}, \texttt{flock}, \texttt{socket related system calls}\\
+	\end{tabular}
+	\caption{System calls handled by \doubletake{}. All unlisted system calls are conservatively treated as irrevocable, and will end the current epoch. Section~\ref{sec:syscalls} describes how \doubletake{} handles calls in each category.\label{table:syscalls}}
+\end{table}

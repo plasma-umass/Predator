@@ -1,0 +1,287 @@
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
+
+%\documentclass{sigplanconf}
+%\nocaptionrule
+
+% \documentclass[twocolumn,9pt]{article}
+% \documentclass[twocolumn,10pt]{acm_proc_article-sp}
+
+% \documentclass{acm_proc_article-sp}
+% \documentclass[9pt]{sigplanconf}
+\documentclass{acm_proc_onecol}
+
+\date{} % \vspace*{-0.2in}}
+
+% Make sure to put back 
+
+\newcommand{\punt}[1]{}
+
+\punt{
+
+Notes from Daan Leijen:
+
+Generally, I think the paper could have been clearer to me if it would have 
+separated out more the actual implementation from the intended semantics.
+Currently I found myself trying to decode the implementation to figure out
+the semantics. Also, in the introduction you remark “Dthreads guarantees
+deterministic execution of multithreaded programs even in the presence of
+data races (notwithstanding external sources of non-determinism like I/O):
+given the same sequence of inputs, a program using dthreads always produces
+the same output”. This is somewhat ambiguous to me. Perhaps it is good to
+remark that a Dthread program is deterministic with respect to any
+particular scheduling of the threads? Clearly, any other source of
+non-determinism will cause a dthread program to be non-deterministic (like I/O).
+
+}
+
+\usepackage{endnotes,xspace}
+
+\newcommand{\footnotenonumber}[1]{{\def\thempfn{}\footnotetext{\small #1}}}
+\usepackage[normalem]{ulem}
+\usepackage{graphicx}
+
+\usepackage{mathptmx} % rm & math
+\usepackage[scaled=0.90]{helvet} % ss
+\usepackage{courier} % tt
+% \normalfont
+\usepackage[T1]{fontenc}
+
+% \usepackage{lmodern}
+% \usepackage{times}
+\usepackage{subfigure}
+\usepackage{url}
+\urlstyle{rm}
+\usepackage[
+      colorlinks=false,    %no frame around URL
+      urlcolor=black,    %no colors
+      menucolor=black,    %no colors
+      linkcolor=black,    %no colors
+      pagecolor=black,    %no colors
+]{hyperref}
+
+\usepackage{color}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{comment} 
+\usepackage{setspace}
+\singlespacing
+%\onehalfspacing
+\newtheorem{thm}{Theorem}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{defn}[thm]{Definition}
+
+\newcommand{\cfunction}[1]{{\bf \tt #1}}
+\newcommand{\malloc}{\cfunction{malloc}}
+\newcommand{\realloc}{\cfunction{realloc}}
+\newcommand{\free}{\cfunction{free}}
+\newcommand{\madvise}{\cfunction{madvise}}
+\newcommand{\brk}{\cfunction{brk}}
+\newcommand{\sbrk}{\cfunction{sbrk}}
+\newcommand{\mmap}{\cfunction{mmap}}
+\newcommand{\munmap}{\cfunction{munmap}}
+\newcommand{\mprotect}{\cfunction{mprotect}}
+\newcommand{\mlock}{\cfunction{mlock}}
+
+\hyphenation{app-li-ca-tion}
+\hyphenation{Die-Hard}
+\hyphenation{Ar-chi-pe-la-go}
+\hyphenation{buf-fer}
+\hyphenation{D-threads}
+\hyphenation{Heap-Layers}
+\hyphenation{wait-Token}
+\hyphenation{mul-ti-threa-ded}
+\hyphenation{me-m-ory}
+
+\hyphenation{pthread-create}
+\hyphenation{pthread-self}
+\hyphenation{pthread-mutex-lock}
+\hyphenation{pthread-mutex-unlock}
+
+\newcommand{\dthreads}{{\scshape Dthreads}}
+\newcommand{\Dthreads}{{\scshape Dthreads}}
+\newcommand{\pthreads}{\texttt{pthreads}}
+
+\lstdefinelanguage{c++threads}[]{c++}{morekeywords={pthread_create,pthread_join}}
+
+\lstset{language=c++threads, basicstyle=\ttfamily\scriptsize,frame=trbl,tabsize=4} % ,numbers=left,numberstyle=\tiny}
+
+\definecolor{Gray}{cmyk}{0,0,0,0.5}
+
+\begin{document}
+
+%\conferenceinfo{SOSP 2011,} {October 22--26, Cascais, Portugal.}
+%\CopyrightYear{2011}
+%\copyrightdata{XXX-X-XXXXX-XXX-X/XX/XX}
+
+\title{{\huge \bf \dthreads{}}: Efficient Deterministic Multithreading}
+
+% \authorinfo{\emph{authorship list removed for anonymity}}
+
+\punt{
+\authorinfo{Tongping~Liu \and Charlie~Curtsinger \and Emery~D.~Berger}
+{Dept.\ of Computer Science \\
+University of Massachusetts, Amherst \\
+Amherst, MA 01003}
+%{\{tonyliu,charlie,emery\}@cs.umass.edu}
+}
+
+% \punt{
+\numberofauthors{1}
+\author{
+\alignauthor Tongping~Liu, Charlie~Curtsinger, and Emery~D.~Berger \\
+\affaddr{Department of Computer Science} \\
+\affaddr{University of Massachusetts, Amherst} \\
+\affaddr{Amherst, MA 01003} \\
+\email{\{tonyliu,charlie,emery\}@cs.umass.edu} \\
+%\alignauthor Charlie~Curtsinger \\
+%\affaddr{Dept.\ of Computer Science} \\
+%\affaddr{Univ. of Massachusetts, Amherst} \\
+%\affaddr{Amherst, MA 01003} \\
+%\email{charlie@cs.umass.edu} \\
+%\alignauthor Emery~D.~Berger \\
+%\affaddr{Dept.\ of Computer Science} \\
+%\affaddr{Univ. of Massachusetts, Amherst} \\
+%\affaddr{Amherst, MA 01003} \\
+%\email{emery@cs.umass.edu} \\
+% }
+}
+
+\maketitle
+
+\begin{comment}
+\end{comment}
+
+\begin{abstract}
+Multithreaded programming is notoriously difficult to get right.  A key problem
+is non-determinism, which complicates debugging, testing, and reproducing
+errors. One way to simplify multithreaded programming is to enforce
+deterministic execution, but current deterministic systems for C/C++ are
+incomplete or impractical. These systems require program modification, do not
+ensure determinism in the presence of data races, do not work with
+general-purpose multithreaded programs, or run up to $8.4\times$ slower than
+\pthreads{}.
+
+This paper presents \dthreads{}, an efficient deterministic multithreading
+system for unmodified C/C++ applications that replaces the \pthreads{} library.
+\Dthreads{} enforces determinism in the face of data races and deadlocks. 
+\dthreads{} works by exploding multithreaded applications into multiple
+processes, with private, copy-on-write mappings to shared memory.  It uses
+standard virtual memory protection to track writes, and deterministically orders
+updates by each thread. By separating updates from different threads,
+\dthreads{} has the additional benefit of eliminating false sharing.
+Experimental results show that \dthreads{} substantially outperforms a
+state-of-the-art deterministic runtime system, and for a majority of the
+benchmarks evaluated here, matches and occasionally exceeds the performance of
+\pthreads{}.
+\end{abstract}
+
+%  Language-based approaches require programmers to write their code in specialized languages. 
+
+
+\punt{
+\category{D.1.3}{Programming Techniques}{Concurrent Programming--Parallel Programming}
+\category{D.2.5}{Software Engineering}{Testing and Debugging--Debugging Aids}
+
+\terms
+Design, Reliability, Performance
+
+\keywords
+Deterministic Multithreading, Determinism, Parallel Programming, Concurrency, Debugging,
+Multicore
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+\input{introduction}
+
+\section{Related Work}
+\input{related-work}
+
+\section{{\bf \Large \Dthreads{}} Overview}
+\input{dthreads-overview}
+
+\section{{\bf \Large \Dthreads{}} Architecture}
+\input{dthreads-architecture}
+
+\begin{figure*}[!t]
+{\centering
+\includegraphics[width=5in]{fig/overhead-figure}
+\caption{Normalized execution time with respect to \pthreads{} (lower is better). For 9 of the 14 benchmarks, \dthreads{} runs nearly as fast or faster than \pthreads{}, while providing deterministic behavior.\label{fig:performance}}
+}
+\end{figure*}
+
+\section{Optimizations}
+\input{dthreads-optimizations}
+
+\section{Evaluation}
+\label{sec:evaluation}
+
+% CCC: overhead figure moved to main.tex to place on the same page as evaluation section
+
+\begin{figure*}
+{\centering
+\includegraphics[width=5in]{fig/scalability-figure}
+\caption{
+	Speedup with four and eight cores relative to two cores (higher is better).  \dthreads{} generally scales nearly as well or better than \pthreads{} and almost always as well or better than CoreDet.  CoreDet was unable to run \texttt{dedup} with two cores and \texttt{ferret} with four cores, so some scalability numbers are missing.\label{fig:scalability}}
+}
+\end{figure*}
+\input{evaluation}
+
+\section{Discussion}
+\input{discussion}
+
+\punt{
+\section{Future Work}
+\input{future-work}
+% eliminate global lock
+% possibly adopting a page-ownership protocol as used by ...
+}
+
+\section{Conclusion}
+\input{conclusion}
+
+\section{Acknowledgements}
+The authors thank Robert Grimm, Sam Guyer, Shan Lu, Tom Bergan, Daan
+Leijen, Dan Grossman, Yannis Smaragdakis, the anonymous reviewers, and our
+shepherd Steven Hand for their invaluable feedback and suggestions which helped
+improve this paper. We acknowledge the support of the Gigascale
+Systems Research Center, one of six research centers funded under the
+Focus Center Research Program (FCRP), a Semiconductor Research
+Corporation entity.  This material is based upon work supported by
+Intel, Microsoft Research, and the National Science Foundation under
+CCF-1012195 and CCF-0910883. Any opinions, findings, and conclusions
+or recommendations expressed in this material are those of the
+author(s) and do not necessarily reflect the views of the National
+Science Foundation.
+
+{
+\bibliographystyle{abbrv}
+\bibliography{dthreads,emery}
+}
+
+\end{document}

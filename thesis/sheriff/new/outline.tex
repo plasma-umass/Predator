@@ -1,0 +1,251 @@
+\date{\vspace*{-0.2in}}
+
+
+\documentclass[10pt]{sigplanconf}
+\nocaptionrule
+
+
+\newcommand{\footnotenonumber}[1]{{\def\thempfn{}\footnotetext{\small #1}}}
+\usepackage[normalem]{ulem}
+\usepackage{graphicx}
+\usepackage{times}
+\usepackage{subfigure}
+\usepackage{url}
+\urlstyle{rm}
+
+\usepackage{color}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{comment} 
+
+\newtheorem{thm}{Theorem}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{defn}[thm]{Definition}
+
+\newcommand{\cfunction}[1]{{\bf \tt #1}}
+\newcommand{\malloc}{\cfunction{malloc}}
+\newcommand{\realloc}{\cfunction{realloc}}
+\newcommand{\free}{\cfunction{free}}
+\newcommand{\madvise}{\cfunction{madvise}}
+\newcommand{\brk}{\cfunction{brk}}
+\newcommand{\sbrk}{\cfunction{sbrk}}
+\newcommand{\mmap}{\cfunction{mmap}}
+\newcommand{\munmap}{\cfunction{munmap}}
+\newcommand{\mprotect}{\cfunction{mprotect}}
+\newcommand{\mlock}{\cfunction{mlock}}
+
+\hyphenation{app-li-ca-tion}
+\hyphenation{Die-Hard}
+\hyphenation{Archi-pe-la-go}
+\hyphenation{buf-fer}
+
+\lstset{language=c++, basicstyle=\small\ttfamily,frame=single,tabsize=4}
+
+\definecolor{Gray}{cmyk}{0,0,0,0.5}
+
+\begin{document}
+\conferenceinfo{XXXXXXXXXXXXXXXXXXX}
+
+\title{\Large \bf Sheriff: Precisely Pinpoint False Sharing Objects in Multi-threaded Programs}
+
+\authorinfo{Tongping~Liu \and Emery~D.~Berger}
+{Dept.\ of Computer Science \\ University of Massachusetts, Amherst \\
+Amherst, MA 01003} {\{tonyliu,emery\}@cs.umass.edu}
+
+\maketitle
+
+\begin{comment}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Story:
+Multi-core processors or NUMA are now widely used in order to avoid the physical limits of hardware. 
+Multi-threaded is considered as one way to take full advantage of those computation resources. Unfornately, 
+writing efficient multi-threaded program is not an easy task; 
+false sharing problem can reduce the performance greatly, 
+even worse, one program with serious false sharing problem can run slower on multi-core machine that that on 
+on single-core machine with the same cpu frequency of every core.
+
+This paper presents Sheriff, a system to detect those false sharing problem in multi-threaded c/c++ programs. 
+Comparing to previous tool, Sheriff has a very low performance overhead, 
+averagely the performance overhead is about 15\% in our experiments. 
+For most programs, Sheriff can run almost the same speed or even faster than original program
+using pthreads library. 
+The second advantage of Sheriff is that there is no false positives at all. 
+The false sharing problems reported by Sheriff are actual false sharing problems.
+
+The third adanvatage of Sheriff is that Sheriff can pinpoint the code to cause the false sharing problems. 
+For heap objects, Sheriff can point out the allocation site, 
+then it is easy for programmer to fix the false sharing problem given the callsite information,
+even for some one that are not familiar with the code. 
+For global objects, Sheriff can point out those objects' name and length information which has false sharing problem.
+
+How Sheriff to do that?
+First, we are using a runtime system which maintains the semantics of multi-threaded program.
+To detect those modifications by different threads, we turn those multi-threaded program into a 
+multi-process program and use the page protection mechanism to capture those writes on different threads.
+In order to capture those writes of different memory, we introduce a "twin" page in the page fault handler;
+then we utilize the lazy differentiating mechanism (which has been widely used in distributed share memory) to 
+find acutal writes in each phase. 
+In order to capture those cache invalidation of different threads, we maintain a global array which is used to
+maintain the last thread id to write on one cache line. We use a 
+conservative mechanism to count those invalidation of cache lines, 
+only those interleaving writes by different threads are counted as an invalidation of corresponding cache line. 
+In order to differentiate the false sharing problem from true sharing problem, 
+we also keep a word-based version number array 
+which is used to record every writes information on each word, including thread id and version. (We use a special
+id to identify multi-threads on one word).
+ 
+Also, this word-based versioning mechanism
+can help us to the precisely locate the object that are causing the problem if multiple objects are located in 
+the same physical cache line.
+
+In order to catch those false sharing problem caused by long transaction, 
+we introduce one "sampling mechanism" which can get continutive writes of different threads.
+
+In order to pingpoint the allocation site, we will attach the callsite information for those allocation. Then we can present those callsite when we find out much invalidation. 
+ 
+What else Sheriff can do?
+First, Sheriff can work as a run-time system, which can tolerate some of the false sharing problems. 
+Second, Sheriff can work as a system which can detect those race condition problems undetectable using those lock-set based tool.
+Third, Sheriff can also work as a system to tolerate race problem, like Isolator.
+
+Future work:
+(1) Pinpoint the line number to access the cache line by using the "watch point" technique.
+(2) Figure out the problem caused by read-write false sharing problem by using the "watch point" technique.
+(3) Design a run-time system which can tolerate the false sharing problem in a very low overhead. Profiling 
+on specified input should be very helpful to find the problem.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{comment}
+
+\begin{abstract}
+\end{abstract}
+
+\terms
+Performance, False sharing
+
+\keywords
+Concurrency, False Sharing, Performance, Multi-threaded program
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+The false sharing problems can affect the performance greately, detection of false sharing is very important? \\
+Definition of false sharing\\
+How is state of art? Some approaches try to avoid that(compilation, scheduling, heap allocator), but none of them 
+can avoid all false sharing problems successfully. \\
+That is why we need the detection tool. What is the shortcomings of current detection tool, performance, false positives, far from the problems \\
+What is the contribution of Sheriff? one runtime system to simulate multi-threaded program, low overhead, no false positives, precisely locate the root of problem\\
+What is the target of Sheriff? How many types of false sharing Sheriff can detect? \\ 
+What is the organization of this paper? \\
+%Another good part of this paper is that we can avoid the problem caused by heap objects as much as possible. For example, we 
+% can try to allocate the object in the same place and we can cleanup the data for heap objects. 
+
+\section{Sheriff Overview}
+
+How Sheriff can be used to capture those false sharing problem? Assumption of Sheriff? 
+%Assumption: those programs to be checked is right in lock usage, without deadlock, race and atomicity violation problems.
+What is the basic mechanism of Sheriff? 
+\subsection{Observation}
+\subsection{Targets}
+\subsection{Procsses as Threads}
+\subsection{Twin Mechanism}
+
+\section{Simulating multi-threaded program}
+We are going to answer the following questions in the following subsections:
+\begin{itemize}
+\item How to turn threads into proceses?
+\item How to maintain the semantics to share address space?
+\item How to share file access?
+\item How to handle synchronization?
+\end{itemize}
+
+\subsection{Thread Creation and Exit}
+\subsection{Share Memory}
+\subsection{Share File Access}
+\subsection{Synchronization}
+mutex, barrier, condvar
+\subsection{Thread Execution}
+\subsubsection{Transaction Begin}
+\subsubsection{Execution}
+\subsubsection{Transaction End}
+
+\section{Detection of False Sharing}
+In this section, we are going to talk how to utilize the runtime system to locate the false sharing objects.
+This section are trying to answer the following questions:
+
+\begin{itemize}
+\item How to capture the memory access from different process?
+\item How to capture the continuous memory accessing?
+% - sampling mechanism - "temporary twin" and "original twin". 
+\item How to capture the interleaving cache invalidation? 
+% Use a global array, updating timely when modification is detected. 
+\item How to identify objects inside one cache line? 
+%Attach the callsite information to capture the allocate sites for heap objects. 
+\item How to differentiate true sharing and false sharing?
+%detect the combination? An array to get word version and threads working on that. We can detect those fields inside one object causing the problem too.
+\item How to report?
+% In the end of program, we traverse the whole global array. 
+\end{itemize}
+\subsection{Capture of Memory Writes}
+\subsection{Capture of Continuous Writes}
+\subsection{Capture of Interleaving Cache Invalidation}
+\subsection{Indentify Objects inside Cache Line}
+\subsection{Avoidance of False Positives}
+\subsection{Reporting False Sharing Objects}
+
+\section{Discussion}
+\subsection{Performance Improvment}
+\begin{itemize} 
+\item Protecting small objects only.
+\item Remove protection if only one thread is running.
+\item Page version number to improve performance.
+\end{itemize} 
+
+\subsection{Limitation}
+It is not good to use stack to communicate between threads, Sheriff cannot run that type of program sucessfully.
+
+\section{Evaluation}
+\begin{itemize}
+\item Effectiveness of tool
+\item What is the performance of tool? 
+\item What can affect the performance of tool, list some data(commits, page protection).
+%% We will try several test cases, something like simple false sharing, combination of false sharing and 
+%% true sharing. 
+%% True sharing benchmarks, to see how Sheriff works in these cases.
+  
+\end{itemize}
+\subsection{Effectiveness of Sheriff}
+\subsubsection{Micro-benchmarks}
+\subsubsection{Actual Applications}
+\subsection{Performance of Sheriff}
+%Whether we can just run Sheriff on a sigle-core machine to capture the false sharing problems? Yes.
+
+\section{Related Work}
+\label{sec:relatework}
+\begin{itemize} 
+\item Tool to detect false sharing problem of multithreaded program.
+\item Distributed Share Memory : twin page usage.
+\end{itemize}
+
+\section{Future Work}
+\begin{itemize}
+\item Pinpoint the line number to access the cache line by using the "watch point" technique.
+\item Figure out the problem caused by read-write false sharing problem by using the "watch point" technique. 
+\item Design a run-time system which can tolerate the false sharing problem in a very low overhead. 
+\end{itemize}
+
+\label{sec:future}
+
+
+\section{Conclusion}
+\label{sec:discussion}
+
+\section{Acknowledgement}
+\section{referrence}
+%\input{ref}
+\end{document}

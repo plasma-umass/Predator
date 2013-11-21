@@ -1,0 +1,154 @@
+\label{sec:falseshare}
+From above section, we already know that how to design a runtime system to simulate the running 
+of multi-threaded program. 
+
+In this section, we are going to talk how to indentify false sharing problems by recording memory writing using
+the runtime system.
+This section are trying to answer the following questions:
+
+\begin{itemize}
+\item How to capture the memory writes from different process?
+\item How to capture the continuous memory writes?
+% - sampling mechanism - "temporary twin" and "original twin". 
+\item How to capture the interleaving cache invalidation? 
+% Use a global array, updating timely when modification is detected. 
+\item How to identify objects inside one cache line? 
+%Attach the callsite information to capture the allocate sites for heap objects. 
+\item How to differentiate true sharing and false sharing?
+%detect the combination? An array to get word version and threads working on that. We can detect those fields inside one object causing the problem too.
+\item How to report one false sharing problem?
+% In the end of program, we traverse the whole global array.
+\end{itemize}
+
+\subsection{Capture of Memory Writes}
+\label{falseshare:memorywrites}
+Process can provide a strong isolation of one thread's running from other threads' running. 
+In each transaction, Sheriff runs one thread in a atomical, consistent and isolated way and
+won't commit those changes in one transaction until the end of one transaction.
+In the end of each transaction, Sheriff can compare ``twin'' page and ``working'' page word by word to find 
+those modifications on each dirty page. When the word of ``working'' page is different from that of 
+corresponding ``twin'' page, this word is thought to be modified by current thread in current transaction. 
+It is reasonable to reach this conclusion since Sheriff can guarantee that originally the content of ``twin'' page 
+is the same as that of ``working'' page by forcing a COW explicitely (see ~\ref{simulation:execution}).
+\begin{comment}
+It is true that the writing of ``A-B-A''  can be missed by simply comparison,
+but we believe that ``A-B-A'' writing in one transaction
+is not frequent and won't bring any correctness problem.
+We don't want to put too much focus on this point.
+\end{comment}
+
+Since we can capture the memory writes on every transaction and one thread's running is consisted of multiple transactions, 
+we can capture the memory writes from different threads.
+
+\subsection{Capture of Continuous Writes}
+\label{detection:sampling}
+We already know from above section that Sheriff can capture memory writes on one transaction. 
+But it is not good enough when the transaction length is too long (some extreme case can be the whole thread). 
+Actually, one serious false sharing problem (\texttt{linear\_regression} benchmark, see Section~\ref{sec:evaluation}) 
+which affect the performance 10X can be omitted since there is only one transaction for one thread, 
+without any synchronization inside. 
+
+Sheriff use a sampling mechanism to avoid this problem. Sampling is 
+to select some of observations in order to acquire some knowledge about the whole.
+Although sampling cannot give complete information about memory writes on one transaction,
+sampling can be used to capture more writes. More fine sampling can help to find more writes by one transaction.
+There is a balance between choosing finer sampling period and performance issue here. 
+Sheriff now choose 10 microseconds as a basic interval to do sampling. 
+
+In order to capture continuous writes, Sheriff introduce one ``temporary twin'' page for every shared dirty page
+ (see Fig.\ref{fig:overview}). 
+Handling of those ``temporary twin'' pages are slightly diferent with those ``original twin'' pages.
+First, they are created in the sampling timer handler when one page is found to be shared by multiple threads. 
+There is no use to create ``temporary twin'' for those pages only accessed by one thread. We are using a global array to
+record users for one page. 
+Second, ``temporary twin'' pages are keeping updated to ``working'' version in every timer handler 
+in order to capture future writes on the same page.
+ 
+\subsection{Capture of Cache Invalidations}
+\label{detection:invalidation}
+Just as we talked in Section~\ref{overview:target}, only numerous interleaving writes can bring performance problem. 
+Sheriff tries to capture the interleaving writes across different threads in order to capture 
+cache invalidations. 
+
+In order to capture interleaving writes on caches, Sheriff introduces 
+virtual cache line status words (Fig.~\ref{fig:overview}). 
+``virtual'' is used here to differentiate with ``physical'' cache line. 
+For every virtual address range (same size with physical cache line) under protection, Sheriff assigns one status word. 
+One status word has two fields, the first field points last thread to write on this cache line, 
+the second field is used to record times of invalidates (version) on one cache line. 
+Every time when one different thread are detected to write on this cache line, Sheriff update both the thread id
+to be the new thread and version number. 
+In actual implementation, Sheriff introduce two different arrays to avoid using lock. Corresponding code can be seen
+in Figure~\ref{fig:capturecacheinvalidation}.
+CacheInvalidation array is used to capture those interleaving cache invalidation for all cache lines in protected memory. 
+Every cache line have one corresponding counter to indicate the interleaving of cache invalidation for this cache line. 
+LastThreadModifyCache array is used to record last thread id to write on its cache line. 
+
+The pseudo code to capture the interleaving cache invalidation is listed in Figure~\ref{fig:capturecacheinvalidation}:
+\begin{figure*}[!t]
+\begin{lstlisting}
+void recordCacheInvalidates(int cacheNo) {
+    int myTid = getpid();
+    int lastTid;
+
+    // Try to check last thread to modify this cache.
+    lastTid = atomic_exchange(&LastThreadModifyCache[cacheNo], myTid);
+    if(lastTid != myTid) {
+       // Increment cache invalidation only when current thread is different.
+       atomic_increment(&cacheInvalidation[cacheNo]);
+     }
+}
+\end{lstlisting}
+\caption{Record the cache invalidation atomically.\label{fig:capturecacheinvalidation}}
+\end{figure*}
+
+\subsection{Indentify Objects inside Cache Line}
+\label{detection:object}
+For global object, Sheriff don't need to do anything since debug information can provide
+object's information.
+Sheriff attaches the call site in the header of each heap object when allocation to indentify objects.
+Callsite information can provide objects' request allocation, which is useful for programmer
+to fix the false sharing problem (see case study in Section~\ref{evaluation:comparison}).
+It is one important feature to differentiate Sheriff from previous tools.
+Previous tools using binary instrumentation or hardware performance counter cannot control
+the memory allocation, so they cannot provide the callsite information about one object.
+Sheriff is a runtime system which intercepts all heap allocations so that Sheriff can tell programmer
+about cache line's object information.
+
+Remember that Sheriff have two arrays to capture the cache interleaving invalidation
+(see Section~\ref{detection:invalidation}), it is necessary to cleanup those invalid counting
+when one object is de-allocated. It is important to avoid the false positives caused by uncorrectly aggregate 
+counting when one address is re-used for other objects. 
+
+\subsection{Avoidance of False Positives}
+\label{detection:avoidfalsepositive}
+To avoid false positives, 
+Sheriff introduces another global array to record  
+threads writing on each word and version numbers of each word.
+Threads writing on each word can tell whether one cache line is false sharing or true sharing. 
+Version number on each word can avoid to report those objects which don't contribute much on cache invalidations, 
+when there are multiple objects in the same cache line.
+In order to save space, Sheriff use one word's higher 16 bit to store the thread id on one word
+and use the lower 16 bit to store version number of this word. 
+When one word is detected to be modified by more than two threads, we marked specially
+on its thread id field.
+
+\subsection{Reporting False Sharing Objects}
+In the end of program, Sheriff reports those objects causing false sharing problems. 
+Since Sheriff introduce a global array (CacheInvalidationArray) to record those 
+cache invalidation (see Section~\ref{detection:invalidation}), Sheriff checks 
+CacheInvalidationArray for cache lines with invalidation times larger than one water level. 
+After one cache line is found, corresponding invalidation times and offset of this cache line 
+will be added into a global link linst sorted by invalidation times. 
+Later we can rank the false sharing objects by invalidation times they caused. 
+
+After the traverse of all cache lines, Sheriff tries to get objects information 
+for all cache lines in the link list. 
+Sheriff uses magic value added in the allocation to differentiate the start of one object. 
+Also, the object size information can help to identify the start of one object. 
+After finding out those objects inside one cache line, Sheriff should look into the 
+array listed in Section~\ref{detection:avoidfalsepositive} to avoid false positives. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%% Where to specify those procedure of timer handler????? LTP
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

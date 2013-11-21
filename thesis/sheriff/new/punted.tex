@@ -1,0 +1,445 @@
+\sheriff{}, a runtime replacement for the
+standard \pthreads{} library extended with \emph{per-thread} memory
+protection and optional per-page isolation via a combination of
+processes, virtual memory support, and a differencing-based commit
+protocol. Using \sheriff{}, we develop two tools to address false
+sharing: \sheriffdetect{} and \sheriffprotect{}. 
+
+%TONGPING_START
+\begin{comment}
+
+Notes from Tongping:
+
+I feel like that the following things is not good. 
+(1) ``Scheduling updates can avoid false sharing'' - example. 
+ If one thread’s accesses to A strictly preceded the other thread’s accesses to B, then the false sharing would cause no invalidations and hence have no performance impact.
+
+I can't understand it and how it relates to our work.  Our work are trying to eliminate false sharing by delaying and merging the updates. Here, why not just say that delaying and merge updates from one thread can cause less updates on cache line and hence no performance impact?
+
+(2)   specially on Linux where both pthreads and processes are invoked using the same system call (clone).
+(a) According to my knowledge, there are two different system calls, fork and clone. But kernel handle that using the same function do_fork(). 
+Sys_fork, Sys_vfork, Sys_clone eventually will call do_fork() to handle that.
+(b) Also, using the same system call can not be used as an reason why it is inexpensive. 
+
+(3) word-by-word --> byte-by-byte
+
+(4) ``Sheriff only indicates the need to examine 4 cache lines'' --> 4 objects.
+
+(5) About ``true sharing'', in fact, PTU can differentiate true
+sharing from false sharing.  So in evaluation, it is not good to say
+this ``Sheriff distinguishes true from false sharing'', in act, I
+originally say that ``Sheriff avoid all false positives''.  False
+positives can come from the following forms: (a) Few interleaving
+(like benchmark4, benchmark5).  (b) Caused by heap object re-usage.
+
+%TONGPING_END
+\end{comment}
+
+
+\begin{comment}
+\begin{table}
+\centering
+\begin{tabular}{|l|r|rr|}
+\hline
+{\bf \small Benchmark} & {\bf \small PTU} & {\bf \small \sheriffdetect{}}\\
+ & {\# Lines} & {\# Lines} & {\# Objects}\\
+\hline
+\small \textbf{histogram} & 0 & 0 & 0 \\
+\small \textbf{kmeans} & 1916 & & 2 \\
+\small \textbf{linear\_regression} & 5 & 1 \\
+\small \textbf{matrix\_multiply} & 468 & 0\\
+\small \textbf{pca} & 45 & 0 \\
+\small \textbf{reverseindex} & N/A & 5 \\
+\small \textbf{string\_match} & 0 & 0 \\
+\small \textbf{word\_count} & 4 & 2\\
+\hline
+\small \textbf{blackscholes} & 0 & 0 \\
+\small \textbf{canneal} & 1 & 1 \\
+\small \textbf{dedup} & 0 & 0 \\
+\small \textbf{ferret} & 0 & 0\\
+\small \textbf{fluidanimate} & 3 & 1 \\
+\small \textbf{streamcluster} & 9 & 1\\
+\small \textbf{swaptions} & 196 & 0\\
+\hline
+\small \textbf{Total} & 2647 & 13\\
+\hline
+\end{tabular}
+\caption{Detection results of PTU and \sheriffdetect{}. For PTU, we show 
+how many cache lines are marked as falsely shared. For \sheriffdetect{},
+we show how many objects are reported by \sheriffdetect{} (with interleaving writes larger than 100). 
+%The column "False-negatives" shows possible false negatives of \sheriffdetect{} which we got results 
+%manually by check those cachelines with larger than 100 times reference showed in PTU. 
+The item marked as ``N/A'' means PTU fails to show results because it runs out of memory.
+\label{table:detection}}
+\end{table}
+\end{comment}
+
+
+\begin{comment}
+The worst case for \sheriff{} is exemplified
+by \texttt{ferret}, which modifies a huge number of pages (about
+3.45G) and has a large number of transactions (about 1M).
+We also measured charecteristics of our benchmark suites in
+Table~\ref{table:characteristics}.  The
+following parameters determine the performance of \sheriff{}.
+
+\begin{itemize}
+\item
+Pages written: each write on a protected page imposes
+additional overhead to unprotect the page in the page fault handler.
+In the sampling handler, \sheriff{} must check for cache writes for
+each shared written page, and at the end of transaction, \sheriff{} must
+check cache writes for each page and commit the modification to the shared
+space.
+
+\item
+Transaction length: \sheriff{} introduces overhead in the beginning
+of transaction and in the end of each transaction. Longer transactions
+amortizes this overhead.
+
+\item 
+Allocation times: \sheriff{} (in detection mode) attaches callsite information for every
+allocated object, slowing allocation.
+
+\item
+Cache cleanup size: \sheriff{} cleans up the invalid cache counting
+information in the memory allocation if one allocation is involving in
+the re-usage of memory of those freed memory objects.
+\end{itemize}
+
+From the results from Table~\ref{table:characteristics}, we can
+confirm our analysis.  Allocation times and cache cleanup size have
+little impact on performance. However, when the number and rate of
+pages written is large, performance suffers.
+
+Figure~\ref{fig:overhead} shows that \sheriff{}'s overhead is highest for
+the following two benchmarks: \texttt{fluidanimate} and \texttt{canneal}.
+For \textt{canneal}, different threads are writting to a lot of shared pages
+benchmarks \texttt{ferret}, \texttt{reverse\_index}, \texttt{dedup}
+and \texttt{fluidanimate}. Characteristics showed in
+Table~\ref{table:characteristics} that the first three benchmarks have
+a very high rate of page updates (\textbf{PagesPerMs}). 
+\texttt{fluidanimate} is an outlier if we are just using the \textbf{PagesPerMs} metrics.
+The reason of \texttt{fluidanimate} has a high overhead is that there
+are huge amounts of transactions inside (about 10M). Examination of
+the source code revealed a large number of lock calls in this
+application. \sheriff{} replaces lock calls with their interprocess
+variants and triggers a transaction end and begin for each, adding
+overhead.  The worst case for \sheriff{} is exemplified
+by \texttt{ferret}, which modifies a huge number of pages (about
+3.45G) and has a large number of transactions (about 1M).
+
+\begin{table*}
+\centering
+\begin{tabular}{|l|rrrr|rr|r|}
+\hline
+{\bf \small Benchmark} & {\bf \small PagesWritten} & {\bf \small Commits} & {\bf Allocs} & {\bf \small CleanupSize} & {\bf \small TranLength(ms)} & {\bf \small PagesPerTran} & {\bf \small PagesPerMs}\\
+\hline
+\small \textbf{histogram} & 0 & 24 & 2 & 0 & 12.5 & 0 & 0\\
+\small \textbf{kmeans} & 1312 & 3836 & 101002 & 0 & 4.15 & 0.34 & 0.08\\
+\small \textbf{linear\_regression} & 16 & 24 & 3 & 0 & 38.6 & 0.67 & 0.02\\
+\small \textbf{matrix\_multiply} & 16 & 24 & 11 & 0 & 313.23 & 0.67 & 0.0\\
+\small \textbf{pca} & 0 & 47 & 2 & 0 & 450.69 & 0 & 0.0\\
+\small \textbf{reverseindex} & 260201 & 156409 & 250927 & 0 & 0.05 & 1.66 & 30.99 \\
+\small \textbf{string\_match} & 0 & 24 & 7 & 0 & 104.75 & 0 & 0.00\\
+\small \textbf{word\_count} & 145 & 89 & 38 & 32 & 25.08 & 1.63 & 0.06\\
+\hline
+\small \textbf{blackscholes} & 0 & 23 & 4 & 0 & 453.51 & 0 & 0.0\\
+\small \textbf{canneal} & 8 & 1056 & 5974612 & 0 & 10.32 & 0.01 & 0.0\\
+\small \textbf{dedup} & 76184 & 45636 & 8291 & 0 & 0.04 & 1.67 & 44.9\\
+\small \textbf{ferret} & 904381 & 1072258 & 110558 & 0 & 0.01 & 0.84 & 76.04\\
+\small \textbf{fluidanimate} & 8 & 10018550 & 135430 & 352 & 0.00 & 0.00 & 0.00\\
+\small \textbf{freqmine} & 0 & 1 & 33 & 0 & 11524.6 & 0 & 0.0 \\
+\small \textbf{streamcluster} & 32824 & 128557 & 12 & 294 & 0.02 & 0.26 & 10.42\\
+\small \textbf{swaptions} & 48 & 24 & 388 & 0 & 167.23 & 2 & 0.01\\
+\hline
+\end{tabular}
+\caption{Characteristics of benchmarks. 
+\label{table:characteristics}}
+\end{table*}
+\end{comment}
+
+\begin{figure}[!t]
+\begin{lstlisting}
+void recordCacheInterwrites(cache) {
+	if(cache.lastTid != mine.tid) {
+		cache.interwrites++;
+		cache.lastTid = mine.tid;
+	}
+}
+\end{lstlisting}
+\caption{Pseudo-code to record cache interleaved writes.\label{fig:capturecacheinvalidation}}
+\end{figure}
+
+\label{discussion-perf}
+\begin{comment}
+
+To reduce overhead, \sheriff{} employs the following performance optimizations:
+
+\begin{itemize}
+
+\item
+Applying memory protection to the entire heap is expensive. To reduce
+this cost, \sheriff{} uses a protected heap only for allocations smaller
+than the number of cores times the cache line size (e.g., 512
+bytes). This heuristic is effective since small objects are more
+likely to be the source of false sharing because they fit on a cache
+line.
+
+% FIX ME
+%  Our experiments
+%from the Phoenix} and \texttt{PARSEC} suites also confirms our
+% guess.
+
+\item 
+\sheriff{} does not apply memory protection at all when there is just one
+thread running: when there is only one thread, false sharing cannot
+occur. \sheriff{} only initiates protection after
+a \texttt{pthread\_create()} call to start a new thread. Also, \sheriff{}
+disables protection as soon as it detects that there is only one
+thread running, which it checks after each call
+to \texttt{pthread\_join()}.
+
+\item
+\sheriff{} uses sampling to capture continuous writes in
+the same transaction.  In the timer handler, \sheriff{} must compare
+written pages (dirty) to the committed pages. Since false
+sharing problems can happen on those pages that are shared by
+multiple process simultaneously, \sheriff{} only checks those shared pages
+to reduce the checking overhead.  Thus, \sheriff{} uses a shared
+page-based array to track the status of all pages. When one page is
+faulted because of a write operation, \sheriff{} increments the
+number of writers to this page.
+
+\item 
+\sheriff{} uses the shared page version number to improve performance on
+commits.  Notice that \sheriff{} must compare the corresponding twin
+page and working page in order to locate and commit only the modifications to the
+shared mapping.  In fact, if one private page's corresponding
+shared mapping has not been modified by other threads, it is safe to
+commit the entire content of this page to the shared mapping. Copying the
+entire page is faster than diffing, so \sheriff{} does this whenever
+possible.
+
+To detect whether there are potential conflicts that would preclude
+copying, \sheriff{} associates a version number with each page in shared
+mapping.  \sheriff{} increments each page's version number after every
+commit of that page. Before the creation of each twin page, \sheriff{}
+saves the corresponding page version number for one page.  In the end
+of transaction, if the saved page version number is still the same as
+the shared page version number, that means that no one else has
+committed a new version to corresponding shared mapping, so it is safe
+to copy the entire working page as next version of shared mapping.
+\end{itemize}
+\end{comment}
+
+
+\begin{comment}
+\begin{figure}[!t]
+\small 
+\begin{lstlisting}[frame=trbl]{}
+//@This function is called by pthread_join
+void uniqueChecking (void) {
+  // Is this the initial thread?
+  if(getpid() == initialPid) {
+    // Use waitpid to check for uniqueness.
+    if(waitpid(-1, NULL, WNOHANG) == -1 
+	   && errno == ECHILD) {
+	// Close protection here.
+        closeMemoryProtection();
+        _protected = false;
+    }
+  }
+}
+\end{lstlisting}
+\caption{Pseudo-code for uniqueness checking; when there is only one thread running, there is no need to protect any pages.\label{fig:unique}}
+\end{figure}
+
+\end{comment}
+
+\label{sec:overview}
+
+
+This section describes \sheriff{}'s implementation in detail.
+
+ replacing threads with
+processes. While \sheriff{} borrows Grace's processes-as-threads model, \sheriff{} significantly extends it. Grace
+only supports a restricted class of multithreaded programs, but \sheriff{}
+provides support for general-purpose multithreaded programs, including
+full support for file I/O and cross-thread synchronization.
+
+\sheriff{} replaces the \pthreads{} library 
+
+% \sheriffdetect{} to indicate which objects or fields within objects are causing performance problems.
+
+
+\subsection{Insights}
+\label{overview:insight}
+
+To achieve the goals outlined above, \sheriff{} leverages the following
+two key insights.
+
+\begin{itemize}
+
+\item \textbf{XXXX: tongping CITE the Dubois' paper??} 
+
+\item {\bf Updates outside critical sections are false sharing.}
+We also observe that, in a correctly-synchronized program, \emph{the
+only updates outside of critical sections are to unshared data}. In
+other words, any sharing outside of a critical section in a race-free
+program must be false sharing.
+
+\end{itemize}
+
+% We now show how \sheriff{} leverages these insights.
+
+\subsection{Mechanisms}
+
+\paragraph{Processes as Threads}
+As mentioned above, it is possible to prevent false sharing from
+impacting performance by delaying each thread's updates. To accomplish
+this, 
+% now we talk about updates and diffs.
+
+\paragraph{Twinning and Diffing}
+\label{overview-twinpage}
+
+
+The next sections describe \sheriff{}'s threads-as-processes and twinning
+mechanisms in detail.
+
+
+
+
+
+
+\begin{comment}
+The false sharing problems can affect the performance greately, detection of false sharing is very important? \\
+Definition of false sharing\\
+How is state of art? Some approaches try to avoid that(compilation, scheduling, heap allocator), but none of them 
+can avoid all false sharing problems successfully. \\
+That is why we need the detection tool. What is the shortcomings of current detection tool, performance, false positives, far from the problems \\
+What is the contribution of \sheriff{}? one runtime system to simulate multi-threaded program, low overhead, no false positives, precisely locate the root of problem\\
+What is the target of \sheriff{}? How many types of false sharing \sheriff{} can detect? \\ 
+What is the organization of this paper? \\
+%Another good part of this paper is that we can avoid the problem caused by heap objects as much as possible. For example, we 
+% can try to allocate the object in the same place and we can cleanup the data for heap objects. 
+\end{comment}
+
+
+\begin{comment}
+My Plan:
+(1) If we can track all writes, then output those callsites with writes times larger than 10000.
+Then we could try to check the false negative rate.
+(2) We can show an table, that explains the false sharing rate on small objects and larger objects. 
+So it is used to prove that we don't care much about those larger objects. 
+Also, it is good to show that we can use a parser interval to capture those interleaving writes on the same page.
+Then if one page is captured to have some interleaving writes, then we should keep that. Otherwise, we 
+will use a parser mechanism to capture those writes. 
+(3) Maybe it is good to use the deterministic pid for each process.
+(4) Output the detail information about false sharing, inter-object false sharing or intra object false sharing.
+(5) Should we modify the code to handle the callsite problem? Whether to modify the code when one place are changed by several
+threads in the same time.
+
+
+TONGPING:
+MIT's shortcoming:
+(1) They made assumptions on hardware: 
+There are no more than 32 threads/cores simultaneously active in an application since
+they don't want to explode their memory consumption. Because they have no idea about how 
+many threads are in the applications (they are not trying to getpid inside).
+
+For false sharing detection, they can only support 8 threads.
+I guess that they cannot handle the thread migration, they will definitely have false positives since
+they cannot detect this condition.
+
+(2) They cannot differentiate the cold cache misses and false sharing.
+Where they classified histogram as false sharing.
+
+(3) They can't tell the cause of false sharing. They can just say some lines of code invoke the false sharing problem.
+But they can't tell how and where. So if instructions are distributed across different instructions, then it is hard
+to aggregate while providing enough notice. 
+\end{comment}
+
+
+
+\begin{figure}[!t]
+\small
+\begin{lstlisting}[frame=trbl]{}
+int spawnWithSharedFiles{
+  return syscall(SYS_clone, 
+   CLONE_FS|CLONE_FILES|SIGCHLD,(void*)0);
+}
+\end{lstlisting}
+\caption{Linux code to create a new process that shares file
+  descriptors with its parent, but does not share an address space.
+\label{fig:newfork}}
+\end{figure}
+
+
+\begin{figure}[!t]
+\small
+\begin{lstlisting}[frame=trbl]{}
+  void pthread_sync (var) {
+    closeTransaction();
+    realVar = getRealVariable(var);
+    real_pthread_sync (realVar);
+    startTransaction();
+  }
+\end{lstlisting}
+\caption{A template for the implementation of synchronization
+  operations in \sheriff{} (where ``sync'' denotes the appropriate operation).\label{fig:synccode}}
+\end{figure}
+
+
+\begin{table}[!t]
+\centering
+\begin{tabular}{|l|r|r|}
+\hline
+{\bf \small Benchmark} & {\bf \small PTU} & \multicolumn{2}{|c|}{\bf \small \sheriffdetect{}} \\
+ & {Lines} & {Objects}\\
+\hline
+\small \textbf{histogram} & 0 & 0 & 0 \\
+\small \textbf{kmeans} & 1916 & 198 & 2 \\
+\small \textbf{linear\_regression} & 5 & 5 & 1 \\
+\small \textbf{matrix\_multiply} & 468 & 0 & 0\\
+\small \textbf{pca} & 45 & 0 & 0 \\
+\small \textbf{reverseindex} & N/A & 5 & 5 \\
+\small \textbf{string\_match} & 0 & 0 & 0 \\
+\small \textbf{word\_count} & 4 & 4 & 3\\
+\hline
+\small \textbf{blackscholes} & 0 & 0 &  0 \\
+\small \textbf{canneal} & 1 & 69317 & 1 \\
+\small \textbf{dedup} & 0 & 0 & 0 \\
+\small \textbf{ferret} & 0 & 0 & 0\\
+\small \textbf{fluidanimate} & 3 & 1119 & 1 \\
+\small \textbf{streamcluster} & 9 & 26 & 1\\
+\small \textbf{swaptions} & 196 & 0 & 0\\
+\hline
+\small \textbf{Total} & 2647 & 70674 & 14\\
+\hline
+\end{tabular}
+\caption{Detection results for PTU and \sheriffdetect{}. For PTU, we show 
+how many cache lines are marked as falsely shared. For \sheriffdetect{},
+we show both cache lines and objects. 
+%manually by check those cachelines with larger than 100 times reference showed in PTU. 
+``N/A'' means PTU fails to show results because it ran out of memory.
+\label{table:detection}}
+\end{table}
+
+
+\begin{comment}
+To detect false
+sharing, \sheriffdetect{} simply compares the original contents of adjacent
+memory in the same cache line (in the twin) to those on the committed
+page (that is, those written by another thread). A modification of any
+adjacent data indicates the presence of false sharing: another thread
+has modified data on the same cache line that the current thread has
+also modified.
+
+However, as mentioned earlier, the presence of one instance of false
+sharing does not necessarily indicate a performance issue. A single
+transaction may run for a long period of time (seconds or more), and a
+small number of false sharing instances in this period will have
+little impact on performance.
+\end{comment}

@@ -1,0 +1,67 @@
+\label{sec:dthreads-optimizations}
+
+\dthreads{} employs a number of optimizations that improve its performance.
+
+\textbf{Lazy commit:}
+\dthreads{} reduces copying overhead and the time spent in the serial
+phase by \emph{lazily} committing pages. When only one thread has ever
+modified a page, \dthreads{} considers that thread to be the page's
+owner.  An owned page is committed to shared state only when another
+thread attempts to read or write this page, or when the owning thread attempts to modify it in a later phase. \dthreads{} tracks reads with page protection and signals
+the owning thread to commit pages on demand. To reduce the number of
+read faults, pages holding global variables (which we expect to be
+shared) and any pages in the heap that have ever had multiple writers are
+all considered unowned and are not read-protected.
+
+\textbf{Lazy twin creation and diff elimination: }
+To further reduce copying and memory overhead, a twin page is only created
+when a page has multiple writers during the same transaction.
+In the commit phase, a single writer can directly copy its working copy to
+shared state without performing a diff. \dthreads{} does this by
+comparing the local version number to the global page version number
+for each dirtied page.  At commit time, \dthreads{} directly copies
+its working copy for each page whenever its local version number
+equals its global version number.  This optimization saves the cost of a twin 
+page allocation, a page copy, and a diff in the common case where just one thread is the sole writer of a page.
+
+\textbf{Single-threaded execution: }
+Whenever only one thread is running, \dthreads{} stops using memory protection 
+and treats certain synchronization operations (locks and barriers) as no-ops.
+In addition, when all other threads are waiting on condition variables, 
+\dthreads{} does not commit local changes to the shared mapping or discard  
+private dirty pages. Updates are only committed when the thread
+issues a signal or broadcast call, which wakes up at least one thread
+and thus requires that all updates be committed.
+
+\textbf{Lock ownership: }
+\dthreads{} uses lock ownership to avoid unnecessary waiting when threads are
+using distinct locks.  Initially, all locks are unowned.  Any thread that
+attempts to acquire a lock that it does not own must wait until the serial phase
+to do so.  If multiple threads attempt to acquire the same lock, this lock is 
+marked as shared.  If only one thread attempts to acquire the lock, this thread 
+takes ownership of the lock and can acquire and release it during the parallel
+phase.
+
+Lock ownership can result in starvation if one thread continues to re-acquire an owned lock without entering the serial phase.  To avoid this, each lock has a maximum number of times it can be acquired during a parallel phase before a serial phase is required.
+
+\textbf{Parallelization: }
+\dthreads{} attempts to expose as much parallelism as possible in the
+runtime system itself.  One optimization takes place at the start of trasactions, where
+\dthreads{} performs a variety of cleanup tasks. These include releasing private page frames,
+and resetting pages to read-only mode by calling the \texttt{madvise}
+and \texttt{mprotect} system calls. If all this cleanup work is done
+simultaneously for all threads in the beginning of parallel phase
+(Figure~\ref{fig:phase}), this can hurt performance for some
+benchmarks.
+
+Since these operations do not affect other the behavior of other
+threads, most of this work can be parallelized with other threads'
+commit operations without holding the global token. With this
+optimization, the token is passed to the next thread as soon as
+possible, saving time in the serial phase.  Before passing the token,
+any local copies of pages that have been modified by other threads
+must be discarded, and the shared read-only mapping is restored.  This
+ensures all threads have a complete image of this page which later
+transactions may refer to.  In the actual
+implementation, this cleanup occurs at the end of each transaction.
+

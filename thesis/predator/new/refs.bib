@@ -1,0 +1,517 @@
+@Book{unixprogramming,
+ author    = "W. Richard Stevens and Stephen A. Rago",
+ title     = "Advanced Programming in the UNIX® Environment: Second Edition",
+ chapter   = "17.4.2. Passing File Descriptors over UNIX Domain Sockets", 
+ publisher = "Addison Wesley Professional",
+ year      = "2005",
+ isbn 	   = "0201433079",
+}
+
+@inproceedings{deadlockavoid,
+ author = {Pyla, Hari K. and Varadarajan, Srinidhi},
+ title = {Avoiding deadlock avoidance},
+ booktitle = {Proceedings of the 19th international conference on Parallel architectures and compilation techniques},
+ series = {PACT '10},
+ year = {2010},
+ isbn = {978-1-4503-0178-7},
+ location = {Vienna, Austria},
+ pages = {75--86},
+ numpages = {12},
+ url = {http://doi.acm.org/10.1145/1854273.1854288},
+ doi = {http://doi.acm.org/10.1145/1854273.1854288},
+ acmid = {1854288},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {concurrent programming, deadlock detection and recovery, runtime systems},
+} 
+
+@inproceedings{Umbra,
+ author = {Zhao, Qin and Bruening, Derek and Amarasinghe, Saman},
+ title = {Umbra: efficient and scalable memory shadowing},
+ booktitle = {Proceedings of the 8th annual IEEE/ACM international symposium on Code generation and optimization},
+ series = {CGO '10},
+ year = {2010},
+ isbn = {978-1-60558-635-9},
+ location = {Toronto, Ontario, Canada},
+ pages = {22--31},
+ numpages = {10},
+ url = {http://doi.acm.org/10.1145/1772954.1772960},
+ doi = {10.1145/1772954.1772960},
+ acmid = {1772960},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {dynamic optimization, shadow memory},
+} 
+
+@inproceedings{qinzhaodetection,
+  title     = "Dynamic Cache Contention Detection in Multi-threaded Applications",
+  author    = "Qin Zhao and David Koh and Syed Raza and Derek Bruening and Weng-Fai Wong and Saman Amarasinghe",
+  booktitle = "The International Conference on Virtual Execution Environments",
+  address   = "Newport Beach, CA",
+  month     = "Mar",
+  year      = "2011",
+  keywords  = "Umbra",
+  url       = "http://groups.csail.mit.edu/commit/papers/2011/zhao-vee11-cache-contention.pdf",
+}
+
+@inproceedings{Valgrind,
+ author = {Nethercote, Nicholas and Seward, Julian},
+ title = {Valgrind: a framework for heavyweight dynamic binary instrumentation},
+ booktitle = {Proceedings of the 2007 ACM SIGPLAN conference on Programming language design and implementation},
+ series = {PLDI '07},
+ year = {2007},
+ isbn = {978-1-59593-633-2},
+ location = {San Diego, California, USA},
+ pages = {89--100},
+ numpages = {12},
+ url = {http://doi.acm.org/10.1145/1250734.1250746},
+ doi = {10.1145/1250734.1250746},
+ acmid = {1250746},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {Memcheck, Valgrind, dynamic binary analysis, dynamic binary instrumentation, shadow values},
+} 
+
+[download] 
+
+@inproceedings{ad-hoc-considered-harmful,
+  author = {Weiwei Xiong and Soyeon Park and Jiaqi Zhang and Yuanyuan Zhou and Zhiqiang Ma},
+  title = {Ad Hoc Synchronization Considered Harmful},
+  year = 2010,
+ booktitle = {OSDI'10: Proceedings of the 9th Conference on Symposium on Opearting Systems Design \& Implementation},
+ pages = {163--176},
+ location = {Vancouver, BC, Canada},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+}
+
+@inproceedings{falseshare:schedule,
+ author = {Chow, Jyh-Herng and Sarkar, Vivek},
+ title = {False Sharing Elimination by Selection of Runtime Scheduling Parameters},
+ booktitle = {ICPP '97: Proceedings of the international Conference on Parallel Processing},
+ year = {1997},
+ isbn = {0-8186-8108-X},
+ pages = {396--403},
+ publisher = {IEEE Computer Society},
+ address = {Washington, DC, USA},
+}
+
+
+@inproceedings{falseshare:compile,
+ author = {Jeremiassen, Tor E. and Eggers, Susan J.},
+ title = {Reducing false sharing on shared memory multiprocessors through compile time data transformations},
+ booktitle = {PPOPP '95: Proceedings of the fifth ACM SIGPLAN symposium on Principles and practice of parallel programming},
+ year = {1995},
+ isbn = {0-89791-701-6},
+ pages = {179--188},
+ location = {Santa Barbara, California, United States},
+ doi = {http://doi.acm.org/10.1145/209936.209955},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+}
+
+%In this paper we provide definitions for several types of degenerate sharing,
+%including false sharing. We also provide an algorithm that computes the cost of unnecessary
+%coherence (false coherence) in a shared memory system using a single memory trace. Finally, we
+%provide a counter intuitive example demonstrating that the elimination of degenerate sharing can
+%reduce performance.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% Definitions of different types of sharing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@article{falseshare:Analysis,
+ author = {Hyde, Randall L. and Fleisch, Brett D.},
+ title = {An analysis of degenerate sharing and false coherence},
+ journal = {J. Parallel Distrib. Comput.},
+ volume = {34},
+ number = {2},
+ year = {1996},
+ issn = {0743-7315},
+ pages = {183--195},
+ doi = {http://dx.doi.org/10.1006/jpdc.1996.0054},
+ publisher = {Academic Press, Inc.},
+ address = {Orlando, FL, USA},
+}
+
+
+@inproceedings{falseshare:effect,
+ author = {Bolosky, William J. and Scott, Michael L.},
+ title = {False sharing and its effect on shared memory performance},
+ booktitle = {{SEDMS IV}: USENIX Symposium on Experiences with Distributed and Multiprocessor Systems},
+ year = {1993},
+ pages = {57--71},
+ location = {San Diego, California},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% The average penalty lies around 125 cycles per reference which is for now accepted as penaltyc per false sharing event.
+%%%% Furthermore, we do not know whether every memory access really triggers a false sharing event. 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@inproceedings{falseshare:binaryinstrumentation1,
+ author = {G\"{u}nther, Stephan M. and Weidendorfer, Josef},
+ title = {Assessing cache false sharing effects by dynamic binary instrumentation},
+ booktitle = {WBIA '09: Proceedings of the Workshop on Binary Instrumentation and Applications},
+ year = {2009},
+ isbn = {978-1-60558-793-6},
+ pages = {26--33},
+ location = {New York, New York},
+ doi = {http://doi.acm.org/10.1145/1791194.1791198},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% This paper shows it can capture some total false sharing missing data, but it is far from a tool to
+%%%% detect false sharing objects. 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+@mastersthesis{falseshare:simulator,
+ author = {Martin Schindewolf},
+ title = {Analysis of Cache Misses Using {SIMICS}},
+ year = {2007},
+ school = {Institute for Computing Systems Architecture, University of Edinburgh},
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% This estimator is mainly built based on the technology of dynamic
+%%%% instrumentation and cooperates with debug information of execution file and source
+%%%% code information. 
+%%%% Performance results: 174.4X ~ 1663X
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+@mastersthesis{falseshare:binaryinstrumentation2,
+ author = {Chien-Lung Liu},
+ title = {False Sharing Analysis for Multithreaded Programs},
+ year = {2009},
+ month = {July},
+ school = {National Chung Cheng University},
+}
+
+@inproceedings{interthread-cache-contention,
+ author = {Chandra, Dhruba and Guo, Fei and Kim, Seongbeom and Solihin, Yan},
+ title = {Predicting Inter-Thread Cache Contention on a Chip Multi-Processor Architecture},
+ booktitle = {HPCA '05: Proceedings of the 11th International Symposium on High-Performance Computer Architecture},
+ year = {2005},
+ isbn = {0-7695-2275-0},
+ pages = {340--351},
+ doi = {http://dx.doi.org/10.1109/HPCA.2005.27},
+ publisher = {IEEE Computer Society},
+ address = {Washington, DC, USA},
+}
+
+@article{falseshare:interleaving,
+ author = {Torrellas, J. and Lam, H. S. and Hennessy, J. L.},
+ title = {False Sharing and Spatial Locality in Multiprocessor Caches},
+ journal = {IEEE Trans. Comput.},
+ volume = {43},
+ number = {6},
+ year = {1994},
+ issn = {0018-9340},
+ pages = {651--663},
+ doi = {http://dx.doi.org/10.1109/12.286299},
+ publisher = {IEEE Computer Society},
+ address = {Washington, DC, USA},
+}
+
+@manual{detect:ptu,
+ title = {Intel Performance Tuning Utility 3.2 Update },
+ organization = "{Intel Corporation}",
+ year = {2008},
+ month = {November},
+}
+
+@misc{detect:intel,
+ title = {Avoiding and Identifying False Sharing Among Threads},
+ author = "{Intel Corporation}",
+ howpublished = "\url{http://software.intel.com/en-us/articles/avoiding-and-identifying-false-sharing-among-threads/}",
+ year = {2010},
+ month = {February},
+}
+
+@inproceedings{phoenix-hpca,
+ author = {Ranger, Colby and Raghuraman, Ramanan and Penmetsa, Arun and Bradski, Gary and Kozyrakis, Christos},
+ title = {Evaluating {MapReduce} for Multi-core and Multiprocessor Systems},
+ booktitle = {HPCA '07: Proceedings of the 2007 IEEE 13th International Symposium on High Performance Computer Architecture},
+ year = {2007},
+ isbn = {1-4244-0804-0},
+ pages = {13--24},
+ doi = {http://dx.doi.org/10.1109/HPCA.2007.346181},
+ publisher = {IEEE Computer Society},
+ address = {Washington, DC, USA},
+ }
+
+@inproceedings{parsec,
+  author = {Christian Bienia and Kai Li},
+  title = {{PARSEC} 2.0: A New Benchmark Suite for Chip-Multiprocessors},
+  booktitle = {Proceedings of the 5th Annual Workshop on Modeling, Benchmarking and Simulation},
+  year = {2009},
+  month = {June}
+}
+
+@phdthesis{passfd,
+ author = {David Bacon},
+ title = {{SETL} for Internet Data Processing},
+ year = {2000},
+ month = {January},
+ school = {New York University},
+ note = {Section 2.12, Passing File Descriptors},
+}
+
+@phdthesis{multithread,
+ author = {Joshua Lee Kihm},
+ title = {Simulation and Characterization of Inter-Process Interference on Multithreaded and Multicore Architectures},
+ year = {2007},
+ school = {Department of Electrical and Computer Engineering, University of Colorado at Boulder},
+}
+
+@article{HPCToolKit,
+ author = {Adhianto, L. and Banerjee, S. and Fagan, M. and Krentel, M. and Marin, G. and Mellor-Crummey, J. and Tallent, N. R.},
+ title = {{HPCTOOLKIT}: tools for performance analysis of optimized parallel programs},
+ url = "\url{http://hpctoolkit.org}",
+ journal = {Concurr. Comput. : Pract. Exper.},
+ volume = {22},
+ number = {6},
+ year = {2010},
+ issn = {1532-0626},
+ pages = {685--701},
+ doi = {http://dx.doi.org/10.1002/cpe.v22:6},
+ publisher = {John Wiley and Sons Ltd.},
+ address = {Chichester, UK},
+ }
+
+@inproceedings{DProf,
+ author = {Pesterev, Aleksey and Zeldovich, Nickolai and Morris, Robert T.},
+ title = {Locating cache performance bottlenecks using data profiling},
+ booktitle = {EuroSys '10: Proceedings of the 5th European conference on Computer systems},
+ year = {2010},
+ isbn = {978-1-60558-577-2},
+ pages = {335--348},
+ location = {Paris, France},
+ doi = {http://doi.acm.org/10.1145/1755913.1755947},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ }
+
+@book{transaction,
+  author = {James Larus and Ravi Rajwar},
+  title = {Transactional Memory (Synthesis Lectures on Computer Architecture)}, 
+  publisher = {Morgan \& Claypool Publishers},
+  year = {2007},
+  edition = {First}, 
+}
+
+@inproceedings{hoard,
+  author = {Emery D. Berger and Kathryn S. McKinley and Robert D. Blumofe and Paul R. Wilson},
+  title = {Hoard: A Scalable Memory Allocator for Multithreaded Applications},
+  month = nov,
+  year = 2000,
+  pages = "117--128",
+  booktitle =  "Proceedings of the International Conference on Architectural Support for Programming Languages and Operating Systems (ASPLOS-IX)",
+  address = "Cambridge, MA",
+  url = "citeseer.ist.psu.edu/berger00hoard.html"
+}
+
+@inproceedings{Addresssanitizer,
+ author = {Serebryany, Konstantin and Bruening, Derek and Potapenko, Alexander and Vyukov, Dmitry},
+ title = {AddressSanitizer: a fast address sanity checker},
+ booktitle = {Proceedings of the 2012 USENIX conference on Annual Technical Conference},
+ series = {USENIX ATC'12},
+ year = {2012},
+ location = {Boston, MA},
+ pages = {28--28},
+ numpages = {1},
+ url = {http://dl.acm.org/citation.cfm?id=2342821.2342849},
+ acmid = {2342849},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+} 
+
+@inproceedings{heaplayers,
+ author = {Berger, Emery D. and Zorn, Benjamin G. and McKinley, Kathryn S.},
+ title = {Composing high-performance memory allocators},
+ booktitle = {Proceedings of the ACM SIGPLAN 2001 conference on Programming language design and implementation},
+ series = {PLDI '01},
+ year = {2001},
+ isbn = {1-58113-414-2},
+ location = {Snowbird, Utah, USA},
+ pages = {114--124},
+ numpages = {11},
+ url = {http://doi.acm.org/10.1145/378795.378821},
+ doi = {10.1145/378795.378821},
+ acmid = {378821},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+} 
+
+@inproceedings{Xen,
+  author = {Paul Barham and Boris Dragovic and Keir Fraser and Steven H and Tim Harris and Alex Ho and Rolf Neugebauer and Ian Pratt and Andrew Warfield},
+ title = {Xen and the art of virtualization},
+ booktitle = {Proceedings of the nineteenth ACM symposium on Operating systems principles},
+ series = {SOSP '03},
+ year = {2013},
+}
+
+@inproceedings{MyXen,
+ author = {Barham, Paul and Dragovic, Boris and Fraser, Keir and Hand, Steven and Harris, Tim and Ho, Alex and Neugebauer, Rolf and Pratt, Ian and Warfield, Andrew},
+ title = {Xen and the art of virtualization},
+ booktitle = {Proceedings of the nineteenth ACM symposium on Operating systems principles},
+ series = {SOSP '03},
+ year = {2003},
+ isbn = {1-58113-757-5},
+ location = {Bolton Landing, NY, USA},
+ pages = {164--177},
+ numpages = {14},
+ url = {http://doi.acm.org/10.1145/945445.945462},
+ doi = {10.1145/945445.945462},
+ acmid = {945462},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {hypervisors, paravirtualization, virtual machine monitors},
+} 
+
+@inproceedings{OSdetection,
+ author = {Nanavati, Mihir and Spear, Mark and Taylor, Nathan and Rajagopalan, Shriram and Meyer, Dutch T. and Aiello, William and Warfield, Andrew},
+ title = {Whose cache line is it anyway?: operating system support for live detection and repair of false sharing},
+ booktitle = {Proceedings of the 8th ACM European Conference on Computer Systems},
+ series = {EuroSys '13},
+ year = {2013},
+ isbn = {978-1-4503-1994-2},
+ location = {Prague, Czech Republic},
+ pages = {141--154},
+ numpages = {14},
+ url = {http://doi.acm.org/10.1145/2465351.2465366},
+ doi = {10.1145/2465351.2465366},
+ acmid = {2465366},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+}
+
+@inproceedings{OSfalsesharing,
+ author = {Boyd-Wickizer, Silas and Clements, Austin T. and Mao, Yandong and Pesterev, Aleksey and Kaashoek, M. Frans and Morris, Robert and Zeldovich, Nickolai},
+ title = {An analysis of Linux scalability to many cores},
+ booktitle = {Proceedings of the 9th USENIX conference on Operating systems design and implementation},
+ series = {OSDI'10},
+ year = {2010},
+ location = {Vancouver, BC, Canada},
+ pages = {1--8},
+ numpages = {8},
+ url = {http://dl.acm.org/citation.cfm?id=1924943.1924944},
+ acmid = {1924944},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+}
+
+@misc{JVMfalsesharing,
+ title = {False sharing induced by card table marking},
+ author = "{David Dice}",
+ howpublished = "\url{https://blogs.oracle.com/dave/entry/false_sharing_induced_by_card}",
+ year = {2011},
+ month = {February},
+}
+
+
+@mastersthesis{appfalsesharing,
+ author = {Konstantinos Papadimitriou},
+ title = {Taming False Sharing in Parallel Programs},
+ year = {2009},
+ school = {University of Edinburgh},
+ howpublished = "\url{http://www.inf.ed.ac.uk/publications/thesis/online/IM090714.pdf}",
+}
+
+@inproceedings{dsmfalsesharing,
+ author = {Bolosky, William J. and Scott, Michael L.},
+ title = {False sharing and its effect on shared memory performance},
+ booktitle = {USENIX Systems on USENIX Experiences with Distributed and Multiprocessor Systems - Volume 4},
+ series = {Sedms'93},
+ year = {1993},
+ location = {San Diego, California},
+ pages = {3--3},
+ numpages = {1},
+ url = {http://dl.acm.org/citation.cfm?id=1295480.1295483},
+ acmid = {1295483},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+} 
+
+@INPROCEEDINGS{tmfalsesharing,
+    author = {Kevin E. Moore and Jayaram Bobba and Michelle J. Moravan and Mark D. Hill and David A. Wood},
+    title = {Logtm: Log-based transactional memory},
+    booktitle = {in HPCA},
+    year = {2006},
+    pages = {254--265}
+}
+
+@misc{libfalsesharing,
+ title = {False sharing in boost::detail::spinlock pool?},
+ author = "{mcmcc}",
+ howpublished = "\url{http://stackoverflow.com/questions/11037655/false-sharing-in-boostdetailspinlock-pool}",
+ year = {2012},
+ month = {June},
+}
+
+@inproceedings{sheriff,
+ author = {Liu, Tongping and Berger, Emery D.},
+ title = {SHERIFF: precise detection and automatic mitigation of false sharing},
+ booktitle = {Proceedings of the 2011 ACM international conference on Object oriented programming systems languages and applications},
+ series = {OOPSLA '11},
+ year = {2011},
+ isbn = {978-1-4503-0940-0},
+ location = {Portland, Oregon, USA},
+ pages = {3--18},
+ numpages = {16},
+ url = {http://doi.acm.org/10.1145/2048066.2048070},
+ doi = {10.1145/2048066.2048070},
+ acmid = {2048070},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {false sharing, multi-threaded},
+} 
+
+@inproceedings{llvm,
+ author = {Lattner, Chris and Adve, Vikram},
+ title = {LLVM: A Compilation Framework for Lifelong Program Analysis \& Transformation},
+ booktitle = {Proceedings of the international symposium on Code generation and optimization: feedback-directed and runtime optimization},
+ series = {CGO '04},
+ year = {2004},
+ isbn = {0-7695-2102-9},
+ location = {Palo Alto, California},
+ pages = {75--},
+ url = {http://dl.acm.org/citation.cfm?id=977395.977673},
+ acmid = {977673},
+ publisher = {IEEE Computer Society},
+ address = {Washington, DC, USA},
+} 
+
+@misc{memusage,
+ title = {A way to determine a process's "real" memory usage, i.e. private dirty RSS?},
+ author = "{Justin L.}",
+ howpublished = "\url{http://stackoverflow.com/questions/118307/a-way-to-determine-a-processs-real-memory-usage-i-e-private-dirty-rss}",
+ year = {2011},
+ month = {October},
+}
+
+
+@misc{mysql,
+ title = {MySQL team increases scalability by >50% for Sysbench OLTP RO in MySQL 5.6 labs release april 2012},
+ author = "{Mikael Ronstrom}",
+ howpublished = "\url{http://mikaelronstrom.blogspot.com/2012/04/mysql-team-increases-scalability-by-50.html}",
+ year = {2012},
+ month = {April},
+}
+%http://dimitrik.free.fr/Presentations/MySQL_Perf-PerconaLive_2013-dim.pdf
+
+@inproceedings{falseshareeffect,
+ author = {Bolosky, William J. and Scott, Michael L.},
+ title = {False sharing and its effect on shared memory performance},
+ booktitle = {{SEDMS IV}: USENIX Symposium on Experiences with Distributed and Multiprocessor Systems},
+ year = {1993},
+ pages = {57--71},
+ location = {San Diego, California},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+}
+

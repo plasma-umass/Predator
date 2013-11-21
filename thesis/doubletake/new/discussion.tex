@@ -1,0 +1,44 @@
+In this section, we discuss \doubletake{}'s limitations, the limitations of the dynamic analyses we have implemented, and our plans for future work on \doubletake{}.
+
+\subsection{Limitations}
+
+\doubletake{} lets dynamic analyses run with very low overhead, then
+re-execute with heavyweight instrumentation when an error has been
+detected. This approach will not work for errors that are not
+monotonic: once an invariant has been violated, its evidence must
+remain until the end of the epoch.
+
+\subsubsection*{Applications}
+We have used \doubletake{} to implement detectors for heap buffer
+overflows, use-after-free errors, and memory leaks. These tools
+demonstrate \doubletake{}'s effectiveness as a framework for efficient
+dynamic analyses, but they are not perfect. Our heap buffer overflow
+detector cannot identify all non-contiguous buffer overflows. If an
+overflow touches memory only in adjacent objects and not
+canaries, \doubletake{}'s end-of-epoch scan will not find any evidence
+of the overflow. Both the buffer overflow and use-after-free detectors
+can detect errors only on writes. To reduce overhead, use-after-free
+detection only places canaries in the first 128 bytes of freed
+objects. If a write to freed memory touches only above this threshold,
+our detector will not find it. The memory leak detector will not
+produce false positives, but non-pointer values that look like
+pointers to leaked objects can lead to false negatives. Finally, if a
+leaked object was not allocated in the current epoch, \doubletake{}'s
+re-execution will not be able to find the object's allocation site. In
+practice, \doubletake{}'s epochs are long enough to collect allocation
+site information for all leaks detected during our evaluation.
+ 
+\subsection{Future Work}
+We plan to explore further analyses directions, including concurrency error detection.
+
+To further reduce \doubletake{}'s overhead, we plan to
+replace \doubletake{}'s custom allocator with a more efficient
+heap. For use-after-free detection, large objects could be allocated
+directly using \texttt{mmap} and protected rather than filling them
+with canaries.
+
+We also plan to integrate the \doubletake{} framework
+with \texttt{gdb}. Lightweight rollback and re-execution would be
+useful for diagnosing application errors during a debugging
+session. Additionally, a program run with \doubletake{} could
+automatically begin a \texttt{gdb} session when an error is detected.

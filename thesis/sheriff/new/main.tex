@@ -1,0 +1,134 @@
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
+
+% \date{} % \vspace*{-0.2in}}
+
+\documentclass[10pt,preprint]{sigplanconf} % SIGPLAN
+
+\nocaptionrule
+
+% USENIX
+%\input{header}
+%\usepackage{usenix,epsfig,endnotes}
+\usepackage{subfigure}
+\usepackage{url}
+% \usepackage{breakurl}
+\urlstyle{rm}
+\usepackage[
+      colorlinks=false,    %no frame around URL
+      urlcolor=black,    %no colors
+      menucolor=black,    %no colors
+      linkcolor=black,    %no colors
+      pagecolor=black,    %no colors
+]{hyperref}
+
+\usepackage{subfigure}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{comment} 
+\usepackage{setspace}
+\usepackage{graphicx}
+\newcommand{\sheriff}{\textsc{Sheriff}}
+\newcommand{\sheriffprotect}{\textsc{FS-Patrol}}
+\newcommand{\sheriffdetect}{\textsc{FS-Detective}}
+\newcommand{\pthreads}{\texttt{pthreads}}
+
+\lstdefinelanguage{c++threads}[]{c++}{morekeywords={pthread_create,pthread_join}}
+\lstset{language=c++threads, basicstyle=\ttfamily\scriptsize,frame=trbl,tabsize=4} % ,numbers=left,numberstyle=\tiny}
+
+
+\begin{document}
+
+\conferenceinfo{OOPSLA 2011}
+
+% Sheriff: Efficient and Precise False Sharing Detection
+\title{Precise Detection and Automatic Mitigation of False Sharing}
+
+\authorinfo{Tongping~Liu \and Emery~D.~Berger}
+{Department of Computer Science \\
+University of Massachusetts, Amherst \\
+Amherst, MA 01003}
+{\{tonyliu,emery\}@cs.umass.edu}
+
+\maketitle
+
+\begin{abstract}
+\input{abstract}
+\end{abstract}
+
+%\terms
+%Performance, False sharing
+
+%\keywords
+%Concurrency, False Sharing, Performance, Multi-threaded program
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+\input{intro}
+
+\section{Related Work}
+\input{relatedwork}
+
+\section{\sheriff{}}
+\input{sheriff}
+
+\section{\sheriffdetect{}}
+\input{detective}
+
+\section{\sheriffprotect{}}
+\input{patrol}
+
+%\section{Discussion}
+%\input{discussion}
+
+\section{Evaluation}
+\input{evaluation}
+
+%\section{Future Work}
+%\input{futurework}
+
+\section{Conclusion}
+\input{conclusion}
+
+\section{Acknowledgments}
+The authors thank Luis Ceze and Charlie Curtsinger for their valuable
+feedback and suggestions which helped improve this paper. We
+acknowledge the support of the Gigascale Systems Research Center, one
+of six research centers funded under the Focus Center Research Program
+(FCRP), a Semiconductor Research Corporation entity.  This material is
+based upon work supported by Intel, Microsoft Research, and the
+National Science Foundation under CCF-0910883. Any opinions, findings,
+and conclusions or recommendations expressed in this material are
+those of the author(s) and do not necessarily reflect the views of the
+National Science Foundation.
+
+% \newpage
+
+{
+\bibliographystyle{abbrv}
+\bibliography{ref,emery}
+}
+
+\end{document}

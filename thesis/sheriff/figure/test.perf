@@ -1,0 +1,27 @@
+# clustered graph example from Derek Bruening's CGO 2005 talk
+=cluster;pthreads;Sheriff
+#=patterns
+#=harmean
+max=2
+yformat=%g
+#=norotate
+rotateby=-45
+title=Sheriff Runtime Overhead
+#legendx=right
+xlabel=Benchmark
+xlabelshift=0,4
+ylabel=Normalized Execution Time
+ylabelshift=1.5,0
+colors=black,dark_green
+# stretch it out in x direction
+extraops=set label "3.26" at 14.2,2.1 right font "Times,10"
+#extraops=set size 1.2,1
+
+#          				pthreads Sheriff
+=table
+#multimulti=Phoenix
+histogram 	1.0  0.77
+kmeans      1.0  1.05 
+#multimulti=PARSEC
+blackscholes            1               1
+canneal                 1               1.07

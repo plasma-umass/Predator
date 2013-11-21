@@ -1,0 +1,95 @@
+\label{sec:introduction}
+
+The advent of multicore architectures has made multithreaded
+programming increasingly necessary, but writing multithreaded programs
+remains painful. It is notoriously far more challenging to write
+concurrent programs than sequential ones because of the wide range of
+errors it can cause, including deadlocks and race
+conditions~\cite{havender,76897,130623}. Because thread interleavings
+are non-deterministic, different runs of the same multithreaded
+program can unexpectedly produce different results. These
+``Heisenbugs'' greatly complicate debugging, and eliminating them
+requires extensive testing to account for possible thread
+interleavings~\cite{DBLP:conf/icse/BallBHMQ09,DBLP:conf/asplos/BurckhardtKMN10}.
+
+% Lots of recent work on bug finding. Getting better, but still difficult.
+
+Instead of testing, one promising alternative approach is to attack
+the problem of concurrency bugs by eliminating its source:
+non-determinism. A fully \emph{deterministic multithreaded system}
+would prevent Heisenbugs by ensuring that executions of the same
+program with the same inputs always yield the same results, even in
+the face of race conditions in the code. Such a system would not only
+dramatically simplify debugging of concurrent
+programs~\cite{Carver:1991:RTC:624586.625040} and reduce their
+attendant testing overhead, but would also enable a number of other
+applications. For example, a deterministic multithreaded system would
+greatly simplify record and replay for multithreaded
+programs~\cite{Choi:1998:DRJ:281035.281041,LeBlanc:1987:DPP:32387.32396}
+and the execution of multiple replicas of multithreaded applications
+for fault
+tolerance~\cite{deterministic-process-groups,1134000,224058,replicant-hotos}.
+
+Several recent software-only proposals aim at providing
+deterministic multithreading, but these all suffer from a variety of
+disadvantages. Language-based approaches are effective at removing
+determinism but require programmers to write code in specialized
+languages, which can be
+impractical~\cite{Bocchino:2009:TES:1640089.1640097,Burckhardt:2010:CPR:1869459.1869515,Simpson:1999:SEE:330346.330357}. Recent
+deterministic systems that target legacy programming languages
+(especially C/C++) are either incomplete or impractical. Kendo ensures
+determinism of synchronization operations with low overhead, but does
+not guarantee determinism in the presence of data
+races~\cite{1508256}. Grace prevents all concurrency errors but is
+limited to fork-join programs, and although it is efficient, it can require
+code modifications to avoid large runtime
+overheads~\cite{grace}. CoreDet, a compiler and runtime system,
+enforces deterministic execution for arbitrary multithreaded C/C++
+programs~\cite{Bergan:2010:CCR:1736020.1736029}. However, it exhibits
+prohibitively high overhead (running up to $8\times$ slower
+than \pthreads{}; see Section~\ref{sec:evaluation}) and generates
+thread interleavings at arbitrary points
+in the code, complicating program debugging and testing.
+
+\hspace{1em} \\
+\noindent
+\textbf{Contributions:}
+This paper presents \textbf{\dthreads{}}, an efficient deterministic runtime
+system for multithreaded C/C++ applications. \dthreads{} guarantees
+deterministic execution of multithreaded programs even in the presence
+of data races (notwithstanding external sources of non-determinism
+like I/O): given the same sequence of inputs, a program
+using \dthreads{} always produces the same output. \dthreads{}'
+deterministic commit protocol not only eliminates data races but also
+prevents lock-based deadlocks.
+
+\dthreads{} is easy to deploy: it works as a direct replacement for
+the \pthreads{} library, requiring no code modifications or
+recompilation. \dthreads{} is also efficient. Its software
+architecture avoids the need for expensive write buffers, and 
+its commit protocol eliminates cache-line based false sharing, a
+notorious performance problem for multithreaded programs. These two
+features enable \dthreads{} to nearly match or even exceed the
+performance of \pthreads{} for the majority of the benchmarks examined
+here. \dthreads{}
+thus is a significant improvement over the state of the art in
+deployability and performance, and provides evidence that fully
+deterministic multithreaded programming may be practical.
+
+% XXX borrowed from Grace, XXX borrowed from Treadmarks, etc.
+
+
+%Deployable: directly replaces
+%the \pthreads{} library, requiring no code modifications.
+
+% Summary of results. Improvements over state-of-the-art (CoreDet).
+
+The remainder of this paper is organized as
+follows. Section~\ref{sec:dthreads-architecture} describes
+the \dthreads{} architecture and algorithms in depth, and
+Section~\ref{sec:discussion} discusses key
+limitations. Section~\ref{sec:evaluation} evaluates \dthreads{}
+experimentally, comparing its performance and scalability
+to \pthreads{} and CoreDet. Section~\ref{sec:related-work} provides an
+overview of related work, Section~\ref{sec:future-work} describes
+future directions, and Section~\ref{sec:conclusion} concludes.

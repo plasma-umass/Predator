@@ -1,0 +1,176 @@
+
+\subsection{Record-and-Replay}
+
+Is there a Record-and-Replay mechanism can guarantee repeatable memory usage? If they can, how do they do?
+Do they need to keeping track of every memory allocation and deallocation?
+
+If yes, which is different with our approach. We do not need to track memory allocation and deallocation?
+We guarantee repeatable memory usage by ensuring memory allocation and deallocation, thus 
+there is no need to track those detailed memory allocation and deallocation. 
+
+How is the performance overhead of Record-and-Replay? How much performance overhead they are introducing?
+What about TERN, which enforce a global order of synchronizations, their performance overhead is larger
+than us.
+
+DoublePlay ~\cite{DoublePlay}, RecPlay ~\cite{RecPlay}, Respec ~\cite{Respec}, 
+Flashback ~\cite{Flashback}
+
+\subsection{Dynamic Analysis}
+Generally, there are two types of approaches of detecting memory errors: static analysis and dynamic analysis. 
+%Some approaches combines these two approaches. 
+Dynamic analysis is widely used because of its accuracy and precision, which never reports any false positive and can pinpoint the line of code with memory errors. We only present the related work in dynamic analysis. 
+
+Dynamic analysis can be classified into the following categories.
+
+\paragraph{Dynamic Instrumentation}: 
+Most of widely used approaches falls into this category, including Valgrind~\cite{}, Dr.Memory~\cite{overflow:drmemory}, .
+
+\paragraph{Instrumentation in Compilation and Linking Phase}:
+AddressSanitizer, LBC, 
+
+\paragraph{Dynamic Library Interposition}
+StackShield, Libsafe. HeapShield: However, they can only guarantee the safeness of specific library functions. 
+
+\paragraph{Specialized Memory Allocator}
+
+Static analysis and dynamic analysis:
+
+Dynamic binary instrumentation is one type of approach, such as Valgrind and Dr.Memory~\cite{overflow:drmemory}.
+
+Compilation assisted runtime system, such as AddressSanitizer.
+
+Runtime interception, however, they may only works on specific library calls. .  
+\subsubsection{Overflow Detection}
+Buffer overflow detection There are two types of buffer overflows, depending on where overflows occur:
+stack-based overflows and heap-based overflows.
+Lots of tools work on the detection and prevention of stack-based 
+overflows, such as StackGuard~\cite{StackGuard}, StackShield~\cite{StackShield}, 
+non-Executable stack~\cite{non-executablestack}
+and LibSafe~\cite{Libsafe}. But stack-based overflows are not the focus of this paper. 
+
+Approches to detect heap-based buffer overflows are classified as follows.  
+
+\textbf{Bounds Checking}: \\ 
+Some static analysis tools examine the source code automatically 
+~\cite{Wagner00afirst, CSSV}, hoping to find out overflows before deployment. 
+However, these static
+approaches can find only specific types of overflows and usually introduce a
+very high false positive or false negative rate. 
+Some dynamic approaches forces pointers to carry buffer size information, knowned 
+as ``fat pointer'', but they are imcompatible with legacy programs~\cite{Austinpldi1994, Cyclone, CCured}.
+The work of Jones and Kelly ~\cite{Jones97backwardscompatiblebounds} and 
+CRED~\cite{CRED} tries to associate a lookup of the bounds of a buffer
+on every pointer access, introducing performance overhead over $2\times$.
+Baggy bounds checking~\cite{overflow:Baggy} reduces the overhead of bounds checking by 
+%constraining the sizes of allocated memory regions and alignments, 
+relaxing checking precision, 
+which may lead to false negatives and needs some changes of programs while still imposing 
+over 60\% performance overhead. 
+Some approaches only do bounds checking for specific libraries 
+functions~\cite{Libsafe, LibsafePlus, HeapShield}, which can not detect overflows caused by 
+pointer dereferences or array accesses, two common sources of overflows.   
+
+* Manuel Costa (did WIT and others; make VERY sure to cite and compare)
+WIT, Baggy bounds checking, BGI
+
+* YY Zhou (Lift and Rx)
+
+* Jonathan Walpole (he wrote some very early work on buffer and stack
+overflow protection)
+StackGuard, 
+%http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=821514
+%http://scholar.google.com/citations?user=J5saPIwAAAAJ&hl=en&oi=sra
+
+\textbf{Guard Zone}: \\
+Guard Zone, also called as ``Canary'', was first proposed by StackGuard~\cite{StackGuard} to find
+stack smashing problems by placing a canary word before the return address on stack. Those attempts to
+overwrite the return address should corrupt the canary word at first. 
+Doug Lea's memory allocator~\cite{dlmalloc} and Robertson et al. ~\cite{Robertson:2003:RDH:1051937.1051947} first introduce this idea to protect the heap metadata by putting a canary
+word between heap metadata and actual heap objects. By checking the integrity of 
+the canary word, it can detect some buffer underflows, but they can not pinpoint the sources of overflows.
+Two state-of-the-art tools, LBC~\cite{overflow:lbc} and AddressSanitizer~\cite{AddressSanitizer} utilize
+the guard zone to detect buffer overflows. 
+They insert guard zones for heap and stack objects at runtime phases and for globals at 
+compilation phases. The big difference of LBC to AddressSanitizer is that it can not 
+detect memory usage-after-free errors and it only works for C programs. 
+They all have similar performance overhead, around 
+25\% overhead for instrumentation on writes only.  
+Our approach is similar to these two recent works, but it is different as follows: 
+\doubletake{} can detect those overflows 
+caused by library functions, which are missed by them; \doubletake{} does not need the re-compilation 
+and can report the whole sequence of accesses on
+problematic memory addresses. Also, \doubletake{} can report all possible overflows at a time, not 
+stopping at the first overflow. 
+
+\textbf{Un-addressable Memory}: \\
+Purify~\cite{overflow:purify} and Valgrind~\cite{overflow:valgrind}
+put in-accessible pages around those dynamic allocated buffers and 
+track all memory accesses relying on binary instrumentation. 
+They can report errors caused by buffer overflows when accesses on in-accessible pages are found.
+But their performance overhead are too high to be used and they introduce large space overhead.
+Dr.Memory~\cite{overflow:drmemory}, built on DynamoRIO dynamic instrumentation tool, divides memory
+into three different types: un-addressable, uninitialized and defined. Dr.Memory checks all memory
+accesses based on shadow memory technique. An access on un-addressable memory is considered
+to be errors caused by buffer overflows, underflows or other memory errors. Dr.Memory introduces more 
+than $10\times$ performance overhead.    
+Electric Fence~\cite{electricfence}, Duma~\cite{duma} and GuardMalloc put additional protected pages
+before or/and after every allocated objects. Programs can get a segmentation fault error when there
+are some acceses on those protected pages. They introduce much memory overhead and performance overhead
+by doing this. 
+ 
+\textbf{Randomization}: \\
+Address Space Layout Randomization~\cite{addressobfuscation, Pax} randomizes the locations of stack and heap for each exection, providing some probalistic guarantee to prevent buffer overflows.  
+DieHard~\cite{diehard} provides a probalistical guarantee to avoid heap overflow by randomly locating 
+heap objects far apart from each other in memory. However, DieHard introduces around 12\% percent performance overhead on SPECint2000 benchmark. 
+ASLR and Diehard can not detect any possible buffer overhead. 
+Exterminator~\cite{exterminator} automatically corrects heap-based memory errors without programmer 
+intervention, but it needs multiple executions to determine the buffer overflow 
+problems.
+% and can only correct certain cases of overflows. 
+
+Besides that, Cruiser~\cite{overflow:Cruiser} spawns a concurrent thread to check integrity of heap objects.
+Since Cruiser puts the overhead of checking overflows to this additional thread running on other CPUs,
+it imposes very low overhead (comparable to that of \doubletake{}) on the performance of applications, 
+around 5\% percent. However, Cruiser can not pinpoint the source of overflows, which putting the 
+burden to find out exact cause of overflows to programmers. 
+\doubletake{} saves an additional CPU while providing precise information to fix corresponding problems
+in some similar performance overhead.   
+
+\subsubsection{Detection of Memory Leak}
+
+Valgrind, Dr. Memory, 
+Hound
+
+\subsubsection{Memory Use-after-free Detection}
+
+\begin{comment} 
+A lot of  tools utilize the binary instrumentations, such as
+Valgrind~\cite{overflow:valgrind}, Purify~\cite{overflow:purify}, 
+Dr. Memory~\cite{overflow:drmemory}, 
+Inspector~\cite{overflow:inspector} and Discover~\cite{overflow:discover}.
+
+
+ Mudflap~\cite{overflow:Mudflap}
+and AddressSanitizer~\cite{AddressSanitizer}.
+
+However, AddressSanitizer can not detect the problems caused by library calls and partial 
+out-of-bounds error caused by an unaligned access. 
+The performance overhead of AddressSanitizer is still significant: average 26\% slowdown if writes are
+instrumented only and 73\% slowdown if all acccesses are instrumented.
+\end{comment}
+
+\begin{comment}
+CCured~\cite{overflow:ccured} and LBC~\cite{overflow:lbc} uses static analysis to reduce 
+redundant checks and reduce the overhead of instrumentation. They can only limited to C language
+and can not detect the usage-after-free memory errors. LBC performance overhead are higher than
+23\% averagely, even with the help of static analysis. 
+In order to reduce the overhead, LBC do not check pointer arithmetic operations, but only on pointer
+dereferences. This could cause some false negatives, which those overflow is caused by pointer arithmetic operations. 
+LBC is very impressive in its memory overhead, only 8.3\% overhead.
+LBC do not given any details whether they detect those out-of-bounds errors in their most efficient
+mode or not, since this can be misleading because different mode have significant difference on performance.
+
+Baggy~\cite{overflow:Baggy} and WIT~\cite{overflow:WIT}.
+
+\end{comment}
+

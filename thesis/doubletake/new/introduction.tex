@@ -1,0 +1,96 @@
+% Dynamic analysis
+% Super-duper awesome
+
+Dynamic analysis tools are widely used to find bugs in
+applications. They are popular among programmers because of their
+precision---for many analyses, they report no false positives---and
+can pinpoint the exact location of errors, down to the individual line
+of code.
+
+Perhaps the most prominent and widely used dynamic analysis tool for
+C/C++ binaries is Valgrind~\cite{overflow:valgrind}. Valgrind's most
+popular use case, via its default tool, memcheck, is to check memory
+errors, including buffer overflows, dangling pointer errors, and
+memory leaks.
+
+Unfortunately, while these dynamic analysis tools are useful, they are
+often expensive. Using Valgrind typically slows down applications by
+10-100$\times$. Faster dynamic analysis frameworks exist for finding
+particular errors, but all impose substantial overheads. Google's
+AddressSanitizer, for example, detects buffer overflows and
+use-after-free errors, but slows applications by around 30\%. Precise
+memory leak detectors that identify the point at which objects are
+leaked remain far more expensive.
+
+Because of their overhead, dynamic analysis tools are only used during
+debugging. However, they are limited by definition to the executions
+that they have seen. The fact that using these tools in deployed
+applications is not practical means that errors that could
+have been found trivially instead require painstaking debugging
+later.
+
+This paper presents a new approach that enables extremely lightweight
+dynamic analysis for an important class of errors. These errors share
+a monotonicity property: when an error happens, evidence that it
+happened either remains or grows in memory so that it can be recovered at a
+later point. When this evidence is not naturally occurring, it is
+often possible to ``plant'' evidence via what we call \emph{tripwires}
+to ensure later detection. An example tripwire is a random value, also
+known as a ``canary'', placed in unallocated space between heap
+objects~\cite{StackGuard}. A corrupted canary is incontrovertible 
+evidence that a buffer overflow occurred at some time in the past.
+
+We present an approach called \emph{evidence-based dynamic analysis} that is based on the
+following key insight: by combining checkpointing with evidence
+gathering, it is possible to let applications run at full speed in the
+common case (no errors). If we discover evidence of an error, we can
+go back and re-execute the program with instrumentation activated to
+find the exact cause of the error.
+
+We present a prototype evidence-based dynamic analysis framework called \doubletake{}. \doubletake{} performs its checkpoints only at
+irrevocable system calls, amortizing the cost of checkpoint
+collection. Each checkpoint saves the contents of the stack,
+globals, registers, and the heap. If it finds evidence of an error at
+the next system call or after a segmentation violation, \doubletake{}
+re-executes the application from the most recent checkpoint. During
+re-execution, it triggers instrumentation to let it precisely locate
+the source of the error. For buffer overflows, \doubletake{} sets hardware watchpoints on the tripwire
+memory locations that were found to be corrupted. During re-execution,
+\doubletake{} can pinpoint exactly the point where the buffer overflow
+occurred.
+
+We implement \doubletake{} as a drop-in library that can either be
+linked directly with the application under analysis, or which can be
+activated by setting an environment variable (\texttt{LD\_PRELOAD} on
+Unix systems) to dynamically load \doubletake{} before execution. No
+re-compilation or availability of source code is required. This
+approach makes \doubletake{} as convenient to use as Valgrind.
+
+We have built three different analyses using \doubletake{}: buffer
+overflow detection, dangling pointer detection, and memory leak
+detection. All of these analyses run without any false positives,
+precisely pinpoint the error location, and operate
+with \emph{extremely} low overhead: for example, with \doubletake{},
+buffer overflow analysis operates with just 2\% overhead on average,
+making it the fastest overflow detector to date and thus feasible to
+use in deployed scenarios.
+
+\subsection*{Contributions}
+
+The contributions of this paper are the following:
+
+\begin{enumerate}
+
+\item It introduces \emph{evidence-based} dynamic analysis, a new analysis technique that combines checkpointing with evidence gathering and instrumented replay to enable precise error detection with extremely low overhead.
+
+\item It presents \doubletake{}, a framework that implements evidence-based dynamic analyses for C/C++ programs: its analyses (detecting buffer overflows, dangling pointers, and memory leaks) are the fastest reported to date.
+
+\end{enumerate}
+
+
+%\subsection{Outline}
+%This paper talks about those related works in next section. Section 3 discusses specific mechanisms 
+%used by \doubletake{}. Section 4 describes some implementation details worth noting. 
+%Section 5 evaluates the performance and effectiveness of \doubletake{} and Section 6
+%discusses some problems and extending possibilities of \doubletake{}.
+%Section 7 concludes this paper. 

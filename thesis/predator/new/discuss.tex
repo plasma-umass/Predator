@@ -1,0 +1,59 @@
+\label{sec:discussion}
+
+\subsection{Prediction Limitation}
+\Predator{} can accurately and precisely locate false sharing problems if they occur
+in an execution. 
+As discussed in Section~\ref{sec:intro}, many dynamic properties
+can affect occurrences of false sharing. 
+\Predator{} can predict potential false sharing caused by the change of cache line size 
+or an object's starting address.
+However, it cannot predict false sharing problems possibly caused by two random objects,
+either global variables or heap objects, if they are not placed in the same or adjacent cache lines.
+In fact, different compilers and memory managers can create 
+different memory layout for global variables and heap objects. 
+For example, two global variables $A$ and $B$, which are not placed 
+on adjacent cache lines by $llvm$ compiler, may be placed 
+close to each other by another compiler, and thus lead to possible false sharing. 
+It is impossible to predict the memory layout created by different compilers and memory managers.
+
+\subsection{Approach Applicability}
+The approach of combining compiler instrumentation and runtime system 
+does not rely on the support of specific hardware, OS and libraries.
+Hence, it is applicable to detect and predict false sharing in different levels of 
+software stack in theory, including hypervisors, operating systems, libraries or 
+applications using different threading libraries.
+However, some components of \Predator{} has to be 
+modified correspondingly instead of applying to them directly.
+For example, \Predator{} has to identify computing unit of all memory accesses, 
+e.g., different virtual machines, tasks or threads. 
+Different system has their own specific calls and must be adjusted correspondingly.
+In order to precisely report origins of culprit false sharing, \Predator{} intercepts 
+memory allocation and de-allocation functions. 
+Those interceptions should also be changed correspondingly for different system too.
+Extending \Predator{} to different levels of software stack will be the future work for us.
+
+\subsection{Performance Improvement}
+\Predator{} runs around $6.6$X slower on average for all evaluated benchmarks. 
+In our current implementation, every memory access is instrumented with a library call 
+in order to notify the runtime system for tracking.
+A library call entails not only normal function call overhead but also 
+overhead related to Global Offset Table(GOT) and/or Procedure Linkage Table (PLT) look-up. 
+It is too heavy for simple computations, such as the following:
+
+\begin{itemize}
+\item
+As discussed in Section~\ref{sec:thresholdtracking}, 
+before the number of writes on a cache line reaches {\it Tracking-Threshold}, 
+\Predator{} simply increments this cache line's write counter for writes
+and ignores reads.
+\item
+In sampling mechanism discussed in Section~\ref{sec:sample}, 
+most accesses (99\%) only needs to increment access counters of cache lines.
+\end{itemize}
+
+These computations only involve in checking or updating operations,
+normally taking only a few CPU cycles to finish. 
+In the future, we plan to further improve the performance of \Predator{} 
+by instrumenting those simple computations directly, 
+instead of using library calls to notify runtime system.
+
