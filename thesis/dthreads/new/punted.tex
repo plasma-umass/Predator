@@ -1,0 +1,66 @@
+Different with CoreDet, \dthreads{} are not scheduled based on instruction quatum 
+but on synchronization points.  
+
+There are two advantages by doing this:
+First, there is no read barriers and no write barriers for memory accesses. 
+CoreDet doesn't allow reads/writes on one memory unit owned by others and writes on one shared memory unit.
+Those operations should wait until the serial phase, which can affect performance greatly. 
+While threads are treated as processes in \dthreads{} and memory are read-shared across different process. 
+Read operations can happen directly on shared memory without barrier and write operations only invoke one 
+trap and one commit, thus it improves performance for most of benchmarks. 
+
+Second, \dthreads{} are scheduled based on more natural synchronization points(not instruction quatum).
+Thus \dthreads{} can provide stable schedule if the synchronization are not changed accross different runs, but 
+no need to memoize schedules~\cite{stable-deterministic}.
+Also, modification without the change of synchronization won't change the schedule order, which can be helpful to debug 
+and reason about the program.
+
+%Emery: If there is no synchronization, \dthreads{} can work on its private copy safely.
+%Advantages over prior work; performance (no read barriers and no
+%per-access write barriers (just once per dirtied page)). especially
+%robustness.
+
+% \subsection{Disadvantage of \dthreads{}}
+
+
+
+\begin{table}[!t]
+\centering
+% \small
+\begin{tabular}{l|rrrr}
+&
+{\bf \small Serial} &
+\multicolumn{2}{c}{\bf \small Transactions} &
+%{\bf \small Trans.} &
+%{\bf \small Trans.} &
+{\bf \small Dirtied}
+\\
+{\bf \small Benchmark} &
+{\bf \small (\% time)} &
+{\bf \small Count} &
+{\bf \small Time} &
+{\bf \small Pages}\\
+%\hline
+%\multicolumn{6}{|c|}{\emph{Phoenix}} \\
+\hline
+\small \textbf{histogram} & \small 0 & \small 23 & \small 15.47 & \small 29\\
+\small \textbf{kmeans} & \small 0 & \small 3929 & \small 3.82 & \small 9466\\
+\small \textbf{linear\_reg.} & \small 0 & \small 24 & \small 23.92 & \small 17\\
+\small \textbf{matrix\_mult.} & \small 0 & \small 24 & \small 841.2 & \small 3945\\
+\small \textbf{pca} & \small 0 & \small 48 & \small 443 & \small 11471\\
+\small \textbf{reverseindex} & \small 17\% & \small 61009 & \small 1.04 & \small 451876\\
+\small \textbf{string\_match} & \small 0 & \small 24 & \small 82 & \small 41\\
+\small \textbf{word\_count} & \small 1\% & \small 90 & \small 26.5 & \small 5261\\
+%\hline
+%\multicolumn{6}{|c|}{\emph{PARSEC}} \\
+%\hline
+\small \textbf{blackscholes} & \small 0 & \small 24 & \small 386.9 & \small 991\\
+\small \textbf{canneal} & \small 26.4\% & \small 1062 & \small 43 & \small 3606413\\
+\small \textbf{dedup} & \small 31\% & \small 45689 & \small 0.1 & \small 356589\\
+\small \textbf{ferret} & \small 12.3\% & \small 11282 & \small 1.49 & \small 147027 \\
+\small \textbf{streamcluster} & \small 18.4\% & \small 130001 & \small 0.04 & \small 131992\\
+\small \textbf{swaptions} & \small 0 & \small 24 & \small 163 & \small 867\\
+\hline
+\end{tabular}
+\caption{Benchmark characteristics.\label{tbl:characteristics}}
+\end{table}

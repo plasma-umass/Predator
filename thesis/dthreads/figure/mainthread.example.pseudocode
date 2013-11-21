@@ -1,0 +1,8 @@
+int a = b = 0;
+main() {
+  pthread_create(&p1, NULL, t1, NULL);
+  pthread_create(&p2, NULL, t2, NULL);
+  pthread_join(&p1, NULL);
+  pthread_join(&p2, NULL);
+  printf ("%d,%d\n", a, b);
+}

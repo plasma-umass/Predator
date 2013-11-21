@@ -1,0 +1,159 @@
+% Make sure to put back 
+
+\date{} % \vspace*{-0.2in}}
+
+\documentclass{sigplanconf}
+\usepackage{endnotes,xspace}
+\nocaptionrule
+
+\newcommand{\footnotenonumber}[1]{{\def\thempfn{}\footnotetext{\small #1}}}
+\usepackage[normalem]{ulem}
+\usepackage{graphicx}
+
+\usepackage{mathptmx} % rm & math
+\usepackage[scaled=0.90]{helvet} % ss
+\usepackage{courier} % tt
+\normalfont
+\usepackage[T1]{fontenc}
+
+% \usepackage{lmodern}
+% \usepackage{times}
+\usepackage{subfigure}
+\usepackage{url}
+\urlstyle{rm}
+\usepackage[
+      colorlinks=false,    %no frame around URL
+      urlcolor=black,    %no colors
+      menucolor=black,    %no colors
+      linkcolor=black,    %no colors
+      pagecolor=black,    %no colors
+]{hyperref}
+
+\usepackage{color}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{comment} 
+\usepackage{setspace}
+\singlespacing
+%\onehalfspacing
+\newtheorem{thm}{Theorem}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{defn}[thm]{Definition}
+
+\newcommand{\dthreads}{\textsc{Dthreads}}
+\newcommand{\Dthreads}{\textsc{Dthreads}}
+\newcommand{\pthreads}{\texttt{pthreads}}
+
+\newcommand{\cfunction}[1]{{\bf \tt #1}}
+\newcommand{\malloc}{\cfunction{malloc}}
+\newcommand{\realloc}{\cfunction{realloc}}
+\newcommand{\free}{\cfunction{free}}
+\newcommand{\madvise}{\cfunction{madvise}}
+\newcommand{\brk}{\cfunction{brk}}
+\newcommand{\sbrk}{\cfunction{sbrk}}
+\newcommand{\mmap}{\cfunction{mmap}}
+\newcommand{\munmap}{\cfunction{munmap}}
+\newcommand{\mprotect}{\cfunction{mprotect}}
+\newcommand{\mlock}{\cfunction{mlock}}
+
+\hyphenation{app-li-ca-tion}
+\hyphenation{Die-Hard}
+\hyphenation{Ar-chi-pe-la-go}
+\hyphenation{buf-fer}
+
+\lstset{language=c++, basicstyle=\ttfamily\scriptsize,frame=trbl,tabsize=4,numbers=left,numberstyle=\tiny}
+
+\definecolor{Gray}{cmyk}{0,0,0,0.5}
+
+\begin{document}
+
+\conferenceinfo{PLDI 2011,} {June 4--8, San Jos\'e, California, USA.}
+\CopyrightYear{2011}
+\copyrightdata{XXX-X-XXXXX-XXX-X/XX/XX}
+
+\title{\textsc{Dthreads}: Efficient and Deterministic Multithreading}
+
+\authorinfo{\emph{authorship list removed for anonymity}}
+
+%\authorinfo{
+%Tongping~Liu \and Charlie~Curtsinger \and Emery~D.~Berger}
+%{Dept.\ of Computer Science \\ University of Massachusetts, Amherst \\
+%Amherst, MA 01003} {\{tonyliu,charlie,emery\}@cs.umass.edu}
+
+\maketitle
+
+\begin{comment}
+\end{comment}
+
+\begin{abstract}
+Multithreaded programming is notoriously difficult to get right.  A
+key problem is non-determinism, which complicates debugging, testing,
+and reproducing errors in multithreaded applications. One way to
+simplify multithreaded programming is to enforce deterministic
+execution. However, past deterministic systems are incomplete
+or impractical. Language-based approaches require programmers to write
+their code in specialized languages. Other systems require program
+modification, do not ensure determinism in the presence of data
+races, do not work with general-purpose multithreaded programs, or
+suffer substantial performance penalties (up to $8\times$ slower
+than \pthreads{}) that limit their usefulness.
+
+This paper presents \dthreads{}, an efficient deterministic
+multithreading system for unmodified C/C++ applications. \Dthreads{}
+not only prevents semantic errors like race conditions and deadlocks,
+but also can enhance performance by eliminating false sharing of cache
+lines. \dthreads{} combines per-thread memory isolation and a
+deterministic commit protocol to ensure robust deterministic execution
+with low runtime overhead. Experimental results show that \dthreads{}
+substantially outperforms a state-of-the-art deterministic runtime
+system, and often matches---and occasionally exceeds---the performance
+of \pthreads{}.
+\end{abstract}
+
+\category{D.1.3}{Programming Techniques}{Concurrent Programming--Parallel Programming}
+\category{D.2.5}{Software Engineering}{Testing and Debugging--Debugging Aids}
+
+\terms
+Design, Reliability, Performance
+
+\keywords
+Deterministic Multithreading, Determinism, Parallel Programming, Concurrency, Debugging,
+Multicore
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+\input{introduction}
+
+\section{\Dthreads{} Architecture}
+\input{dthreads-architecture}
+
+\section{Discussion}
+\input{discussion}
+
+\section{Evaluation}
+\input{evaluation}
+
+\section{Related Work}
+\input{related-work}
+
+\section{Future Work}
+\input{future-work}
+% eliminate global lock
+% possibly adopting a page-ownership protocol as used by ...
+
+\section{Conclusion}
+\input{conclusion}
+
+{
+\bibliographystyle{abbrv}
+\bibliography{dthreads,emery}
+}
+
+\end{document}

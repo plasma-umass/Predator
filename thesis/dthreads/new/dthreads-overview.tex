@@ -1,0 +1,103 @@
+\begin{figure*}[!ht]
+{\centering
+%\fbox{
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/mainthread.example.pseudocode}}
+\hspace{50pt}
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/thread1.example.pseudocode}}
+\hspace{50pt}
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/thread2.example.pseudocode}}
+%}
+\caption{A simple multithreaded program with data races on \texttt{a} and \texttt{b}. With \pthreads{}, the output is non-deterministic, but \dthreads{} guarantees the same output on every execution.\label{fig:sample}}
+}
+\end{figure*}
+
+\label{sec:dthreads-overview}
+
+% \subsection{Overview}
+
+We begin our discussion of how \dthreads{} works with an example execution of a
+simple, racy multithreaded program, and explain at a high level how
+\dthreads{} enforces deterministic execution.
+
+Figure~\ref{fig:sample} shows a simple multithreaded program that,
+because of data races, non-deterministically produces the outputs
+``1,0,'' ``0,1'' and ``1,1.''  With \pthreads{}, the order in
+which these modifications occur can change from run to run, resulting
+in non-deterministic output. 
+
+With \dthreads{}, however, this program \emph{always} produces the
+same output, (``1,1''), which corresponds to exactly one possible
+thread interleaving. \dthreads{} ensures determinism using the
+following key approaches, illustrated in Figure~\ref{fig:architecture}:
+
+\textbf{Isolated memory access:}
+In \dthreads{}, threads are implemented using separate processes with
+private and shared views of memory, an idea introduced by
+Grace~\cite{grace}.  Because processes have separate address spaces,
+they are a convenient mechanism to isolate memory accesses between
+threads.  \dthreads{} uses this isolation to control the visibility of
+updates to shared memory, so each ``thread'' operates independently
+until it reaches a synchronization point (see
+below). Section~\ref{sec:threadsasprocs} discusses the implementation
+of this mechanism in depth.
+
+\textbf{Deterministic memory commit:} 
+Multithreaded programs often use shared memory for communication, so \dthreads{} must propagate one thread's writes to all other threads. To ensure deterministic
+execution, these updates must be applied at deterministic times, and in a deterministic order.
+
+\dthreads{} updates shared
+state in sequence at synchronization points. These points
+include thread creation and exit; mutex lock and unlock; condition
+variable wait and signal; posix sigwait and signal; and barrier waits. Between
+synchronization points, all code effectively executes within an
+atomic \emph{transaction}. This combination of memory isolation between
+synchronization points with a deterministic commit protocol guarantees
+deterministic execution even in the presence of data races.
+
+\textbf{Deterministic synchronization:}
+\dthreads{} supports the full array of \pthreads{} synchronization
+primitives.  Because current operating systems make no guarantees about the
+order in which threads will acquire locks, wake from condition
+variables, or pass through barriers, \dthreads{} re-implements these
+primitives to guarantee a deterministic ordering.
+Details on the \dthreads{} implementations of these primitives are
+given in Section~\ref{sec:synchronization}.
+
+\textbf{Twinning and diffing:}
+Before committing updates, \dthreads{} first compares each modified
+page to a ``twin'' (copy) of the original shared page, and then writes
+only the modified bytes (diffs) into shared state (see
+Section~\ref{sec:dthreads-optimizations} for optimizations that avoid
+copying and diffing).  This algorithm is adapted from the distributed
+shared memory systems TreadMarks and
+Munin~\cite{dsm:munin,dsm:treadmarks}. The order in which threads
+write their updates to shared state is enforced by a single global
+token passed from thread to thread; see
+Section~\ref{sec:sharedmem} for full details.
+
+%%% \vfill %%% EDB
+
+\subsection*{Fixing the data race example}
+Returning to the example program in Figure~\ref{fig:sample}, we can
+now see how \dthreads{}' memory isolation and a deterministic
+commit order ensure deterministic output. \dthreads{} effectively
+isolates each thread from each other until it completes, and then
+orders updates by thread creation time using a deterministic
+last-writer-wins protocol.
+
+At the start of execution, thread 1 and thread 2 have the same view of
+shared state, with $a = 0$ and $b = 0$.  Because changes by one thread
+to the value of $a$ or $b$ will not be made visible to the other until
+thread exit, both threads' checks on line 2 will be true.  Thread 1
+sets the value of $a$ to 1, and thread 2 sets the value of $b$ to 1.
+These threads then commit their updates to shared state and exit, with
+thread 1 always committing before thread 2.  The main thread then has
+an updated view of shared memory, and prints ``1, 1'' on every
+execution.
+
+This determinism not only enables record-and-replay and replicated
+execution, but also effectively converts Heisenbugs into ``Bohr''
+bugs, making them reproducible. In addition, \dthreads{} optionally
+reports any conflicting updates due to racy writes, further
+simplifying debugging.
+

@@ -1,0 +1,20 @@
+\label{sec:conclusion}
+
+\dthreads{} is a deterministic replacement for the \pthreads{}
+library that supports general-purpose multithreaded
+applications. It is straightforward to deploy:
+\dthreads{} resuires no source code, and operates on commodity hardware. By converting threads
+into processes, \dthreads{} leverages process isolation and virtual
+memory protection to track and isolate concurrent memory updates with
+low overhead. Changes are committed deterministically at natural
+synchronization points in the code, rather than at boundaries based on
+hardware performance counters. \dthreads{} not only ensures full
+internal determinism---eliminating data races as well as
+deadlocks---but does so in a way that is portable and easy to
+understand. Its software architecture prevents false sharing, a
+notorious performance problem for multithreaded applications running
+on multiple, cache-coherent processors. The combination of these
+approaches enables \dthreads{} to match or even exceed the performance
+of \pthreads{} for the majority of the benchmarks examined here,
+making \dthreads{} a safe and efficient alternative to \pthreads{} for
+many applications.

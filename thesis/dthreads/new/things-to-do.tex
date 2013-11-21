@@ -1,0 +1,34 @@
+
+XXX Things to do punchlist:
+
+\begin{enumerate}
+\item Pseudo-code for atomicBegin, atomicEnd, waitToken, and putToken.
+\item Simple working example.
+\item Picture for timeline of memory commit / fence.
+\item Picture for phases (parallel then serial).
+\end{enumerate}
+
+Alternating phases and token mechanism based on CoreDet.
+Process mechanism is based on Grace (though extended to support gen purpose synch).
+Commit protocol is loosely based on Treadmarks (release consistency, diffs).
+
+Note where overheads are, and how they are amortized.
+
+New structure.
+\begin{itemize}
+\item memory first
+\begin{itemize}
+\item   simple example.
+\item   thread begin, thread end (process stuff)
+\item   atomic begin
+\item   twinning \& diffing
+\item   token protocol (global order by thread id);
+\item serial mode begin and end. atomic end.
+\end{itemize}
+\item then synchronization
+\begin{itemize}
+\item   locks
+\item   condition variables
+\item   barriers
+\end{itemize}
+\end{itemize}

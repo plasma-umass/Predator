@@ -1,0 +1,20 @@
+\label{sec:conclusion}
+\dthreads{} is a deterministic library for general multithreaded program, which supports
+the full range of synchronizations of multithreaded library.
+ 
+By treating threads as process, each process can work on its private copy, 
+\dthreads{} can provide a strong isolation for concurrent memory accessing among different threads, 
+thus prevent the expensive read/write tracking mechanism for current deterministic system. 
+
+Since those modifications by different threads happened only on its private copy and won't be 
+commited to share mapping until those synchronization points, 
+\dthreads{} can prevent the false sharing problem, a notorious performance
+problem for multithreaded programs.
+Thus for most of benchmarks, \dthreads{} can achieve same or better performance than \texttt{pthreads} library.
+
+Since \dthreads{} are scheduled based on more natural synchronization, instead of 
+retired instructions which highly depending on hardware or compilation, 
+\dthreads{} improves stability of scheduling without memoization. 
+
+Considering the reasonable overhead, \dthreads{} can be worked as a deployable deterministic system 
+for most of applications. 

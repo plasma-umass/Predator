@@ -1,0 +1,75 @@
+\label{sec:discussion}
+
+This section analyzes some key limitations of \dthreads{} that
+restrict its ability to run certain programs, limit the extent of
+determinism it can guarantee, or potentially affect performance.
+
+%\dthreads{} is a fully deterministic multithreaded system, which ensures a deterministic order of 
+%both synchronization operations and all memory accesses. The most close
+%work to us is CoreDet~\cite{Bergan:2010:CCR:1736020.1736029}.
+
+
+\textbf{Unsupported programs: }
+\dthreads{} currently does not support programs with ad hoc
+synchronization that avoids the \pthreads{} library, such as those
+that use atomic operations implemented in assembly.  However, the
+upcoming C++0X standard includes a library interface for atomic
+operations~\cite[pp. 1107--1128]{c++0xstandarddraft}, and a future
+version of \dthreads{} could correctly implement these by intercepting
+these library calls and treating them as synchronization points. While
+ad hoc synchronization is a common practice, it is also a notorious
+source of bugs; Xiong et al.\ show that 22--67\% of the uses of ad hoc
+synchronization lead to bugs or severe performance
+issues~\cite{ad-hoc-considered-harmful}.
+
+\dthreads{} also currently does not write-share the stack
+across threads, so that updates made by a thread to a stack variable
+would not be reflected back to the parent, which could cause a program
+to fail. Passing stack variables to a thread for modification is
+extremely error-prone and generally deprecated, making this a rare
+coding practice.
+
+\textbf{External determinism: }
+While \dthreads{} provides internal non-determinism, it does not
+guarantee determinism when a program's behavior depends on external
+sources of non-determinism, such as system time or I/O
+events. Incorporation of \dthreads{} in the dOS framework, an OS
+proposal that enforces system-level determinism, would provide full
+deterministic execution, although this remains future
+work~\cite{deterministic-process-groups}.
+
+\textbf{Runtime performance: }
+Section~\ref{sec:evaluation} shows that \dthreads{} can provide high
+performance for a number of applications; in fact, for the majority of
+the benchmarks examined, \dthreads{} matches or even exceeds the
+performance of \pthreads{}. However, \dthreads{} does occasionally
+degrade performance, sometimes substantially. The primary culprit is
+the intensive use of locks (that is, when programs that acquire and
+release locks at high frequency), which are much more expensive
+in \dthreads{} than in \pthreads{}. The \texttt{ferret} benchmark from
+the PARSEC benchmark suite exemplfies this behavior.
+
+However, programmers using \dthreads{} could greatly reduce the use of
+locks, and thus improve performance, by taking advantage
+of \dthreads{}' strong isolation guarantee between threads.
+
+
+%  Since Surprise locking inside libraries. Not a limitation \emph{per
+%  se} but definitely an issue that could surprise programmers.
+
+% Draft can be downloaded from http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3126.pdf.
+%Fine once they are library calls, as they are in gcc and in the upcoming C++0X standard (cite!), since then we can intercept them.
+
+\textbf{Memory consumption: }
+Finally, because \dthreads{} creates private, per-process copies of
+modified pages between commits, it can increase a program's memory
+footprint by the number of modified pages between synchronization
+operations. This increased footprint does not seem to be a problem in
+practice, both because the number of modified pages is generally far
+smaller than the number of pages read, and because it is transitory:
+all private pages are relinquished to the operating system
+(via \munmap{}) at the end of every commit operation.
+
+%Increased memory footprint (linear in the number of dirtied (modified) pages).
+
+

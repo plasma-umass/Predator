@@ -1,0 +1,97 @@
+\label{sec:discussion} All DMT systems must
+impose an order on updates to shared memory and synchronization operations.  The
+mechanism used to isolate updates affects the limitations and performance of the
+system.  \dthreads{} represents a new point in the design space for DMT systems
+with some inherent advantages and limitations which we discuss below.
+
+\subsection{Design Tradeoffs} CoreDet and \dthreads{} both use a combination of
+parallel and serial phases to execute programs deterministically.  These two
+systems take different approaches to isolation during parallel execution, as
+well as the transitions between phases:
+
+\textbf{Memory isolation:} CoreDet orders updates to shared memory by
+instrumenting all memory accesses that could reference shared data. 
+Synchronization operations and updates to shared memory must be performed in a
+serial phase.  This approach results in high instrumentation overhead during
+parallel execution, but incurs no additional overhead when exposing updates to
+shared state.
+
+\dthreads{} takes an alternate approach: updates to shared state proceed at full
+speed, but are isolated using hardware-supported virtual memory.  When a serial
+phase is reached, these updates must be exposed in a deterministic order with
+the twinning and diffing method described in Section~\ref{sec:protocol}.
+
+A pleasant side-effect of this approach is the elimination of false sharing. 
+Because threads work in separate address spaces, there is no need to keep caches
+coherent between threads during the parallel phase.  For some programs this
+results in a performance improvement as large as $7\times$ when compared to
+\pthreads{}.
+
+\textbf{Phases:} CoreDet uses a quantum-based scheduler to execute the serial
+phase.  After the specified number of instructions is executed, the scheduler
+transitions to the serial phase.  This approach bounds the waiting time for any
+threads that are blocked until a serial phase.  One drawback of this approach is
+that transitions to the serial phase do not correspond to static program points.  Any code changes (and most inputs) will result in a new, previously-untested schedule.
+
+Transitions between phases are static in \dthreads{}.  Any synchronization
+operation will result in a transition to a serial phase, and parallel execution
+will resume once all threads have executed their critical sections.  This makes
+\dthreads{} susceptible to delays due to load imbalance between threads but
+results in more robust determinism.  With \dthreads{}, only the
+order of synchronization operations affects the schedule.  For most programs
+this means that different inputs, and even many code changes, will not change
+the schedule produced by \dthreads{}.
+
+\subsection{Limitations}
+\label{sec:limitations}
+
+\textbf{External non-determinism:} \dthreads{} provides only internal
+determinism. It does not guarantee determinism when a program's behavior depends
+on external events, such as system time or the arrival order of network packets.
+ The dOS framework is a proposed OS mechanism that provides system-level
+determinism~\cite{deterministic-process-groups}.  dOS provides Deterministic Process Groups and a deterministic replay shim for external events, but uses CoreDet to make each individual process deterministic.  \dthreads{} could be used instead CoreDet within the dOS system, which would add support for controlling external non-determinism.
+
+\textbf{Unsupported programs:} \dthreads{} supports programs that use the
+\pthreads{} library, but does not support programs that bypass it by
+rolling their own \emph{ad hoc} synchronization operations. While
+\emph{ad hoc} synchronization is common, it is also a notorious source of bugs;
+Xiong et al.\ show that 22--67\% of the uses of \emph{ad hoc} synchronization
+lead to bugs or severe performance issues~\cite{ad-hoc-considered-harmful}.
+
+\punt{ The upcoming C++0X standard includes a library interface for atomic
+operations~\cite[pp. 1107--1128]{c++0xstandarddraft}, and \dthreads{} could
+trivially intercept these library calls and treating them as synchronization
+points. }
+
+\dthreads{} does not write-share the stack across threads, so any updates to
+stack variables are only locally visible.  While sharing of stack variables is
+supported by \pthreads{}, this practice is error-prone and relatively
+uncommon.  Support for shared stack variables could be added to \dthreads{} by handling stack memory like the heap and globals, but this would require additional optimizations to avoid poor performance in the common case where stack memory is unshared.
+
+\textbf{Memory consumption:} \dthreads{} creates private, per-process
+copies of modified pages between commits.  Because of this, it can increase a program's memory
+footprint by the number of modified pages between synchronization operations.
+This increased footprint does not pose a problem in practice, both because the
+number of modified pages is generally far smaller than the number of pages read,
+and because it is transitory: all private pages are relinquished to the
+operating system (via \madvise{}) at the end of every commit.
+
+\textbf{Memory consistency:} \dthreads{} provides a form of release consistency
+for parallel programs, where updates are exposed at static program points. 
+CoreDet's DMP-B mode also uses release consistency, but the update points 
+depend on when the quantum counter reaches zero.  To the best of our knowledge,
+\dthreads{} cannot produce an output that is not possible with \pthreads{},
+although for some cases it will result in unexpected output.  When run with
+\dthreads{}, the example in Figure~\ref{fig:sample} will always produce the
+output ``1,1.''  This ouptut is also possible with \pthreads{}, but is much less
+likely (occurring in just $0.01\%$ of one million runs) than ``1,0'' ($99.43\%$) or ``0,1''
+($0.56\%$).  Of course, the same unexpected output will be produced on every run
+with \dthreads{}, making it easier for developers to track down the source
+of the problem than with \pthreads{}.
+
+\punt{ \textbf{Runtime performance:} Section~\ref{sec:evaluation} demonstrates
+that \dthreads{} can provide high performance for a number of applications. In
+fact, for the majority of the benchmarks examined, \dthreads{} matches or even
+exceeds the performance of \pthreads{}. However, \dthreads{} can occasionally
+degrade performance, sometimes substantially, as explored in
+Section~\ref{sec:performance}. }

@@ -1,0 +1,28 @@
+\label{sec:scalability}
+
+% CCC: Moved scalability figure to evaluation.tex to place on proper page
+
+To measure the scalability cost of running \dthreads{}, we ran our
+benchmark suite (excluding \texttt{canneal}) on the same machine with
+eight cores, four corse, and just two cores enabled.  Whenever possible
+without source code modifications, the number of threads was matched
+to the number of CPUs enabled.  We have found that \dthreads{} scales
+at least as well as \pthreads{} for 9 of 13 benchmarks, and scales as
+well or better than CoreDet for all but one benchmark
+where \dthreads{} outperforms CoreDet by $3.5\times$.  Detailed results of this
+experiment are presented in Figure~\ref{fig:scalability} and discussed
+below.
+
+The \texttt{canneal} benchmark was excluded from the scalability experiment because it matches the workload to the number of threads, making
+the comparison between different numbers of threads invalid.  \dthreads{}
+hurts scalability relative to \pthreads{} for the \texttt{kmeans}, \texttt{word\_count}, \texttt{dedup}, and \texttt{streamcluster} benchmarks,
+although only marginally in most cases.  In all of these cases, \dthreads{} scales better than CoreDet.
+
+\dthreads{} is able to match the scalability of \pthreads{} for three
+benchmarks: \texttt{matrix\_multiply}, \texttt{pca},
+and \texttt{blackscholes}.  With \dthreads{}, scalability
+actually \emph{improves} over \pthreads{} for 6 out of 13
+benchmarks.  This is because \dthreads{} prevents false sharing, avoiding 
+unnecessary cache invalidations that normally hurt scalability.
+
+% \textbf{tongping: Should we cite "sheriff" here?}
