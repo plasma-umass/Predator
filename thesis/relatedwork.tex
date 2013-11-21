@@ -1,0 +1,251 @@
+\section{False Sharing Detection}
+
+%\textbf{Simulation and Instrumentation Approaches:} \\ 
+Based on the SIMICS functional simulator, 
+Schindewolf et al. designed a tool to report different kinds of cache usage information,
+such as cache miss and cache invalidations~\cite{falseshare:simulator}. 
+Pluto utilizes Valgrind to track the sequence of memory read and write
+events on different threads and reports a worst-case estimation of
+possible false sharings~\cite{falseshare:binaryinstrumentation1}. 
+Similarly, Liu uses Pin to collect memory access information and 
+reports total false sharing miss information~\cite{falseshare:binaryinstrumentation2}. 
+These tools introduce about $100-200\times$ performance overhead. 
+These tools can not pinpoint the causes of false sharing problems. 
+
+Zhao et al.\ developed a compilation-based approach to 
+detect false sharings and other cache contention problems
+of multithreaded programs~\cite{qinzhao}. This
+tool instruments the source code in the compilation phase, 
+tracks the ownership of cache lines and 
+bases on shadow memory technique to obtain thread interleaving information.
+However, it can only support at most 8 simultaneous
+threads. Also, it can not pinpoint the source of problems exactly, 
+so programmers have to examine the source code and figure out problems
+manually.
+
+Intel's performance tuning utility (PTU)~\cite{detect:ptu, detect:intel} uses Precise 
+%Intel's performance tuning utility (PTU)~\cite{detect:ptu} uses Precise 
+Event Based Sampling (PEBS) hardware support to detect problems efficiently. 
+PTU can point out the physical cache addresses 
+and identify individual functions with possible false sharings.
+However, PTU introduces numerous false positives. 
+PTU aggregates memory accesses without considering the memory re-usage and
+access interleavings, thus it reports a lot of   
+false sharings without actual performance impact.
+PTU cannot differentiate true sharing from
+false sharing and pinpoint the source of false sharings.
+
+Pesterev et al.\ develop a tool, DProf, to help programmers identfy cache misses based on
+AMD's instruction-based sampling hardware~\cite{DProf}. 
+DProf requires manual annotation
+to locate data types and object fields, and cannot detect false
+sharing when multiple objects reside on the same cache line. 
+
+\section{False Sharing Prevention}
+Jeremiassen and Eggers uses a compiler transformation to automatically adjust the 
+memory layout of applications through padding and alignment~\cite{falseshare:compile}.  
+Chow et al.\ describe an approach to alter parallel loop scheduling to avoid
+sharings~\cite{falseshare:schedule}. 
+These static analysis based approaches only works for regular,
+array-based scientific codes.
+
+Berger et al.\ describe Hoard, a scalable memory allocator can reduce
+the possibility of false sharing 
+by making different threads to use different heaps~\cite{BergerMcKinleyBlumofeWilson:ASPLOS2000}. 
+But Hoard can not avoid the false sharings of globals and inside one heap object.
+
+\section{Deterministic Multithreading}
+The research on deterministic multithreading is a very active area these years. 
+Due to space limitations, we describe some software-only,
+non language-based approaches here.
+
+Grace prevents deadlocks, race conditions, ordering and atomicity violations errors
+for those fork-join multithreaded programs by imposing a sequential semantics 
+at join points~\cite{grace}. 
+However, Grace does not support programs with interthread communications, such as
+conditional variables and barriers.
+
+CoreDet is a compiler-based approach to 
+support general-purpose multithreaded programs~\cite{Bergan:2010:CCR:1736020.1736029}. 
+CoreDet instruments those memory read and write operations as long
+as those operations can not be proved to be thread-local in static analysis. 
+In the runtime phase, CoreDet divides the execution into 
+alternating parallel and serial phases and guides all memory operations 
+using a memory ownership table: only those owned locations can be accessed
+in the parallel phases; all non-owned locations and synchronizations can only 
+be accessed in the serial phases guided by a global token.
+CoreDet guarantees deterministic execution for racy programs without memory errors,
+but with very high performance overhead: 
+averagely $3.5\times$ slower than those using \pthreads{} library.
+In order to guarantee determinsim, 
+CoreDet has to serialize \emph{all} external library calls without instrumentation.
+CoreDet doesn not provide deterministic 
+memory allocations, which can not guarantee determinism for programs with memory errors.  
+% The use of synchronization points as commit boundaries also makes \dthreads{}
+% code relatively \emph{robust}: when updates occur after a given number of 
+% instructions retired (as in CoreDet and Kendo), it is impossible for 
+% programmers to know when interleavings can occur. Such boundaries could vary 
+% depending on the underlying architecture and would also be input-dependent, 
+% meaning that slightly different inputs could lead to dramatically different
+% thread interleavings. By contrast, \dthreads{} guarantees that only changes to
+% the sequence of synchronization operations affect the order in which updates 
+% are applied.
+dOS~\cite{deterministic-process-groups} is an extension to CoreDet
+that uses the same deterministic scheduling framework.  dOS 
+supports deterministic communication for those threads and processes inside the same
+deterministic process groups (DPGs) and handle those external non-determinism by recording and
+replaying interactions across DPG boundaries. 
+
+Determinator is a microkernel-based operating system that enforces
+system-wide determinism~\cite{efficient-system-enforced}.
+Determinator provides separate address spaces and supports interprocess
+communications at explicit synchronizaton points. 
+Determinator is a proof-of-concept system, which can not support the whole rage of
+threads APIs and can not work on legacy programs.  
+
+Some other works can only support limited determinism or need user annotation.
+Kendo can only guarantee the determinism for race-free programs~\cite{1508256}. 
+TERN~\cite{stable-deterministic} provides a best-effort system to 
+apply memoized schedules for future runs with similar inputs. 
+It can not guarantee the determinism for racy programs, as Kendo. 
+Peregrine~\cite{peregrine:sosp11} is a system based on TERN, which tries to record
+ memory accesses orders for racy portion and apply those schedules for future runs possibly.
+However, both TERN and Peregrine do not support complete determinism (using a best effort)
+and requires program annotations. 
+
+\section{Race Detection}
+% static approach: 
+% Lockset
+% Happen-before approach: vector based, fasttrack (8 times slower), pacer (1% - 86% overhead). sos. 
+The detection of race condition generally can be divided to two types of approaches.
+The first approach statically analyze the possible race condition in 
+the programs~\cite{race:static1, race:static2, race:static3, race:static4, race:static5}.
+However, those static approaches either are hard to scale to big programs 
+or have numerous false positives. 
+
+Another type of approaches checks race conditions by examining 
+the memory accesses of actual executions online or offline. 
+Dynamic race detection can be classified into two categories: 
+one is based on lock discipline  and another is based on vector clocks.
+
+Eraser~\cite{race:eraser} is one of earliest work based on lock discipline (lockset).
+The basic idea of lock discipline is that 
+a variable shared by different threads should be always protected by one 
+mutual exclusion lock. However, those lockset based approaches reports 
+a lot of false positives, although the performance overhead are generally smaller 
+than those based on vector clocks. 
+
+The vector clock based approaches construct \textbf{happens-before} relationships for program
+statements. They have to record the timing of all accesses to shared variables 
+and corresponding synchronization primitives.
+To construct happens-before relationships for all statements, 
+they have to compare those clock vectors for all shared variables. 
+Those tools based on vector clock can report race conditions accurately, without any false positives.
+Since those comparations are normally proportional to number of threads ($O(n)$), they
+can introduce large performance overhead and space overhead.
+ 
+Recently, some approaches~\cite{race:FastTrack, race:Pacer, race:LiteRace, race:SOS} tries to 
+improve the performance of vector clock based approaches.
+FastTrack~\cite{race:FastTrack} is based on the oberservation: for those reads and writes already totally-ordered, 
+only the last operation should be recorded and compared. 
+FastTrack can reduce the analysis time from $O(n)$ to $O(1)$ through lightweight, constant-time
+fast paths. However, FastTrack still slows down programs about a factor of eight on average. 
+LiteRace~\cite{race:LiteRace} and PACER~\cite{race:Pacer} reduces the performance overhead by using the sampling technique. 
+LiteRace provides no guarantee by using heuristics and has high online space overhead. 
+PACER provides some probability guarantee to detect races: 
+it detects any race at a rate equal to the sampling rate and detects those races 
+whose first access occurs during a global sampling period.
+However, PACER also introduces much performance overhead (52\%) even when the sampling rate 
+is about 1\%. 
+SOS~\cite{race:SOS} improves the performance and effectiveness based on another observation: a lot of 
+thread-shared objects are only written in the early phase and become read-only afterwards
+(stationary objects). 
+The performance of SOS is still very high, about $5\times$ slower. 
+ 
+ 
+\section{Buffer Overflow Detection}
+
+Buffer overflow detection has been an research activity around two decades. 
+There are two types of buffer overflows, depending on where overflows occur:
+stack-based overflows and heap-based overflows.
+Lots of tools work on the detection and prevention of stack-based 
+overflows, such as StackGuard~\cite{StackGuard}, StackShield~\cite{StackShield}, 
+non-Executable stack~\cite{non-executablestack}
+and LibSafe~\cite{Libsafe}. But stack-based overflows are not the focus of this paper. 
+
+Approches to detect heap-based buffer overflows are classified as follows.  
+
+\textbf{Bounds Checking}: \\ 
+Some static analysis tools examine the source code automatically 
+~\cite{Wagner00afirst, CSSV}, hoping to find out overflows before deployment. 
+However, these static
+approaches can find only specific types of overflows and usually introduce a
+very high false positive or false negative rate. 
+Some dynamic approaches forces pointers to carry buffer size information, known 
+as ``fat pointer'', but they are imcompatible with legacy programs~\cite{Austinpldi1994, Cyclone, CCured}.
+The work of Jones and Kelly ~\cite{Jones97backwardscompatiblebounds} and 
+CRED~\cite{CRED} tries to associate a lookup of the bounds of a buffer
+on every pointer access, introducing performance overhead over $2\times$.
+Baggy bounds checking~\cite{overflow:Baggy} reduces the overhead of bounds checking by 
+%constraining the sizes of allocated memory regions and alignments, 
+relaxing checking precision, 
+which may lead to false negatives and needs some changes of programs while still imposing 
+over 60\% performance overhead. 
+Some approaches only do bounds checking for specific libraries 
+functions~\cite{Libsafe, LibsafePlus, HeapShield}, which can not detect overflows caused by 
+pointer dereferences or array accesses, two common sources of overflows.   
+ 
+\textbf{Guard Zone}: \\
+Guard Zone, also known as ``Canary'', was first proposed by StackGuard~\cite{StackGuard} to find
+stack smashing problems by placing a canary word before the return address on stack. Those attempts to
+overwrite the return address should corrupt the canary word at first. 
+Doug Lea's memory allocator~\cite{dlmalloc} and Robertson et al. ~\cite{Robertson:2003:RDH:1051937.1051947} first introduce this idea to protect the heap metadata by putting a canary
+word between heap metadata and actual heap objects. By checking the integrity of 
+the canary word, it can detect some buffer underflows, but they can not pinpoint the sources of overflows.
+Two state-of-the-art tools, LBC~\cite{overflow:lbc} and AddressSanitizer~\cite{AddressSanitizer} utilize
+the guard zone to detect buffer overflows. 
+They insert guard zones for heap and stack objects at runtime phases and for globals at 
+compilation phases. The big difference of LBC to AddressSanitizer is that it can not 
+detect memory usage-after-free errors and it only works for C programs. 
+They all have similar performance overhead, around 
+25\% overhead for instrumentation on writes only.  
+Our approach is similar to these two recent works, but it is different as follows: 
+\stopgap{} can detect those overflows 
+caused by library functions, which are missed by them; \stopgap{} does not need the re-compilation 
+and can report the whole sequence of accesses on
+problematic memory addresses. Also, \stopgap{} can report all possible overflows at a time, not 
+stopping at the first overflow. 
+
+\textbf{Un-addressable Memory}: \\
+Purify~\cite{overflow:purify} and Valgrind~\cite{overflow:valgrind}
+put inaccessible pages around those dynamic allocated buffers and 
+track all memory accesses relying on binary instrumentation. 
+They can report errors caused by buffer overflows when accesses on in-accessible pages are found.
+But their performance overhead are too high to be used and they introduce large space overhead.
+Dr.Memory~\cite{overflow:drmemory}, built on DynamoRIO dynamic instrumentation tool, divides memory
+into three different types: un-addressable, uninitialized and defined. Dr.Memory checks all memory
+accesses based on shadow memory technique. An access on un-addressable memory is considered
+to be errors caused by buffer overflows, underflows or other memory errors. Dr.Memory introduces about $10\times$ performance overhead. 
+Electric Fence~\cite{electricfence}, Duma~\cite{duma} and GuardMalloc put additional protected pages
+before or/and after every allocated objects. Programs can get a segmentation fault error when there
+are some acceses on those protected pages. They introduce much memory overhead and performance overhead
+by doing this. 
+ 
+\textbf{Randomization}: \\
+Address Space Layout Randomization~\cite{addressobfuscation, Pax} randomizes the locations of stack and heap for each exection, providing some probalistic guarantee to prevent buffer overflows.  
+Diehard~\cite{diehard} provides a probalistical guarantee to avoid heap overflow by randomly locating 
+heap objects far apart from each other in memory. However, Diehard introduces around 12\% percent performance overhead on SPECint2000 benchmark by utilizing more than 
+$2\times$ memory. 
+ASLR and Diehard can not detect any possible buffer overhead. 
+Exterminator~\cite{exterminator} automatically corrects heap-based memory errors without programmer 
+intervention, but it needs dozens of executions to determine the buffer overflow 
+problems and can only correct certain cases of overflows. 
+
+Besides that, Cruiser~\cite{overflow:Cruiser} spawns a concurrent thread to check the integrity of heap objects.
+Since Cruiser puts the overhead of checking overflows to this additional thread running on other CPUs,
+it imposes very low overhead (comparable to that of \stopgap{}) on the performance of applications, 
+around 5\% percent. However, Cruiser can not pinpoint the source of overflows, which putting the 
+burden to find out exact cause of overflows to programmers. 
+\stopgap{} saves additional CPU while providing precise information to fix corresponding problems
+in some similar performance overhead.   
+

@@ -1,0 +1,152 @@
+% Multithreaded is important to utilize multi-core resources. 
+% But there are tons of multithreaded problems. 
+% Check Grace; how they describe those multithreaded problems.
+
+Writing Multithreaded programs can encounter a wide range of problems,
+such as race conditions, atomicity violations, deadlocks, etc.
+This proposal specifically addresses performance problems and some concurrency problems: 
+false sharing, non-deterministic executions,
+buffer overflows and race conditions.  
+
+%Some of those problems are notoriously hard to debug, like race condtions, because there are huge
+%number of thread interleavings there and it is impossible to explore all
+%possible thread interleavings~\cite{interleavingcoverage}.
+
+%Some of those problems can silently slow down the programs, like false sharing problems, thus 
+%it can not utilize the underlying hardware resources.
+We discuss the definitions, causes of these problems and their possible consequence as follows.
+
+\section{False Sharing}
+% False sharing definition
+\label{falsesharing}
+False sharing occurs when multiple threads are accessing different
+words in the same cache line simultaneously, where at least one access is a write.
+
+False sharing can greatly slow down the execution of multithreaded programs 
+in shared memory multiprocessor system.
+In this type of system, each processor has a separate cache memory. 
+When multiple processors are accessing the same piece of data, 
+the data can have multiple copies: 
+one in the main memory and one in each cache memory.
+It is the duty of hardware to maintain the consistency of data: 
+if any copy has been changed, this change should be propogated to other copies immediately
+in order to guarantee the correctness of programs. 
+%In the actual hardware implementation, this propogation can be implemented 
+%differently: in a eager way or in a lazy way. 
+%But those different implementations are sharing the common point: 
+%if one copy of data are changed, 
+That is, those copies in the caches of other processors must be invalidated.
+% at first 
+%in the unit of a cache line (64 or 128 bytes normally).  
+%In the false sharing situation, because different threads are accessing 
+%different words in the same cache line and one of those accesses is a write.
+%When a write access is happening, other copies in other caches of this cache line 
+%needs to be invalidated to ensure the correctness. 
+When there are interleaved writes on the same cache line, the ping-pong effect of 
+loading-and-invalidating of data on this cache line can  
+greately slow the execution of programs
+because the speed to load data from the main memory is much slower than that to access cache directly
+(about 20 $\times$ slower). 
+Programs with false sharing can even run slower in a multi-core machine 
+than in a single-core machine, losing the benefit of multiple cores.  
+
+Many common programming practices can easily cause false sharing. 
+For example, different threads accessing different entries of the same global array, listed in 
+Figure~\ref{fig:falsesharingexample}, is such an example. 
+
+\begin{figure*}[!ht]
+{\centering
+\fbox{
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/falsesharing.sample1}}
+\hspace{20pt}
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/falsesharing.sample2}}
+}
+\caption{False sharing problem
+\label{fig:falsesharingexample}}
+}
+\end{figure*}
+
+Based on the relationship of false sharing objects, 
+false sharing can be divided into inter-object and intra-object false sharing.
+The example of Figure~\ref{fig:falsesharingexample} is an intra-object false sharing.
+When two different objects in the same cache line 
+are acccessed by different threads simultaneously, that is inter-object 
+false sharing.   
+
+%are accessing we can use the padding or thread-local variable to   
+% why it is important
+% why it can cause the performance problem
+% one or two example of false sharing problem
+
+% how to fix this kindd of problem: padding, 
+
+\section{Non-determinism of Program Executions}
+A program with the same input does not always create the same output in different executions,
+known as ``non-determinism'' problem.
+Executions of multithreaded programs are full of non-determinism: 
+thread schedulings, memory access on shared data, operations depending on timing 
+and non-deterministic synchronizations can easily cause different behavior of the same program.
+A simple example can be seen in Figure~\ref{fig:nondeterminism}.
+
+\begin{figure*}[!ht]
+{\centering
+\fbox{
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/nondeter.sample1}}
+\hspace{12pt}
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/nondeter.sample2}}
+\hspace{12pt}
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/nondeter.sample3}}
+}
+\caption{Non-determinism problem 
+\label{fig:nondeterminism}}
+}
+\end{figure*}
+
+\label{sec:nondeterminism}
+This program with \pthreads{} can print ``1,0'', ``0,1'' or ``1,1'' in the end, 
+depending on the order of memory accesses from different threads. 
+About 99.43\% it will print ``1,0'', while 0.56\% it will print ``0,1''
+and 0.01\% it will print ``1,1''.
+For this case, unexpected results caused by race condition are rare (about 0.01\%). 
+It is unlikely to detect race conditions in the development phase. 
+So this non-determinism problem can be easily leaked to users.
+Users can observe errorneous results that are not discovered in testings. 
+Even worse, these errors may not be reproducible by the development team using
+a different hardware configuration. 
+
+Deterministic execution is a nice property: programs always produce 
+the same output given the same input.
+Determinism greatly simplifies the understanding and debugging of multithreaded programs.
+
+\section{Race Condition and Buffer Overflow}
+Race condition occurs when multiple threads are trying to access the same address, 
+where at least one of them is a write access.
+Race condition can cause non-deterministic results based on 
+the timing of accesses.
+The example showed in Figure~\ref{fig:nondeterminism} has a race condition since \texttt{t1} 
+can access the variable \texttt{a} when thread \texttt{t2} is writing on that. As what we described 
+in the Section~\ref{sec:nondeterminism}, this can cause nondeterminsitc executions.
+
+Buffer overflow is a memory corruption error, occurs when the software writes data to a place outside
+the boundary of current memory block.
+Buffer overflow can result in erratic program behavior, including program 
+crashes, races or incorrect results. 
+Examples of buffer overflow are listed in the Figure~\ref{fig:overflow}.
+
+\begin{figure*}[!ht]
+{\centering
+\fbox{
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/overflow.sample1}}
+\hspace{12pt}
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/overflow.sample2}}
+}
+\caption{Buffer overflow problems 
+\label{fig:overflow}}
+}
+\end{figure*}
+
+The left side of Figure~\ref{fig:overflow} is a stack overflow problem since this program corrupts 
+the stack variable of \texttt{str} by writing 7 bytes to an array with 5 bytes.
+The right side is a heap overflow problem because the variable \texttt{str} is a heap object. 
+Buffer overflow problem can be exploited to attack the system, causing security problems.
+

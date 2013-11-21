@@ -1,0 +1,130 @@
+The general trend in processor development has moved to the multi-core era: 
+dual-cores, quad-cores, or even hundreds of cores are common in the same machine. 
+Multi-threading is a general approach in order to fully utilize these CPU resources.
+However, writing multithreaded programs is still challenging: multithreaded 
+applications are susceptible to performance anomalies and concurrency errors 
+that are notoriously difficult to debug.
+
+First, it is very difficult to make multithreaded programs efficient.
+The false sharing is insidious for multithreaded programs
+running on multicore processors, where it can silently degrade
+performance and scalability. Worse, some common programming practice
+can easily cause false sharing problems.
+
+Second, it is hard to write correct multithreaded programs.  
+Because thread interleavings can happen randomly and differently,  
+programs may run differently in different executions. 
+This non-deterministic behavior makes it hard to understand and debug multi-threaded programs.
+
+Third, it is hard to detect races effectively and efficiently, 
+one of the concurrency problems of multithreaded 
+programs, because of exploding possibilities of thread interleavings\cite{interleavingcoverage}. 
+Approaches based on \texttt{happens-before} can not detect all races while introducing
+significant performance overhead. lockset based approaches can detect all races with 
+too many false positives.   
+%easily causing significant performance overhead. 
+%it is impossible to explore all possible interleavings 
+%find all programs' errors by 
+%in the development phase. Thus it is beneficial to have a low-overhead debugging system, 
+%helping to identify and report the possible program errors in the actual deployed environment. 
+
+In this proposal, we address all of these difficulties and make the following contributions:
+
+\begin{itemize}
+\item \Sheriff{}:
+%\item \textbf{\Sheriff{}}:
+We provide two tools to deal with false sharing problems
+of multithreaded programs based on the same \Sheriff{} framework~\cite{sheriff}, 
+by extending the \emph{processes-as-threads} concept introduced
+in our Grace paper~\cite{grace}.
+%By replacing threads with processes with the shared file descriptor table, 
+%this framework allows programs to perform per-thread memory isolation and write
+%tracking on a per-page basis by utilizing standard memory protection mechanism.
+%By utilizing the twining-and-diffing mechanism, \sheriff{} can find memory modifications
+%inside different threads and commit those local updates to the shared mapping at synchronization
+%boundaries.
+\SheriffDetect{} can find instances of false sharings by comparing updates of
+the same cache lines by different threads, and ranking problems by performance impact. 
+\SheriffDetect{} is accurate (no false positives), runs with low overhead (on average 20\%), and can precisely pinpoint the exact objects involved in false sharing.
+\SheriffProtect{} mitigates false sharing problems by adaptively isolating shared 
+updates from different threads into separate physical addresses, effectively 
+eliminating the performance impact of false sharing. 
+%\textbf{Real Impact}:\sheriffDetect{} is a open-source project on GitHub and is 
+%utilized by the \textbf{SAS} and \textbf{Intel} company to locate false sharing 
+%problems inside their products. 
+
+%\SheriffProtect{} 
+%can be used in the following cases: it is infeasible to fix false sharing problems 
+%when source is unavailable, or undesirable when padding objects would unacceptably 
+%increase memory consumption or further worsen runtime performance. 
+
+\item \Dthreads{}:
+We developed an efficient deterministic multithreading system, \dthreads{}~\cite{dthreads}, 
+for unmodified C/C++ applications by replacing the existing \pthreads{} library.
+\dthreads{} outperforms a state-of-the-art runtime system (CoreDet)
+by a factor of 3, and often matches and sometimes exceeds the performance with \pthreads{}.
+\Dthreads{} enforces robust/stable determinism even in the face of data races, 
+greatly simplifying program understanding and debugging: 
+programs always behave the same, even with different inputs and on different hareware,
+as long as the synchronization order is staying the same. 
+Because of this, \dthreads{} can also be used to support \textbf{replicated executions} 
+of multithreaded applications for fault tolerance purposes.
+
+%\sheriff{} framework provides a per-thread-isolation functionality, which is perfectly suitable
+%for the determinism purpose since a thread's modifications won't be seen by other threads.
+
+
+%\dthreads{} works by exploding multithreaded applications into multiple processes, with 
+%private, copy-on-write mappings to the same shared memory, isolating the memory writes from different threads. 
+%It then uses standard virtual memory protection to track writes, and deterministically orders updates by each thread. 
+%By isolating updates from different threads, \dthreads{} has the additional benefit of eliminating false sharing.
+
+%\sheriff{} framework provides a per-thread-isolation functionality, which is perfectly suitable 
+%for the determinism purpose since a thread's modifications won't be seen by other threads.
+%Building on \sheriff{} framework, \dthreads{} isolates memory accesses, commits threads' updates 
+%in a deterministic order and synchronizes threads deterministically.
+
+\item \stopgap{}:
+We propose \stopgap{} to detect \textbf{write-write} races effectively, precisely, and efficiently.
+\stopgap{} verifies all write accesses inside the same epoch, while 
+concurrent accesses from different threads inside the same epoch are considered
+to be races. In order to locate races precisely, \stopgap{} re-executes programs after installing 
+watch points on problematic memory addresses. 
+Since \stopgap{} only checks memory errors at boundaries of synchronizations and system calls,
+instead of before every memory access like traditional approaches, 
+the overhead of \stopgap{} can be amortized over a long execution time. 
+To replay the executions of  multithreaded programs, we
+are planning to built \stopgap{} on top of the \dthreads{} framework.
+% Most of existing tools to detect races are based on a pess 
+% to achieve the determinism target.
+  
+%Whenever some memory errors detected, like races or buffer overflows, 
+%we can re-execute the program and utilize the hardware watchpoints to 
+%locate the origin of problems precisely. 
+%We have finished a practical buffer overflow detection tool for single-threaded program, which only
+%introduces negligible performance overhead (about 2\%), much lower than the state-of-the-art technique. 
+%The state-of-the-art tool to detect the buffer overflow problem,  
+%AddressSanitizer from \texttt{Google}, introduces about 26\% performance overhead.
+
+%However, checking memory errors using this technique for multithreaded programs
+% is much more complicated 
+%than that for single-threaded programs. 
+%Because numerous possible thread interleavings can happen in the re-execution phase, we should  
+%ensure deterministic rollbacks of the programs in order to precisely locate
+%the memory errors.
+%We are proposing to rely on the \dthreads{} framework to achieve this determinism target.
+%By combining with \dthreads{} and watchpoint technique, we can find out those memory errors in some specific
+%scheduling order, which also verify one claim of determinism: 
+%deterministic system is useful to locate the memory errors.
+
+\end{itemize}
+
+The rest of this proposal is organized as follows. Chapter 1 introduces 
+difficulties to write multithreaded programs. 
+Chapter 2 provides an overview of previous work on these existing problems. 
+Chapter 3 and chapter 4 discuss our existing systems, \sheriff{} and \dthreads{}.
+Chapter 5 proposes the basic idea and challenges to design an efficient memory debugging system, \stopgap{}. 
+
+%%
+%% Some sample text
+
