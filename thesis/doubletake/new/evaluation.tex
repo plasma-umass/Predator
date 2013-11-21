@@ -1,0 +1,59 @@
+\label{sec:evaluation}
+% TODO: Explain why we don't evaluate on parallel programs
+
+We evaluate \doubletake{} to demonstrate its efficiency, both in runtime and memory overhead. We also demonstrate the effectiveness of our detection tools across a benchmark suite and with several real applications. All experiments are run on a quiescent Intel Core 2 dual-processor system with 16GB of RAM running Linux 2.6.18, and version 2.5 of \texttt{glibc}. Each processor is a 4-core 64-bit Intel Xeon, operating at 2.33GHz with a 4MB shared L2 cache a 32KB per-core L1 cache. All benchmarks are built as 64-bit executables using LLVM 3.2 with the clang front-end and \texttt{-O2} optimizations.
+
+% -194.17.1.el5
+
+Our evaluation measures the memory and runtime overhead of \doubletake{}, and the effectiveness of the heap buffer overflow, memory leak, and use-after-free detectors.
+
+\subsection{Runtime Overhead}
+\label{sec:evaluation/runtime}
+
+\input{valgrindtable.tex}
+
+\input{charactertable.tex}
+
+The runtime and memory overhead of \doubletake{} is evaluated with all C and C++ SPEC CPU2006 benchmarks, 19 in total. We compare \doubletake{} with AddressSanitizer and Valgrind. AddressSanitizer is the previous state-of-the-art for detecting buffer overflows and use-after-free errors, but cannot detect memory leaks~\cite{AddressSanitizer}. Valgrind's Memcheck tool is widely used to detect buffer overflows, memory leaks, and use-after-free errors~\cite{overflow:valgrind}. 
+
+\input{memorygraph.tex}
+
+During performance evaluation, we disable \doubletake{}'s rollback to measure only the overhead of normal execution. \doubletake{}'s memory error detectors only run on the heap, so AddressSanitizer is configured to check only writes to heap memory. For each benchmark, we report the average of three runs with the largest input size, except for Valgrind. We only run Valgrind once because of its high runtime overhead. 
+
+Figure~\ref{fig:perf} shows the runtime overhead results for \doubletake{} and AddressSanitizer. Results for Valgrind do not fit on the graph, and are presented separately in Table~\ref{table:valgrind}. On average, \doubletake{} adds only $9\%$ overhead \emph{with all three error detectors enabled}. Without use-after-free detection, \doubletake{}'s overhead is just $3\%$. Overflow detection alone slows execution by just $2\%$. AddressSanitizer has an average runtime overhead of $30\%$. Valgrind has an average runtime overhead of $20\times$, but two benchmarks (\texttt{perlbench} and \texttt{sjeng}) have not yet finished running.
+
+% difference across all different tools
+For 17 out of 19 benchmarks, \doubletake{} outperforms AddressSanitizer, even with memory leak detection enabled. For 12 benchmarks, \doubletake{}'s runtime overhead with all detectors enabled is under 3\%. Both \doubletake{} and AddressSanitizer substantially outperform Valgrind on all benchmarks. Three benchmarks, \texttt{400.perlbench}, \texttt{403.gcc} and \texttt{447.dealII}, have substantially higher overhead than most benchmarks with both \doubletake{} and AddressSanitizer. Table~\ref{tbl:memoryoverhead} shows that \doubletake{} and AddressSanitizer both add substantial memory overhead for these benchmarks. This increased memory footprint is likely responsible for the degraded performance due to increased cache and TLB pressure.
+
+% Difference across all different tools
+\doubletake{}'s use-after-free detection adds roughly $6\%$ runtime overhead: only \texttt{perlbench}, \texttt{gcc}, and \texttt{h264ref} run with more than $20\%$ overhead. As described in Section~\ref{sec:applications/useafterfree}, all freed objects are filled with canaries (up to 128 bytes). \doubletake{} spends a substantial amount of time filling freed memory with canaries for applications with a large number of \texttt{malloc} and \texttt{free} calls.
+
+Table~\ref{table:character} shows detailed benchmark characteristics. The ``Processes'' column shows the number of different invocations in the input set. The number of epochs is significantly lower than the number of system calls because of \doubletake{}'s lightweight system call handling. Benchmarks with the highest overhead run a substantial number of epochs (\texttt{perlbench} and \texttt{h264ref}) and make a large number of \texttt{malloc} calls (\texttt{gcc}, \texttt{omnetpp}, and \texttt{xalancbmk}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Memory Overhead}
+\label{sec:evaluation/memory}
+
+Much of \doubletake{}'s memory overhead comes from the snapshot of writable memory at the beginning at each epoch. However, the first snapshot is very small because the heap is completely empty. The benchmarks \texttt{bzip2}, \texttt{mcf}, \texttt{sjeng}, \texttt{milc}, and \texttt{lbm} run in a single epoch, and therefore have very low memory overhead. System call logs introduce a small amount of additional overhead. Other sources of memory overhead are application-specific: buffer overflow detection adds space between heap objects, which can increase memory usage for programs with many small allocations. Use-after-free detection adds constant-size memory overhead by delaying memory reuse.
+
+Figure~\ref{fig:memory} shows memory overhead for \doubletake{} and AddressSanitizer, and Table~\ref{tbl:memoryoverhead} contains a detailed breakdown. We measure program memory usage by recording the peak \emph{physical} memory usage because \doubletake{}'s pre-allocated heap consumes 4GB of virtual memory. Peak memory usage is collected by periodically sampling the proportional set size files (\texttt{/proc/self/smaps}).
+
+On average, \doubletake{} imposes $2.8\times$ memory overhead, while AddressSanitizer introduces $4.8\times$ overhead. For \texttt{povray} and \texttt{h264ref}, both tools introduce large relative memory overhead because these benchmarks use just 3MB and 24MB respectively. Complete memory usage results are shown in Table~\ref{tbl:memoryoverhead}. For all other benchmarks, both \doubletake{} and AddressSanitizer introduce less than $5\times$ memory overhead. \doubletake{} has lower memory overhead than AddressSanitizer on all but two benchmarks: \texttt{perlbench} and \texttt{namd}. \doubletake{}'s total memory usage is less than twice that of the original programs, and $20\%$ less than AddressSanitizer. 
+
+\input{memorytable.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Effectiveness}
+\label{sec:effect}
+
+We use \doubletake{} to find errors in both the SPEC CPU2006 benchmark suite and a suite of real applications.
+
+\paragraph{Benchmarks.}
+\doubletake{} detected a one-byte heap buffer overflow in \texttt{perlbench}, which is not detected by AddressSanitizer. \doubletake{} also detected a significant number of memory leaks in \texttt{perlbench} and \texttt{gcc}, which we have verified using Valgrind's Memcheck tool.
+
+\paragraph{Real applications.}
+\doubletake{} detects known buffer overflows in \texttt{libHX}, \texttt{bzip2}, \texttt{vim},\texttt{bc}, \texttt{polymorph}, and \texttt{gzip}. Buggy inputs were obtained from prior buffer overflow detection tools, Red Hat's Bugzilla, and bugbench~\cite{vimoverflow, bzip2overflow,bugbench,overflow:Cruiser}.
+
+The buffer overflows we observed in these applications are triggered by specific inputs, which are difficult to detect during development. In most cases, \doubletake{}'s overhead is low enough to be enabled in deployment, which would make it possible to detect these bugs in the field.  \doubletake{} also detects memory leaks in \texttt{gcc-4.4.7} and \texttt{vim}.

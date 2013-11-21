@@ -1,0 +1,29 @@
+\begin{table}[h!]
+\centering
+\begin{tabular}{l|r|r|r}
+\textbf{ \small Benchmark} & \textbf{\small Original} &  \textbf{\small AddressSanitizer} & \textbf{\small \doubletake{} } \\
+\hline
+400.perlbench & 656 &	1481 & 1977 \\
+401.bzip2	& 870 &	1020 &	1003 \\
+403.gcc	& 683 &	2293 &	1583 \\
+429.mcf	& 1716 &	1951 &	1994 \\
+445.gobmk &	28 &	137 &	58 \\
+456.hmmer &	24 &	256 &	129 \\
+458.sjeng & 179 & 220 &	203 \\
+462.libquantum	& 66 &	144 &	131 \\
+464.h264ref	& 65 &	179 &	247 \\
+471.omnetpp	& 172 &	538 &	291 \\
+473.astar	& 333 &	923 &	477 \\
+483.xalancbmk &	428 & 1149 &	801 \\
+433.milc	& 695 &	1008 &	917 \\
+444.namd	& 46 &	79 &	92 \\
+447.dealII	& 514 &	2496 &	1727 \\
+450.soplex	& 441 &	1991 &	1654 \\
+453.povray	& 3 &	133 &	50 \\
+470.lbm	& 418 &	496 &	470 \\
+482.sphinx3 &	45 &	181 & 98 \\
+\hline
+\textbf{Total} & \textbf{7386} & \textbf{16678} & \textbf{13906} \\
+\end{tabular}
+\caption{\doubletake{} and AddressSanitizer memory use (MB).\label{tbl:memoryoverhead}}
+\end{table}

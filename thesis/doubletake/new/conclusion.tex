@@ -1,0 +1,15 @@
+This paper introduces \emph{evidence-based dynamic analysis}, a new
+lightweight dynamic analysis technique. Evidence-based dynamic
+analysis works for errors that can be forced to leave evidence of
+their presence. These errors include key problems for C and C++
+programs: buffer overflows, dangling-pointer errors, and memory
+leaks. Evidence-based dynamic analysis is fast because it lets the
+application run at full speed until an error is detected; execution is
+then rolled back and replayed with instrumentation at the point where
+the evidence was found, pinpointing the error. We
+present \doubletake{}, the first evidence-based dynamic analysis
+framework, and implement these analyses inside it. The resulting
+analyses are the fastest versions to date, demonstrating the
+effectiveness and efficiency of this new dynamic analysis approach.
+\doubletake{} is available for download at \url{http://github.com/plasma-umass/DoubleTake}.
+

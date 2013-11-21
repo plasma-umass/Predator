@@ -1,0 +1,16 @@
+Dynamic analysis can be helpful for debugging, but is often too
+expensive to use in deployed applications. We introduce evidence-based
+dynamic analysis, an approach that enables extremely lightweight
+analyses for an important class of errors: those that can be forced to
+leave evidence of their existence. Evidence-based dynamic analysis lets
+execution proceed at full speed until the end of an epoch. It then
+examines program state to find evidence that an error occurred at some
+time during that epoch. If so, execution is rolled back and
+re-execution proceeds with instrumentation activated to pinpoint the
+error. We present \doubletake{}, a prototype evidence-based dynamic
+analysis framework. We demonstrate its generality by building analyses
+to find buffer overflows, dangling pointer errors, and memory
+leaks. \doubletake{} is precise and efficient: its buffer overflow
+analysis runs with just 2\% overhead on average, making it the fastest
+such system to date.
+

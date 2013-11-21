@@ -1,0 +1,26 @@
+int do_mutex_lock(void * mutex) {
+  list = getSyncEventList(mutex);
+  ret = list->peekSyncEvent();
+  if(ret == 0) {
+    waitSemaphore();
+  }
+  nextEvent = advanceThreadSyncList();
+  if(nextEvent && isPendingEvent(nextEvent)) {
+    signalCurrentThread();
+  }
+}
+
+int do_mutex_unlock(void * mutex) {
+  list = getSyncEventList(mutex);
+  // Advance SyncVariableList
+  nextEvent = list->advanceSyncEvent();
+  if(nextEvent) {
+    if(isThreadNextEvent()) {
+      signalThread();
+    }
+    else {
+      addPendingEvent(nextEvent);
+    }
+  }
+}
+

@@ -1,0 +1,239 @@
+\vspace*{\baselineskip} 
+During normal execution of an epoch, \doubletake{} intercepts all calls to \pthreads{} 
+library functions that may issue system calls. \doubletake{} actually handles much more function calls
+than the listed number of system calls. For example, \texttt{open()}, \texttt{fopen()}, \texttt{fdopen}, \texttt{freopen()}, and \texttt{creat()} can possibly call \texttt{open} system calls. 
+Then all of these library functions should be intercepted. 
+%We assume that other libraries are built 
+%on this library: there is no direct system call from other libraries or applications.
+
+To reduce overhead, we should reduce the amount of epochs as much as possible by 
+recording, checkpointing and delaying system calls since starting and ending an epoch 
+involves large performance overhead, as discussed in Section~\ref{sec:implementation}, 
+Currently, \doubletake{} only optimizes those system calls invoked by evaluated applications.
+Current category of system calls can be seen in Table~\ref{tbl:syscalls}. Other system calls
+not mentioned here belong to the category of irrevocable system calls. 
+
+\begin{comment}
+To support multithreading programs, \DoubleTake{} has to record the order of synchronizations 
+and replay them in the same order (Section~\ref{sec:multithreading}) and design memory allocator specially (Section~\ref{sec:mtheap}).
+
+The basic idea of \DoubleTake{} is to greatly {\em reduce the number of checkings}:  
+instead of checking a possible out-of-bounds error before every memory access, 
+\DoubleTake{} checks all possible out-of-bounds errors of the whole program 
+before those irrevocable system calls or in the end of an execution.
+By checking buffer overflows accumulatively, \DoubleTake{} amortizes 
+checking overhead over long executions and achieves much better performance. 
+As showed in Figure~\ref{fig:diagram}, if a program does not have buffer overflows, 
+it continues to perform those system calls and 
+starts a new epoch after them by snapshotting state of this execution. 
+If a program is found to have buffer overflows, \DoubleTake{} re-executes it by rolling back 
+to last good state after installing hardware watchpoints on those overflowing addresses.
+By handling exceptions, 
+\DoubleTake{} can pinpoint precisely those memory accesses causing memory overflows without
+actually instrumenting every access. 
+\end{comment}
+
+
+\subsection{Canary Mechanism}
+\label{sec:canaries}
+Canaries, also called as sentinels, are normally put before or after each actual object.
+They are initialized to a special value in the beginning so that modifications of those values
+indicates the problems.
+Canaries have been used by many previous works to
+detect buffer overflows ~\cite{overflow:purify, exterminator, overflow:lbc}.
+Similarly, \stopgap{} puts canaries before and after heap objects, which can be used .
+to detect buffer underflows and overflows.
+The size of canary is a balance between memory overhead and precision.
+As discusssed by Hasabnis et al. ~\cite{overflow:lbc}, larger size helps to detect more
+buffer overflows, but increasing memory overhead.
+\stopgap{} chooses the size of a pointer as the size of each word-based canary:
+4 bytes for 32 bit binaries and 8 bytes for 64 bit binaries.
+For those objects with size not aligned by words, \stopgap{} filles byte-based canaries before a
+word-based canary.
+
+\stopgap{} maintains a global bitmap to mark placements of those canaries:
+if a word includes canaries, either a word-based canary or multiple
+byte-based canaries, its corresponding bit is set to $1$.
+Since \stopgap{} only uses a bit for each word, this helps to reduce memory overhead of the bitmap.
+Previous works use a bit for each byte in order to capture one-byte buffer overflow~\cite{overflow:lbc, AddressSanitizer}.
+However, it is uncessary to do this since \stopgap{} embeds size information of each heap object
+into the header, thus by coming with size information and byte-based canaries \stopgap{} doesn't
+loose the precision of detecting one-byte buffer overflows.
+Reducing the size of bitmap helps improving the speed of heap integrity checking too.
+
+\subsection{Watch Point Mechanism}
+\label{sec:watchpoints}
+Watch point mechanism relies on hardware debug registers to monitor memory accesses on
+specific addresses. Previous work has used this mechanism for their specific 
+targets \cite{fastboundschecking, Kivati}.
+
+Debug registers are universally supported by most if not all existing CPUs, such as
+X86 and X86-64 architecture, PowerPC, MIPS, ARM, etc. 
+The main target of debug registers is to support software debuggers, e.g. gdb. 
+In X86 and X86-64 architectures, there are four debug address registers, one debug 
+status register and one debug control register. 
+A user can set up debug address registers to hold those addresses that want to monitor 
+before executions of a program. 
+Then this user can be notified by an exception whenever a memory access matches one of those 
+debugging address in debug registers. 
+
+%\DoubleTake{} installs the addresses of canaries with buffer overflows and watches memory
+%accesses on them in the re-execution phase by handling those exceptions generated by debug registers. 
+%By analyzing the context of signal handler, 
+%\DoubleTake{} can precisely locate those instructions causing buffer overflows and report to users.
+%More implementation details are discussed in Section~\ref{sec:installwatchpoints}. 
+
+\subsection{Customized Heap Allocator}
+\label{sec:allocator}
+A general memory allocator invokes a big number of \texttt{mmap} or \texttt{sbrk} system calls,
+thus it is hard to repeat memory usages of a program without recording all memory allocations. 
+%related system calls and repeating
+%them in re-execution phase.
+\DoubleTake{} utilizes customized memory allocator for its heap allocations to overcome these shortcomings. The memory allocator of \DoubleTake{} is built on Heap Layers ~\cite{heaplayers}, 
+%repeat memory allocations in re-execution phase.
+
+%However, it is normally impossible to do this for multithreading programs.
+\DoubleTake{} pre-allocates a fixed size of memory 
+from its underlying operating system using \texttt{mmap} system calls and 
+satisfies memory allocations from this block of memory.
+All heap objects has the size of {\it power of $2$}, known as block size. 
+When an object is allocated, \doubletake{} adds a object header to each object, including block size,
+actual object size and canary.
+When an object is deallocated, it is put into a corresponding free list of the memory allocator, 
+holding objects with the same block size. 
+\DoubleTake{} never changes size of an object so there is no split and merge operation on heap objects.
+If size of an allocation is less than {\it power of 2}, 
+\DoubleTake{} allocates an object with the size of next {\it power of 2}.
+% but putting canaries
+%right after this actual object in order to detect .
+%The support for multithreading programs can be seen in Section~\ref{sec:mtheap}.
+
+% why it is deterministic?
+Since it is conventient to find out memory usage conditions in the beginning of each epoch 
+and all memory allocation are deterministic according to the order of program execution from the same heap without involving other system calls,  
+it is relatively easy to reproduce memory usage in production runs.
+% Because of this design, it is convenient to take a snapshot in production runs 
+%and repeat memory usage in reproduction runs. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Micro Benchmarks}
+All benchmarks evaluated in this subsection is taken from NIST SAMATE Reference Dataset Project ~\cite{microbenchmarks}.
+
+{\bf Heap Overflows}: We evaluate \doubletake{} on 26 test cases listed in Table~\ref{table:SAMATESRDOverflow}. \doubletake{} can detect all buffer overflows when they corrupted canaries. \doubletake{} does not have any false alarms. Test cases 1955 and 2063 are not detected by \doubletake{} because they are not continuous buffer overflows, which cannot be detected by any canary-based approaches.
+
+{\bf Memory Leakage}: We evaluate 13 test cases listed in Table~\ref{table:SAMATESRDLeak}. \doubletake{} reports memory leakage correctly for all test cases.  
+
+{\bf Memory Usage-After-Free}: 
+{Use After Free}
+  
+\begin{comment}
+
+\begin{table}[!t]
+\centering
+\begin{tabular}{l|r}
+\hline
+{\bf \small Vunerbility Class} & {\bf \small SRD Test Case ID} \\
+\hline
+strcpy & 015 \\
+strcpy & 1843 \\
+strcpy & 1845 \\ % Array Index 
+memory opration & 1952 \\ % Memory operation
+Array Boundary & 1955 \\ % Array assignment
+Array Boundary & 1958 \\ % Array assignment
+Array Index & 1961 \\ % Array assignment
+Array Index & 2062 \\ % Array assignment
+Array Index & 2063 \\ % Array assignment
+Array Index & 2064 \\ % Array assignment
+Array Index & 2065 \\ % Array assignment
+Array Index & 2145 \\ % Array assignment
+strcpy & 2147 \\ % Array assignment
+
+\hline \\ 
+% Good Cases
+strncpy & 1844 \\
+strcpy & 1846 \\ % Array Index, limit string 
+strcpy & 1848 \\
+strcpy & 1936 \\
+Memory & 1953 \\
+Array Boundary & 1956 \\ % Array assignment
+Array Boundary & 1959 \\ % Array assignment
+Array Index & 1962 \\ % Array assignment
+Array Index & 2066 \\ % Array assignment
+Array Scope & 2067 \\ % Array assignment
+Array Index & 2068 \\ % Array assignment
+strcpy & 2134 \\ % Array assignment
+strcpy & 2148 \\ % Array assignment
+strcpy & 2149 \\ % Array assignment
+ 
+\hline
+\end{tabular}
+\caption{SAMATE Test Cases. 
+\label{table:SAMATESRD}}
+\end{table}
+\end{comment}
+
+
+\begin{table}[!t]
+\centering
+\begin{tabular}{l|l}
+\hline
+{\bf \small Vulnerable Cases } & {\bf \small Good Cases} \\
+\hline
+015 1843 1845 1952 1955 & 1844 1846 1848 1936 1953\\
+1958 1961 2062 2063 2065 & 1956 1959 1962 2066 2067 \\
+2145 2147 & 2068 2134 2148 2149\\  
+\hline
+\end{tabular}
+\caption{SAMATE Test Cases for Heap Overflows. 
+\label{table:SAMATESRDOverflow}}
+\end{table}
+
+\begin{table}[!t]
+\centering
+\begin{tabular}{l|l}
+\hline
+{\bf \small Memory Leakage } & {\bf \small Good Cases} \\
+\hline
+1527 1583 1758 1925 1926 & 1458 1584 1587\\
+1933 2056 99201 99202 99203 &   \\
+\hline
+\end{tabular}
+\caption{SAMATE Test Cases for Memory Leakage. 
+\label{table:SAMATESRDLeak}}
+\end{table}
+
+
+%%%%%%%%%%
+%%%%%%%%%%
+
+\begin{table}[!t]
+\small
+\centering
+\begin{tabular}{c|ccc}
+\textbf{Application} & \textbf{Buffer overflow} & \textbf{Memory leak} & \textbf{Use-after-free} \\
+\hline
+\texttt{bc}			& & & \\
+\texttt{bzip2}		& & & \\
+\texttt{gcc}		& & & \\
+\texttt{gzip2}		& & & \\
+\texttt{libhx}		& & & \\
+\texttt{polymorphy}	& & & \\
+\texttt{vim}		& & & \\
+\end{tabular}
+
+
+
+\begin{tabular}{l|l|l}
+\hline
+{\bf \small Buffer Overflows} & {\bf \small Memory Leakage} & {\bf \small Use-after-free}\\
+\hline
+bc libhx vim bzip2 gzip
+polymorphy & gcc bzip2 vim & gcc bzip2 vim\\
+\hline
+\end{tabular}
+\caption{Evaluated Real Applications. 
+\label{table:realapps}}
+\end{table}
+
