@@ -1,0 +1,18 @@
+struct
+{
+  pthread_t tid;  POINT_T *points;
+  int num_elems;  long long SX;
+  long long SY;   long long SXX;
+  long long SYY;  long long SXY;
+} lreg_args;
+
+void * lreg_thread ( void * args_in ) {
+  struct lreg_args * args = args_in ;
+  for(i=0; i<args->num_elems; i++) {
+    args->SX+=args->points[i].x;
+    args->SXX+=args->points[i].x*args->points[i].x;
+    args->SY+=args->points[i].y;
+    args->SYY+=args->points[i].y*args->points[i].y;
+    args->SXY+=args->points[i].x*args->points[i].y;
+  }
+}

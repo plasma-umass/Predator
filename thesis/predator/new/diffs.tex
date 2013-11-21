@@ -1,0 +1,1222 @@
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF LATEXDIFF DIFFERENCE FILE
+%DIF DEL ./bak/main.tex   Thu Aug 22 08:53:11 2013
+%DIF ADD main.tex         Thu Aug 22 10:48:08 2013
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}} %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
+
+%\documentclass{sigplanconf}
+%\nocaptionrule
+
+% \documentclass[twocolumn,9pt]{article}
+% \documentclass[twocolumn,10pt]{acm_proc_article-sp}
+
+% \documentclass{acm_proc_article-sp}
+\documentclass[10pt]{sigplanconf}
+
+\date{} % \vspace*{-0.2in}}
+
+% Make sure to put back
+
+\newcommand{\punt}[1]{}
+
+\usepackage{endnotes,xspace}
+
+\newcommand{\footnotenonumber}[1]{{\def\thempfn{}\footnotetext{\small #1}}}
+%\usepackage[normalem]{ulem}
+\usepackage{graphicx}
+
+\usepackage{mathptmx} % rm & math
+\usepackage[scaled=0.90]{helvet} % ss
+\usepackage{courier} % tt
+% \normalfont
+\usepackage[T1]{fontenc}
+
+% \usepackage{lmodern}
+% \usepackage{times}
+\usepackage{subfigure}
+\usepackage{url}
+\urlstyle{rm}
+\usepackage[
+      colorlinks=false, %no frame around URL
+      urlcolor=black, %no colors
+      menucolor=black, %no colors
+      linkcolor=black, %no colors
+      pagecolor=black, %no colors
+]{hyperref}
+
+\usepackage{color}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{comment}
+\usepackage{setspace}
+\singlespacing
+%\onehalfspacing
+\newtheorem{thm}{Theorem}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{defn}[thm]{Definition}
+
+\newcommand{\cfunction}[1]{{\bf \tt #1}}
+\newcommand{\malloc}{\cfunction{malloc}}
+\newcommand{\realloc}{\cfunction{realloc}}
+\newcommand{\free}{\cfunction{free}}
+\newcommand{\madvise}{\cfunction{madvise}}
+\newcommand{\brk}{\cfunction{brk}}
+\newcommand{\sbrk}{\cfunction{sbrk}}
+\newcommand{\mmap}{\cfunction{mmap}}
+\newcommand{\munmap}{\cfunction{munmap}}
+\newcommand{\mprotect}{\cfunction{mprotect}}
+\newcommand{\mlock}{\cfunction{mlock}}
+
+\hyphenation{app-li-ca-tion}
+\hyphenation{Die-Hard}
+\hyphenation{Ar-chi-pe-la-go}
+\hyphenation{buf-fer}
+\hyphenation{D-threads}
+\hyphenation{Heap-Layers}
+\hyphenation{wait-Token}
+\hyphenation{mul-ti-threa-ded}
+\hyphenation{me-m-ory}
+
+\hyphenation{pthread-create}
+\hyphenation{pthread-self}
+\hyphenation{pthread-mutex-lock}
+\hyphenation{pthread-mutex-unlock}
+
+\newcommand{\Sheriff}{{\scshape Sheriff}}
+\newcommand{\sheriff}{{\scshape Sheriff}}
+\newcommand{\DeFaults}{{\scshape DeFaults}}
+\newcommand{\Defaults}{{\scshape DeFaults}}
+\newcommand{\defaults}{{\scshape DeFaults}}
+\newcommand{\SheriffProtect}{\textsc{Sheriff-Protect}}
+\newcommand{\sheriffProtect}{\textsc{Sheriff-Protect}}
+\newcommand{\sheriffprotect}{\textsc{Sheriff-Protect}}
+\newcommand{\SheriffDetect}{\textsc{Sheriff-Detect}}
+\newcommand{\sheriffDetect}{\textsc{Sheriff-Detect}}
+\newcommand{\sheriffdetect}{\textsc{Sheriff-Detect}}
+%\newcommand{\Grace}{{\scshape Grace}}
+%\newcommand{\grace}{{\scshape Grace}}
+\newcommand{\pthreads}{\texttt{pthreads}}
+
+\lstdefinelanguage{c++threads}[]{c++}{morekeywords={pthread_create,pthread_join}}
+
+\lstset{language=c++threads, basicstyle=\ttfamily\scriptsize,frame=trbl,tabsize=4} % ,numbers=left,numberstyle=\tiny}
+
+\definecolor{Gray}{cmyk}{0,0,0,0.5}
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
+
+\begin{document}
+
+%\conferenceinfo{WXYZ '05}{date, City.} 
+%\copyrightyear{2005} 
+%\copyrightdata{[to be supplied]} 
+
+%\titlebanner{banner above paper title}        % These are ignored unless
+\preprintfooter{short description of paper}   % 'preprint' option specified.
+
+\title{\DeFaults{}: Detecting and Predicting All False Sharing Precisely and Accurately}
+%\title{DeFault: Precisely Detecting All False Sharing with Compiler Instrumentation}
+%\subtitle{Subtitle Text, if any}
+
+\authorinfo{Tongping Liu}
+           {University of Massachusetts Amherst \and FutureWei Technology.}
+           {tonyliu@cs.umass.edu}
+\authorinfo{Chen Tian \and Ziang Hu}
+           {FutureWei Technology.}
+           {Chen.Tian@huawei.com, Ziang.Hu@huawei.com}
+\authorinfo{Emery D. Berger}
+           {University of Massachusetts Amherst}
+           {emery@cs.umass.edu}
+
+\maketitle
+
+\begin{abstract}
+%This is the text of the abstract.
+%How is existing work?
+%Sharing inside mulithreaading programs is not easy, they can easily cause correctness or performance problem. 
+%Inappropriate sharing can dramatically degrade the performance of 
+%mulithreading programs and seriously affect the scalability. 
+%So detecting false sharing accurately and precisely can be helpful for user to fix corresponding performance problem. 
+
+\begin{comment}
+False sharing is notorious for performance degradation in multithreaded
+programs. It apprears when two or more threads running on different cores periodically access 
+different portions of data that can fit into one cache line. Since caching
+system in a multicore processor needs to ensure a coherent view of memory
+accross all cores, it has to grant an exclusive access
+for each write operation by invidating duplicate copies in other cores. As a
+result, frequent cache invalidation can seriously affect the scalability and
+performance of multithreaded programs.
+\end{comment} 
+
+False sharing is a notorious performance issue for different software stacks, 
+which can dramatically degrade the performance and seriously affect the scalability 
+of software.
+
+%Many reserach efforts have been made to detect false sharing. 
+Unfortunately, previous approaches to detect false sharing
+either introduce significant performance overhead, or fail
+to report false sharing accurately and precisely, or have different limitations of usage. 
+The state-of-the-art tool, \sheriff{} 
+has limitations on the type of false sharing (only write-write false sharing),
+thread library (only \pthreads{} library) and applications. 
+\begin{comment}
+For example, the state-of-the-art tool, \Sheriff{}, 
+can only detect write-write type of false sharing in programs using
+\pthreads{} library. Also, \sheriff{} may break correctness when programs are using Ad Hoc
+synchronizations or stack variables to communicate among different threads, which limits
+its usage for many real applications. 
+\end{comment}
+In this paper, we propose a novel method to combine compiler instrumentation
+and runtime system to detect false sharing.
+To our knowledge, it is the first method that can
+identify false sharing problems across the entire software stack including 
+hypervisors, operating systems, libraries and applications. 
+The method has been implemented as a tool, \defaults{}, which can accurately and precisely detect all kinds
+of false sharing inside multithreading applications with only $3\times$ performance overhead.   
+%false sharing detection tool, 
+%called \Defaults{}. 
+%It can detect all kinds of false sharing and work for different 
+%multithreading libraries with reasonable performance overhead (around $3\times$ slower on average). 
+%Different with previous work, 
+%\Defaults{} instruments memory access
+%instructions during compiling, tracks
+%each memory reads and writes at runtime, 
+%and reports those performance degrading false sharing at termination.
+% after the target application finishes. 
+
+It is also noticed that existing tools can only detect false sharing
+manifested in current executions.
+However, any change of compiler optimization, compiler, memory manager, 
+memory allocation order, cache line size 
+or even hardware processors may affect manifests of false sharing, 
+which leaves many of them undetected by existing tools. 
+By exploring many possibilities under various settings,
+\Defaults{} is the first tool that can {\it predict} possible false sharing
+problems that do not even manifest. It can report all possible false
+sharing problems with only one execution and minimal overhead in addition to
+detection overhead. 
+
+%What is novel in our work?
+%How is the performance overhead?
+
+\end{abstract}
+
+\category{CR-number}{subcategory}{third-level}
+
+\terms
+term1, term2
+
+\keywords
+keyword1, keyword2
+
+\section{Introduction}
+%False sharing problem is a cache usage problem. 
+%Cache, with much faster access speed than main memory, is normally utilized by CPU
+%to accelerate program executions by preloading a fixed size of data into the cache each time, 
+%called as a cache line.  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Why 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+False sharing is notorious for performance degradation in multithreaded
+programs due to cache coherence protocol, which exists in most mordern 
+ mutlicore processors.
+The reason of having cache coherence protocol is to ensure the correctness of
+program executions: 
+if some cache line data on a core needs to be updated, the duplicated data in any other core's private 
+cache must be invalidated at cache-line level (e.g., 64 Bytes). 
+However, frequent invalidations can cause severe performance problem.
+In the case of false sharing where multiple threads access different locations
+in the same cache line in a \textit{ping-pong} manner, generated cache
+invalidations can easily degrade program performance as much as an order of magnitude. 
+%Because cache invalidation can cause a thread accessing the same cache line to stall and wait for the data 
+%to be loaded from main memory, wasting both the CPU time and memory bandwidth in the same time. 
+Unfortunately, the hardware evolution is on the venue of building more cores
+with larger cache line size, which makes false sharing increasingly common.
+
+Prior studies have shown that false sharing exists in different levels of current software stack.
+It has been found in OS (Linux kernel~\cite{OSfalsesharing}), Java virtual machine~\cite{JVMfalsesharing}, 
+common libraries~\cite{libfalsesharing} and real applications~\cite{appfalsesharing}. 
+People also observed false sharing in runtime system such as share memory system
+~\cite{dsmfalsesharing} and transactional memory ~\cite{tmfalsesharing}.
+Although many efforts have been made in false sharing detection, existing
+tools have various limitations:
+they either introduce significant performance overhead~\cite{falseshare:simulator, falseshare:binaryinstrumentation1,falseshare:binaryinstrumentation2}, or 
+ are incapable of reporting false sharing 
+precisely and accurately~\cite{qinzhaodetection, detect:ptu, detect:intel, falseshare:binaryinstrumentation1, DProf, falseshare:binaryinstrumentation2}, 
+or require special OS support~\cite{OSdetection}.
+% or they can only detect one kind of
+%false sharing problem on a specific multithreading library~\cite{sheriff}.
+The state-of-the-art tool, Sheriff~\cite{sheriff} overcomes these limitations. However, 
+it can only detect write-write type false sharing in programs using pthreads library,
+and can not work correctly on programs using ad-hoc synchronizations or using stack variables to communicate among different threads. 
+
+Despite their different features and limitations, all existing detection tools 
+have a common drawback, that is, they can only detect those
+false sharing occurring in current executions.
+As pointed out by Nanavati et al.~\cite{OSdetection}, some dynamic properties of a system can easily 
+change the manefest of false sharing problems. For example, 
+{\it "GCC fixes false sharing in the Phoenix linear\_regression benchmark 
+at -O2 and -O3 optimization, while clang fails to even at the highest
+optimization level".} 
+The dynamic properties include choosing different compiler, 
+enabling different compiler optimizations, 
+using different memory management schemes,
+and changing different target platforms such as address mode (32-bit or 64-bit) and cache line
+size (64 Bytes or 128 Bytes) and so on. Unfortuantely, 
+existing detection tools do not consider these dynamic properties, and
+therefore are unable to identify potential performance-degrading false
+sharing problems that may occur in an execution under a set of different 
+dynamic properties.
+
+In this paper, we propose a new false sharing detector, \defaults{}, aiming to
+not only {\it detect} all existing false sharing problems accurately and precisely,
+but {\it predict} those potential 
+false sharing problems that may appear in a slightly different environment. 
+%To be more specific, 
+%\defaults{} can report potential false sharing problems with different cache line size and different starting address of an object 
+%without the need of another execution. 
+
+\Defaults{} has the following contributions:
+\begin{itemize}
+\item
+% methodology
+\defaults{} provides a new false sharing detection method by
+combining compiler instrumentation with runtime system.
+%, which can avoid the shortcomings of existing tools. 
+Since \defaults{} neither relies on the support of specific hardware and OS ,
+nor binds to specific threading library, 
+it is suitable for the entire software stack, 
+i.e., hypervisors, operating systems, libraries and applications. 
+%Since compiler can be utilized to do selective instrumentation, 
+%\defaults{} can be utilized to detect all kinds of false sharing problem with ideal overhead. 
+
+% effect: can detect all kinds of false sharing problems.
+\item
+\defaults{} is capable of detecting all kinds of false sharing problems accurately and precisely 
+with reasonable overhead. 
+It reveals some unknown false sharing problems in those benchmark suites evaluated by 
+previous approaches. 
+% combine compiler instrumentation with runtime system, so that it can 
+%detect all kinds of false sharing problem including write-write false sharing. 
+%avoid the shortcomings of runtime-only system, where Sheriff can not detect the read-writee false sharings. 
+%Also, because of the limit of their implementation, Sheriff can not support the program using the ad hoc synchronization
+%or using the stack variables to communicate among different threads.
+%Also, it looks like that we can provide a evenly performance overhead.
+%Also, sheriff should only work on specific thread library, currently, it can only work on pthreads library. 
+%We are trying to extending the same idea to different thread library. Now we can also run DeFault to detect all 
+%false sharings using other threads libraries.
+
+% prediction
+\item
+\defaults{} is the first approach to predict potential false sharing that does
+not manifest in an execution but may appear and greatly affect the performance of programs in a slightly different 
+environment. 
+This avoids the predicament of detection tools: problems may occur in a real
+environment rather than test environment due to environmental changes. 
+%Existing approaches is based on specific hardware,
+%runtime environment(using specific libraries and compilers) and specific cache line size, which is OK to detect those 
+%existing false sharings. But they fail to capture those variables or objects which can greately slow down performance 
+
+%In order to save memory usage, we propose a threshold invoked detection based on the predefined number of writes on a cache line, which
+%can be used to track the .
+
+\end{itemize}
+
+The orgnization of this paper is as follows .....
+
+%There are two types of false sharings:
+%A. Different threads are accessed different locations according to the definition of flase sahrings. 
+%B. Locations with a large amount of reads is placed in the cache line with a large amount of writes.
+%For the second type, existing tools may tend to miss that.  
+
+
+
+\section{\DIFdelbegin \DIFdel{Related Work}\DIFdelend \DIFaddbegin \DIFadd{False Sharing Detection}\DIFaddend }
+\DIFdelbegin \DIFdel{Currently, 
+there is no existing tool which can predict possible false sharing ,
+thus we only talk about those tools which can detect and prevent false sharing 
+problems here.
+}%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\subsection{\DIFdel{False Sharing Detection}}
+%DIFAUXCMD
+\addtocounter{subsection}{-1}%DIFAUXCMD
+\DIFdel{Based on the SIMICS functional simulator, Schindewolf et al. designed a tool 
+to report different kinds of cache usage information, such as cache miss and cache invalidations~\mbox{%DIFAUXCMD
+\cite{falseshare:simulator}
+}%DIFAUXCMD
+. 
+Pluto utilizes Valgrind to track the sequence of memory read and write
+events on different threads and reports a worst-case estimation of
+possible false sharings~\mbox{%DIFAUXCMD
+\cite{falseshare:binaryinstrumentation1}
+}%DIFAUXCMD
+.
+Similarly, Liu uses Pin to collect memory access information and
+reports total false sharing miss information~\mbox{%DIFAUXCMD
+\cite{falseshare:binaryinstrumentation2}
+}%DIFAUXCMD
+.
+These tools introduce about $100-200\times$ performance overhead. 
+These tools can not pinpoint the causes of false sharing problems.  
+}%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{Zhao et al.}%DIFDELCMD < \ %%%
+\DIFdel{developed a dynamic instrumentation based approach to 
+detect false sharing and other cache contention problems
+for multithreading programs~\mbox{%DIFAUXCMD
+\cite{qinzhaodetection}
+}%DIFAUXCMD
+, which is similar to this work. 
+This tool instruments memory reference dynamically using Umbra~\mbox{%DIFAUXCMD
+\cite{Umbra}
+}%DIFAUXCMD
+, 
+tracks the ownership of }\DIFdelend \DIFaddbegin \subsection{\DIFadd{Overview}}
+%DIF > \defaults{} is a hybrid approach that combines the runtime system with compiler instrumentation.
+\DIFadd{As described above, 
+%DIF > false sharing is caused by cache coherence protocol: 
+%DIF > when data of a cache line on a core is changed, the duplicated data of the same cache line 
+%DIF > in any other core must be invalidated in order to guarantee the correctness.
+frequent cache invalidations caused by false sharing can cause severe performance problem.
+For a }\DIFaddend cache \DIFaddbegin \DIFadd{invalidation, }\textbf{\DIFadd{if a thread writes a cache line after other threads have 
+accessed the same cache line, this write operation most likely causes at least a cache invalidation}}\DIFadd{. 
+Leveraged on this observation, }\Defaults{} \DIFadd{aims to capture cache invalidations for all cache }\DIFaddend lines and 
+\DIFdelbegin \DIFdel{bases on shadow memory technique to obtain thread interleaving information.
+However, it can only support at most 32 threads and its memory overhead 
+is above $2\times$ in order to keep track of cache line ownership.
+Moreover, it can not pinpoint the source of problems exactly,
+so programmers have to examine the source code and figure out problems
+manually.
+}\DIFdelend \DIFaddbegin \DIFadd{ranks seriousness of performance problem using cache invalidations.
+%DIF >  by keeping track of accesses from different threads. 
+ }\DIFaddend 
+
+\DIFdelbegin \DIFdel{Intel's performance tuning utility (PTU)~\mbox{%DIFAUXCMD
+\cite{detect:ptu, detect:intel}
+}%DIFAUXCMD
+uses Precise
+Event Based Sampling (PEBS) hardware support to detect problems efficiently. 
+PTU can point out the physical cache addresses 
+and identify individual functions with possible false sharings.
+However, PTU aggregates memory accesses without considering the memory re-usage and
+access interleavings, thus it reports a lot of
+false sharings without actual performance impact.
+PTU cannot differentiate true sharing from
+false sharing and pinpoint the exact source of false sharings.
+}%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{Pesterev et al.}%DIFDELCMD < \ %%%
+\DIFdel{develop a tool, DProf, to help programmers identfy cache misses based on
+AMD's instruction-based sampling hardware~\mbox{%DIFAUXCMD
+\cite{DProf}
+}%DIFAUXCMD
+.
+DProf requires manual annotation
+to locate data types and object fields, and cannot detect false
+sharing when multiple objects reside on the same cache line.
+}%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\subsection{\DIFdel{False Sharing Prevention}}
+%DIFAUXCMD
+\addtocounter{subsection}{-1}%DIFAUXCMD
+\DIFdel{Jeremiassen and Eggers uses a compiler transformation to automatically adjust the
+memory layout of applications through padding and alignment~\mbox{%DIFAUXCMD
+\cite{falseshare:compile}
+}%DIFAUXCMD
+.
+Chow et al.}%DIFDELCMD < \ %%%
+\DIFdel{describe an approach to alter parallel loop scheduling to avoid
+sharings~\mbox{%DIFAUXCMD
+\cite{falseshare:schedule}
+}%DIFAUXCMD
+.
+These static analysis based approaches only works for regular,
+array-based scientific codes.
+}%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{Berger et al.}%DIFDELCMD < \ %%%
+\DIFdel{describe Hoard, a scalable memory allocator can reduce
+the possibility of false sharing
+by making different 
+threadsto use different heaps~\mbox{%DIFAUXCMD
+\cite{Hoard}
+}%DIFAUXCMD
+. But Hoard can not avoid the false sharings of globals and inside one heap object.
+}%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\subsection{\DIFdel{False Sharing Detection and Prevention}}
+%DIFAUXCMD
+\addtocounter{subsection}{-1}%DIFAUXCMD
+%DIFDELCMD < \sheriff{}%%%
+\DIFdel{~\mbox{%DIFAUXCMD
+\cite{sheriff}
+}%DIFAUXCMD
+develops two tools about false sharing based on 
+their threads-as-processes framework: by turning threads into processes with separate address space, }%DIFDELCMD < \sheriff{} %%%
+\DIFdel{relies on page protection mechanism and twinning-and-diffing mechanism 
+to find out local modifications of different threads and merge them into the 
+global mapping at explicit synchronization points of calling }%DIFDELCMD < \pthreads{} %%%
+\DIFdel{APIs. 
+}%DIFDELCMD < \SheriffDetect{} %%%
+\DIFdel{can report false sharing accurately and precisely, which shares the same target 
+as our work.
+However, }%DIFDELCMD < \SheriffDetect{} %%%
+\DIFdel{can only detect write-write type of false sharing for those programs 
+using }%DIFDELCMD < \pthreads{} %%%
+\DIFdel{library, while our work can detect all kinds of false sharing for different
+kinds of threads libraries with minimum change. 
+As a prevention tool, }%DIFDELCMD < \SheriffProtect{} %%%
+\DIFdel{are suitable for improving the performance of
+programs having small amount of synchronizations. For those programs with very significant 
+amount of synchronizations, }%DIFDELCMD < \SheriffProtect{} %%%
+\DIFdel{may even slowdown the performance. 
+Since }%DIFDELCMD < \SheriffDetect{} %%%
+\DIFdel{and }%DIFDELCMD < \SheriffProtect{} %%%
+\DIFdel{assumes the correct usage of }%DIFDELCMD < \pthreads{} %%%
+\DIFdel{APIs,  
+they may not work correctly for those programs that
+are using their own Ad Hoc synchronization or using stack variables to communicate among threads
+, like lock-free data free structures, which limits their usage for most of real applications.
+ }%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{Plastic~\mbox{%DIFAUXCMD
+\cite{OSdetection}
+}%DIFAUXCMD
+leverages the }\texttt{\DIFdel{sub-page granularity memory remapping facility}}
+%DIFAUXCMD
+\DIFdel{provided by Xen hypervisor to detect and tolerate false sharing problem automatically.
+However, this sub-page memory remapping mechanism is not supported by most of existing operating 
+system currently, making it a non-universal solution. Moreover, Plastic can not pinpoint 
+the exact source of false sharing problems, which also greatly limits its usage.
+}%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\section{\DIFdel{False Sharing Detection}}
+%DIFAUXCMD
+\addtocounter{section}{-1}%DIFAUXCMD
+%DIF < \defaults{} is a hybrid approach that combines the runtime system with compiler instrumentation.
+\DIFdel{Runtime system }\DIFdelend %DIF > to be loaded from main memory, wasting both the CPU time and memory bandwidth in the same time.
+\DIFaddbegin \DIFadd{In order to capture cache invalidations, it is important to capture memory accesses from different 
+threads. However, runtime system }\DIFaddend itself is hard to capture \DIFdelbegin \DIFdel{read and write }\DIFdelend accesses efficiently, accurately and timely 
+without hardware support. For example, \Sheriff{} relies on memory protection mechanism \DIFdelbegin \DIFdel{to capture those written pages and uses }\DIFdelend \DIFaddbegin \DIFadd{and }\DIFaddend word-by-word
+\DIFdelbegin \DIFdel{comparsion }\DIFdelend \DIFaddbegin \DIFadd{comparison }\DIFaddend to find out \DIFdelbegin \DIFdel{those modifications from different threads. But it is expensive, inaccurately and can not detect writes immediately with reasonable overhead.  
+Also, }\DIFdelend \DIFaddbegin \DIFadd{accumulated write accesses in a period of time. However, }\DIFaddend it can not capture 
+read accesses \DIFdelbegin \DIFdel{.
+}\DIFdelend \DIFaddbegin \DIFadd{in a reasonable overhead~\mbox{%DIFAUXCMD
+\cite{sheriff}
+}%DIFAUXCMD
+. Liu et al. using one of binary 
+instrumentation (Pin) to collect memory accesses introduces more than 
+$100\times$ performance overhead ~\mbox{%DIFAUXCMD
+\cite{falseshare:binaryinstrumentation2}
+}%DIFAUXCMD
+}\DIFaddend 
+
+\DIFdelbegin \DIFdel{Compiler can instrument those instructionsaccessing global variables and heap objects. 
+However, 
+in the compilation phase, }\DIFdelend \DIFaddbegin \DIFadd{Memory accesses can be captured in compiler by using instrumentation technique. 
+Compiler can easily identify read or write accesses of different instructions, 
+but }\DIFaddend it is impossible to know when and how those instructions are being \DIFdelbegin \DIFdel{executed since they are depending on specific input parameter or executionenvironment. 
+Without these dynamic information, it is impossible to detect those performance-degrading false sharing. 
+}\DIFdelend \DIFaddbegin \DIFadd{accessed, 
+which depends on a specific execution. 
+}\DIFaddend %Fortunately, runtime system can capture these kinds of information with the help of compiler isntrumentation. 
+
+Therefore, \defaults{} combines the runtime system with compiler instrumentation \DIFdelbegin \DIFdel{: 
+compiler is utilized to notify the runtime system about those accesses on gobal }\DIFdelend \DIFaddbegin \DIFadd{to capture 
+cache invalidations: compiler instruments memory accesses on global }\DIFaddend variables and heap variables 
+\DIFdelbegin \DIFdel{and runtime system}\DIFdelend \DIFaddbegin \DIFadd{in order to notify the runtime system(see Section~\ref{sec:compiler}), 
+whereas the runtime system }\DIFaddend is responsible for collecting and analyzing actual memory \DIFdelbegin \DIFdel{read/write information about applications. Also, runtime system can
+}\DIFdelend \DIFaddbegin \DIFadd{accesses 
+in order to detect and }\DIFaddend report false sharing \DIFdelbegin \DIFdel{in the end}\DIFdelend \DIFaddbegin \DIFadd{(see Section~\ref{sec:runtime})}\DIFaddend .
+
+\subsection{Compiler Instrumentation}
+\DIFaddbegin \label{sec:compiler}
+
+\DIFaddend \Defaults{} \DIFdelbegin \DIFdel{leverages }\DIFdelend \DIFaddbegin \DIFadd{relies on }\DIFaddend LLVM to do instrumentation on Intermediate Representation level (IR)\DIFaddbegin \DIFadd{~\mbox{%DIFAUXCMD
+\cite{llvm}
+}%DIFAUXCMD
+}\DIFaddend .
+As described above, \Defaults{} tries to instrument those \DIFaddbegin \DIFadd{instructions to access 
+}\DIFaddend global variabls and heap variables. 
+It is worth to note that \Defaults{} do not instrument those accesses on stack variables 
+since stack variables are considered to be thread local and should not have 
+false sharing problems normally. However, it is always easy to turn on
+instrumentation on stack variables. 
+
+The instrumentation pass is placed in the very end of LLVM optimization passes 
+so that \defaults{} only instruments those memory accesses surviving all previous 
+LLVM optimization passes, like the scalar or loop optimizations. This instrumentation
+technique is very similar to the one used in AddressSanitizer~\cite{Addresssanitizer}.
+In the actual instrumentation, \defaults{} traverses all functions one by one and 
+searches for memory accesses on globals and heap variables. 
+For each memory access, \defaults{} adds one callback function by passing memory access  
+address and access type in order to notify the runtime system.
+\DIFdelbegin \DIFdel{But this technique could be very costly and we discuss the optimization in the Section~\ref{optimization}. 
+}\DIFdelend %DIF > But this technique could be very costly and we discuss the optimization in the Section~\ref{optimization}. 
+
+\subsection{Runtime System}
+\DIFaddbegin \label{sec:runtime}
+
+\DIFaddend Runtime system actually tracks every memory access by handling those callback functions 
+instrumented \DIFdelbegin \DIFdel{by
+the compiler. 
+}\DIFdelend \DIFaddbegin \DIFadd{in the compilation phase. 
+%DIF > Same as \Sheriff{}, 
+%DIF > \Defaults{} reports precise information about a false sharing problem.
+}\DIFaddend By analyzing traces of memory accesses, \defaults{} reports those 
+performance-degrading false sharing \DIFdelbegin \DIFdel{problems 
+}\DIFdelend \DIFaddbegin \DIFadd{precisely }\DIFaddend in the end\DIFaddbegin \DIFadd{, same as that in }\sheriff{}\DIFadd{~\mbox{%DIFAUXCMD
+\cite{sheriff}
+}%DIFAUXCMD
+}\DIFaddend . 
+For global variables, \defaults{} reports name, address and size information. 
+For heap objects, \defaults{} reports actual callsite stack for allocations, address 
+and size information. 
+Besides that, \defaults{} provides word accesses information for those problematic cache lines, 
+including which threads are accessing which words, so that user can \DIFdelbegin \DIFdel{pinpoint precisely }\DIFdelend \DIFaddbegin \DIFadd{figure out
+}\DIFaddend where the problem is and how to fix false sharing problem.
+
+\subsubsection{Detecting Cache Invalidations}
+%DIF <  what is the false sharing problem?
+%DIF <  How to capture false sharing problem?
+%DIF <  
+\DIFdelbegin \DIFdel{As described above, frequent cache invalidations causes performance problem. So }\DIFdelend \Defaults{} reports those global variables or heap objects on those cache lines 
+having a large amount of cache invalidations. 
+%DIF < However, it is impossible to know the exact number of cache invalidations without hardware support. 
+\DIFdelbegin %DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{We notice that }\textbf{\DIFdel{a thread writes a cache line after other threads have accessed the same cache line, 
+this write operation most likely causes at least a cache invalidation}}%DIFAUXCMD
+\DIFdel{. Based on this observation}\DIFdelend \DIFaddbegin \DIFadd{Thus}\DIFaddend , \Defaults{} \DIFdelbegin \DIFdel{captures cache invalidations of different cache lines by keeping }\DIFdelend \DIFaddbegin \DIFadd{has to keep }\DIFaddend track of accesses from different threads \DIFdelbegin \DIFdel{. 
+ }\DIFdelend \DIFaddbegin \DIFadd{in order to capture 
+cache invalidations.
+ }\DIFaddend 
+
+\DIFdelbegin \DIFdel{In order to do that}\DIFdelend \DIFaddbegin \DIFadd{For each cache line}\DIFaddend , \Defaults{} maintains a two-entries-cache-history table\DIFdelbegin \DIFdel{for each cache line}\DIFdelend , showed as Table~\ref{table:cachehistory}. 
+
+\begin{table}
+\centering
+  \begin{tabular}{ l | r }
+    \hline
+    {Thread ID} & {Type of Access} \\ \hline
+    \hline
+     &   \\ \hline
+     &   \\ \hline
+  \end{tabular}
+  \caption{Two-entries-cache-history table. \label{table:cachehistory}}
+\end{table} 
+
+For each entry, we record two fields: thread ID and access type (read or write). 
+Whenever there is new access on a cache line, we check against its corresponding history table 
+to decide whether there is a cache invidation as follows:
+
+\begin{itemize}
+\item
+When the new access is a read operation, it cannot cause a cache invalidation. But we should check corresponding cache history table 
+to decide whether we should record this access.
+  \begin{itemize}
+    \item
+    If its history table is full, then there is no need to record this read access.
+    \item
+    If its history table is not full and another existing entry has a different thread ID with this read access, then we should record this 
+    entry by filling a new entry. 
+  \end{itemize}
+\item
+When the new access is a write opertion, we should check corresponding cache history table about invalidations.
+  \begin{itemize}
+    \item
+    If its history table is full, then this write can cause a cache invalidation since at least one of two existing entries has a different 
+    thread ID with that of this access. 
+    \item
+    If its history table is not full, then it is necessary to check another existing entry inside the table. If this write access has the same    thread ID as the existing entry, this write can not cause a cache invalidation and we should replace the existing entry with this new access. Otherwise, this write can cause a cache invalidation and all existing entries should be cleaned up and replaced by this new write access.
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Reporting False Sharing}
+After detections of those individual cache lines having a large amount of cache invalidations, 
+\defaults{} indentifies those actual false sharing problems. 
+\DIFdelbegin \DIFdel{It is worth to note }\DIFdelend \DIFaddbegin \DIFadd{Note }\DIFaddend that a cache line having a large amount of cache invalidations does not 
+always have false sharing problem inside. 
+True sharing can also cause cache invalidations too: for example, mulitple threads updating 
+the same counter in a cache line can \DIFaddbegin \DIFadd{also }\DIFaddend cause a large number of invalidations, 
+but it is not a false sharing problem.
+
+In order to report false sharing precisely and accurately, 
+\Defaults{} explores the following mechanisms. 
+\begin{itemize}
+\item
+\defaults{} keeps track of access information for each word on those
+problematic cache lines: how many reads or writes happening on each word by which thread. 
+When a word is accessed by multiple threads,
+we marked the access as a shared access. By examining these access information 
+in the reporting phase, \defaults{} can 
+accurately differentiate true sharing with false sharing. 
+Also, access information of each word is also beneficial to figure where 
+actual false sharing occurs when there are multiple fields or multiple objects in the same cache line. 
+\textbf{EXPLAINING TOO TYPES OF FALSE SHARINGS}
+
+\item
+In order to precisely report origins of false sharing objects, \defaults{}
+keeps callsite information for each heap object and reports the source code level
+information about each heap object. \DIFdelbegin \DIFdel{In order to }\DIFdelend \DIFaddbegin \DIFadd{To }\DIFaddend obtain those callsite information, \defaults{}
+intercepts all memory \DIFdelbegin \DIFdel{allocation and de-allocation }\DIFdelend \DIFaddbegin \DIFadd{allocations and de-allocations,  }\DIFaddend and relies on \texttt{backtrace()} 
+function to obtain the callsite stack. 
+Also, \defaults{} avoids pseudo false sharing problems (false positives) caused by memory re-usages 
+by handling correspondingly in memory de-allocations\DIFaddbegin \DIFadd{, whereas those heap objects with false 
+sharing is not re-used at all}\DIFaddend .
+
+\item
+Since \defaults{} have to keep track of reads and writes on each word for those problematic cache lines,
+\defaults{} should locate corresponding bookkeeping information efficiently when there is an access 
+on a cache line. 
+Normally, hash table is a good mechanism to do that, but it needs extra memory to hold the hash table 
+and consumes extra CPU to calculate hash value and traverse corresponding list to find actual entry. 
+\defaults{} uses shadow memory to achieve this target, same as 
+AddressSanitizer~\cite{Addresssanitizer} and other systems~\cite{qinzhaodetection}~\cite{Valgrind}. 
+Each cache line of user space has a corresponding entry in the shadow memory. 
+To map user space of applications, \defaults{} uses predefined starting address and fixed size for 
+the heap. So \Defaults{} develops a customized memory allocator, which is built on 
+Heaplayers~\cite{heaplayers} based on a ``per-thread-heap'' mechanism firstly introduced 
+by Hoard~\cite{Hoard}. Memory allocations from different threads 
+are not coming from the same physical cache line, which automatically avoids false sharing 
+introduced by memory allocator.
+However, it also brings a shortcoming that those false sharings caused by the default memory 
+allocator can not be detected by \defaults{}. 
+
+\end{itemize} 
+
+\subsubsection{Threshold-Based Tracking Mechanism}
+\Defaults{} aims to detect performance degrading false sharing.
+% where those cache lines with a large amount of cache invalidations and writes.
+Since cache invalidations are the root cause of performance degrading and only writes 
+can possibly induce cache invalidations, 
+those cache lines with a small amount of writes are never being candidates for 
+performance degrading false sharing problems.
+For this sake, \defaults{} starts to track cache invalidations, reads and word accesses 
+of a cache line after writes on this cache line are above a pre-defined threshold in order 
+to reduce performance overhead and memory overhead of tracking.
+
+Before this threshold, \defaults{} only tracks writes on a cache line while skipping those 
+reads operations. 
+Those cache lines with small amount of reads are not our focuses for performance problem 
+so this mechanism helps to filter out
+those impossible candidates and benefits the overall performance. 
+For the same reason, \defaults{} only tracks cache invalidations and word accesses of 
+a cache line after writes is above the same threshold, which
+helps to reduce the memory overhead of tracking those non-candidate cache lines.      
+%\defaults{} employs a threshold-based tracking mechanism to reduce the performance overhead and memory overhead: 
+
+In the actual implementation, \defaults{} maintains two shadow mappings: 
+one (\texttt{CacheWrites}) is to track memory writes 
+on every cache line and another (\texttt{CacheTrackings}) is to track detailed information 
+on each cache line when writes on a cache line are larger than a pre-defined threshold.
+If memory writes of a cache line is less than the threshold, there is no need to check 
+corresponding \texttt{CacheTrackings}. 
+The detailed mechanism can be seen in Figure~\ref{fig:algorithm}.
+
+\begin{figure}[!t]
+\begin{lstlisting}
+void HandleAccess(unsigned long addr, bool isWrite) {
+ unsigned long cacheIndex=addr>>CACHELINE_SIZE_SHIFTS;
+ cachetrack *track=NULL;
+
+ if(CacheWrites[cacheIndex]<THRESHOLD_TRACK_DETAILS) {
+  if(isWrite) {
+   if(ATOMIC_INCR(&CacheWrites[cacheIndex]) 
+      ==THRESHOLD_TRACK_DETAILS-1) {
+    track=allocCacheTrack();
+    if(!ATOMIC_CAS(&CacheTrackings[cacheIndex],0,track)){
+     deallocCacheTrack(track);
+    }
+   }
+  } 
+ }
+ else {
+  track=CacheTrackings[index]);
+  if(track){
+   // Track cache invalidations and detailed accesses
+   track->handleAccess(addr, isWrite);
+  }
+ }
+}
+\end{lstlisting}
+\caption{Pseudo-code to handle an access.\label{fig:algorithm}}
+\end{figure}
+
+To avoid expensive lock operations, \defaults{} uses atomic instruction to increment 
+writes counter for each cache line. 
+When writes of a cache line reaches the predefined threshold,
+\defaults{} allocates space to track detailed cache invalidations and word accesses and then 
+uses atomic compare-and-swap instruction to set cache tracking address for this cache line in
+the shadow mapping. From now on, all accesses on this cache line are started to be tracked.
+
+\subsection{Optimization}
+\label{optimization}
+
+\defaults{} employs the following mechanisms to improve the performance\DIFdelbegin \DIFdel{, where main improvement has been evaluated in Section~\ref{}.
+}\DIFdelend \DIFaddbegin \DIFadd{.
+%DIF > , where main improvement has been evaluated in Section~\ref{}.
+}\DIFaddend 
+
+\subsubsection{Selective Compiler Instrumetation}
+\defaults{} relies on instrumentation to provide memory access information to the runtime system 
+and detects false sharing based on memory traces. 
+Thus the volume of instrumentation can largely affect the performance overhead: more 
+instrumentation always means more performance overhead. 
+Thus, \defaults{} can provide a very flexible framework to instrument programs depending on performance requirements. 
+
+% in a flexible fashion so that only necessary memory read/write accesses are 
+%provided to runtime system in order to reduce performance overhead of detection. 
+Currently, \Defaults{} only instruments once for one type of memory access on each address 
+in one basic block. 
+We argue that this sampling mechanism here do not affect the effectiveness of detection. 
+Since \Defaults{} targets to detect performance degrading false sharing with a large amount of cache invalidations,
+less tracking of one basic block can induce less cache invalidations but it won't affect the overall behavior of cache invalidations. 
+
+% detection will not cause performance problem. 
+Also, \defaults{} can be easily extended to support more selective instrumentation as follows:
+\begin{itemize}
+\item
+\Defaults{} can selectively instrument reads-and-writes or writes-only. Fo example, instrumenting writes-only can help to detect write-write false sharing, as Sheriff does. 
+\item
+\Defaults{} can be set to instrument or skip one specific kind of targets. For example, user can provide a black list so that those modules,
+functions or variables are not be isntrumented. Also, user can provide a red list so that only specified functions or variables are instrumented. 
+\end{itemize}
+
+\subsubsection{Sampling Mechanism}
+\defaults{} tracks cache invalidations, cache writes and word accesses when writes on a cache line is larger than a pre-defined threshold.
+In order to track these information, 
+%cache invalidations and cache writes of a cache line, 
+each access happening on this cache line may have to update some common counters shared by this cache line. 
+This can exacerbate the false sharing problem if originally a cache line exists some false sharing problems because every cache 
+invalidation of original cache line can invoke another cache invalidation on those cache lines of tracking detailed information.
+
+To reduce the performance overhead caused by this, \defaults{} only sample the first specified
+number of accesses of each sampling interval happening on those problematic cache lines. 
+Note that we originally maintains a global counter for all accesses and uses the number of 
+all accesses as a sample interval. However, using a global counter for all accesses creates 
+high performance overhead caused by cache invalidations. 
+
+Currently, we maintain an access counter for each cache line and only samples the first $10000$ accesses 
+for every 1 Million accesses (sampling interval), with sampling rate 1\%. By using this mechanism, 
+we greatly reduce the performance overhead but do not miss any false sharing.  
+
+\DIFaddbegin \begin{comment}
+\DIFaddend \subsubsection{Updating-In-Place}
+%During the development of \defaults{}, we discover over $2\times$ performance overhead for those benchmarks 
+%without any false sharing problems. 
+
+Originally, all memory accesses are instrumented with a library call to notify the runtime system. However, this creates
+some unnecessary performance overhead from function calls and library calls. 
+A library call invokes normal function call overhead plus another indirection overhead through a Global Offset Table (GOT) and 
+Procedure Linkage Table (PLT).
+This can introduce significant performance overhead for some simple logic listed in the following:
+\begin{itemize}
+\item
+When total writes on a cache line is less than the pre-defined threshold, if an access is a write, 
+\defaults{} simply incrementes the counter of writes for this cache line. If an access is a read,
+\defaults{} does not do  anything. 
+\item
+When total writes on a cache line is larger than the pre-defined threshold, then this cache line is under 
+tracking. As described in last section, \defaults{} only sample certain number of accesses (1\%) for every 
+sample interval. Most accesses (99\%) only needs to increment an access counter of corresponding cache line.
+\end{itemize}
+
+These simple logic only invokes several circles of useful work, either checking or updating a counter. 
+Thus, the overhead of function calls or library
+calls can be much more than this. 
+In order to avoid these overhead, \defaults{} implements these simple logic in places where these
+memory accesses are instrumented. 
+This brings another problem: how to choose shadow mapping addresses. 
+We borrow the idea of AddressSanitizer~\cite{Addresssanitizer} by 
+choosing these addresses statically. \defaults{} pre-allocated the address space between $0x40000000$ and
+$0xC0000000$ for the heap. Also, \defaults{} chooses $0x200000000000$ as the starting address for the shadow mapping of cache writes 
+$0x200080000000$ as the starting address for the shadow mapping of cache tracking. 
+Also, \defaults{} intentionally stores the access counter in the first word of cache tracking so that 
+those checking and updating can be executed in-place when an memory access is instrumented. 
+\DIFaddbegin \end{comment}
+\DIFaddend 
+
+%\subsection{Compiler Instrumentation}
+%\subsection{Runtime System}
+%\subsection{Performance Optimization}
+
+\section{False Sharing Prediction}
+\subsection{Potential False Sharing Problems}
+False sharing is a problem related to cache usage, which tightly relates to the starting addresses of an object
+and cache size. 
+When one of these two environments changes, an object without false sharings originally may expose some false sharing
+problems.
+
+\begin{figure}[h]
+{\centering
+%\includegraphics{fig/potential.pdf}
+\caption{Possible false sharing under different environment.\label{fig:potentialfalsesharing}}
+}
+\end{figure}
+
+For the example showed in Figure~\ref{fig:potentialfalsesharing}, it is not a false sharing problem since thread T1 only updates 
+``cache line 1'' and thread T2 only updates ``cache line 2'' when cache line size is 64 bytes. However, this can induce performance degrading 
+false sharing when one of the following cases happens.
+
+\begin{itemize}
+\item
+Different cache line size. When cache line size is changed to 128 bytes (bigger cache line size), then thread T1 and thread T2 
+are accessing the same cache line. 
+
+\item
+Different memory manager and slightly different memory usage changes the starting address of this object. When the starting address 
+of this object is not aligned with the starting address of the first cache line, then thread T1 and thread T2 must updating 
+the second cache line simultaneously, which can potentially cause performance problem. 
+\end{itemize} 
+
+\subsection{Basic Mechanism}
+
+%To the best of our knowledge, none of existing false sharing detection tools can report those potential false sharing problems caused by 
+%a slightly different environment, with a different cache line size or a different starting address of an object. 
+%This can easily cause a predicament of detection: those programs may inducing significant performance problems in 
+%a sligtly different environment can be easily ignored by existing tools. 
+%A previous work~\cite{OSdetection} found out that GCC with -O2 and -O3 optimization can make a significant false sharing problem 
+%(causing more than $9\times$ slowdown) inside the Phoenix linear\_regression benchmark goes away. 
+%But compiler support is far from universal. 
+\defaults{} aims to report those potential false sharing that does not happen in current execution 
+environment without the need of an extra execution. 
+Those potential false sharing problems do not actually occured inside existing cache lines, 
+but across two existing adjacent cache lines.
+%So in order to predict this kinds of false sharing problems, \defaults{} must track at least memory reads and writes on two 
+%cache lines. 
+
+Of course, it is too expensive to search existing cache lines one by one for those suspected cache lines, which may contain 
+potential false sharings. \defaults{} utilizes the basic observation described above: a large amount of cache invalidations 
+can cause performance degrading false sharing problems and only writes can invoke cache invalidations. 
+Even for those potential false sharings, they can only happen to two adjacent cache lines, with at least one of them 
+having a large amount of cache writes.
+Based on this observation, \defaults{} employs the same mechanism as that of detection tool - relying on cache writes to filter out
+those possible cache lines. 
+
+%Based on this observation, \defaults{} tracks cache writes of each cache line and captures potential false sharings based on that.
+Steps to capture potential false sharings are listed in the following:
+\begin{itemize}
+\item
+Tracks writes on different cache lines. 
+
+\item
+When cache writes on a cache line equals to a pre-defined threshold, \defaults{} tracks the detailed accesses 
+both on current cache line and on adjacent cache lines. 
+
+\item
+When cache writes on a cache line reaches the second threshold, \defaults{} evaluates potential false sharing problem by
+checking word accesses on adjacent cache lines. 
+Detailed algorithm of evaluation can be seen in Section~\ref{sec:evaluation}.
+
+\item 
+If a possible false sharing has been found, 
+\defaults{} locates a possible adjustment of cache line to maximize false sharing effects, or possible cache invalidations. 
+Then \defaults{} tracks possible invalidations based on this offset, more of this can be seen in Section~\ref{sec:tracking}.
+\end{itemize}
+
+\subsection{Evaluating Potential False Sharing}
+\label{sec:evaluation}
+Assume that a cache line with writes reaching the second threshold is current cache line. 
+If a cache line already has cache invalidations, then \defaults{} do not predict potential false sharing problems on this cache line. 
+Otherwise, \defaults{} evaluate whether current cache line and its previous or next cache line have possible false sharing problems,  
+called as backward possibility and forward possibility.
+
+\defaults{} checks 
+\defaults{} further assumes that all word accesses are issued in an interleaving way. It is an 
+optimistic assumption so that we do not miss any case that can potentially cause a performance
+problem.
+
+To evaluate whether there are some potential false sharing problems, 
+\defaults{} checks those word accesses both on current cache line and on adjacent cache lines. 
+
+Otherwise, \defaults{} first evaluate whether current cache line and its previous or next cache line has false sharing problem. 
+\defaults{} evaluate the possible false sharing problems by checking those hot accesses to two adjacent cache lines.
+
+The basic idea is to evaluate possible false sharing based on hot accesses of two cache lines. 
+\defaults{} evaluate backward possibility and forward possibility of false sharing. 
+Backward possibility is to indicate whether those accesses of current cache line and previous cache
+line can have false sharing problem. Forward possibility is to check the possibility of false sharing
+between current cache line and next cache line.  
+
+
+\subsection{Tracking Potential False Sharing}
+\label{sec:tracking}
+at least one of cache line has a large amount of cache writes.
+So we  
+How to predict the false sharing in the runtime system.
+
+%Why we need prediction? 
+%How to do prediction?
+\subsection{Reporting Potential False Sharing}
+Existing approaches.
+
+There are two phases:
+(a) 
+(1) When write access is larger than one threshold, we are trying to track the detailed accesses on all objects inside this cache line.
+(2) Then we are trying to track all accesses inside one cache line. For example, we will use another threshold to verify the results of 
+    one cache line. Verify the attribute of each cache line. If the access pattern means a false sharing, then we will trying to 
+    verify all possible case of false sharings.
+    First, we should verify whether it can cause false sharing problem in current settings. If yes, good, we should still keep using 
+ current settings.  
+    (a) What if a cache line size is 32 bytes, 64 bytes or 128 bytes, whether it can cause performance problem. 
+    (b) What if a different offset, whether it can cause performance problem. 
+
+    If one of the answer is yes, then we could try to verify the assumption by using the above condition. Then we should keep track of 
+accesses based on this new assumption.
+
+
+%\input{Prediction}
+
+\section{Evaluation}
+how to evaluate the effectiveness
+\section{False Sharing Examples}
+We evaluate false sharing in two existing benchmark suites, Phoenix and PARSEC. 
+All false sharings are showed in the following table:
+
+%\begin{comment}
+\begin{table*}[t]
+{
+\centering
+\begin{tabular}{|l|r|r|r|}
+\hline
+{\bf \small Benchmark} & {\bf \small Source Code} & {\bf \small Type of False Sharing} & {\bf \small Improvement} \\
+\hline
+\small \textbf{histogram} & {histogram-pthread.c: 213} &  & 0 \\
+\small \textbf{reverseindex} &  & 5 \\
+\small \textbf{word\_count} & word\_count-pthread.c: 136 & 2 & 0\\
+\hline
+\small \textbf{streamcluster} & streamcluster.cpp:985 & 1 & 0\\
+\small \textbf{streamcluster} & streamcluster.cpp:1907 & 1 & 0\\
+\small \textbf{bodytrack} & 196 & 0 & 0\\
+\hline
+\small \textbf{linear\_regression} & linear\_regression-pthread.c: 133 & 1 & 0\\
+\hline
+\small \textbf{Total} & 2647 & 13 & 0\\
+\hline
+\end{tabular}
+\caption{Detection results of \defaults{} on Phoenix and PARSEC benchmark suites. \label{table:detection}}
+}
+\end{table*}
+%\end{comment}
+
+
+\section{Discussion}
+Whether performance matters?
+Can we use the small input to predict possible false sharing then we actually do not need to 
+run on big inputs.
+
+Present data on this. How much we can use the small input to predict possible false sharing problem
+which occurs in bigger input set.
+%\input{discuss}
+
+%\section{Issues}
+%\input{issues}
+\DIFaddbegin \section{\DIFadd{Related Work}}
+\DIFadd{Currently, there is no existing tool which can predict possible false sharing,
+thus we only talk about those tools which can detect and prevent false sharing 
+problems here.
+}
+
+\subsection{\DIFadd{False Sharing Detection}}
+\DIFadd{Based on the SIMICS functional simulator, Schindewolf et al. designed a tool 
+to report different kinds of cache usage information,
+such as cache miss and cache invalidations~\mbox{%DIFAUXCMD
+\cite{falseshare:simulator}
+}%DIFAUXCMD
+.
+Pluto utilizes Valgrind to track the sequence of memory read and write
+events on different threads and reports a worst-case estimation of
+possible false sharings~\mbox{%DIFAUXCMD
+\cite{falseshare:binaryinstrumentation1}
+}%DIFAUXCMD
+.
+Similarly, Liu uses Pin to collect memory access information and
+reports total false sharing miss information~\mbox{%DIFAUXCMD
+\cite{falseshare:binaryinstrumentation2}
+}%DIFAUXCMD
+.
+These tools introduce about $100-200\times$ performance overhead. 
+These tools can not pinpoint the causes of false sharing problems.  
+}
+
+\DIFadd{Zhao et al.}\ \DIFadd{developed a dynamic instrumentation based approach to 
+detect false sharing and other cache contention problems
+for multithreading programs~\mbox{%DIFAUXCMD
+\cite{qinzhaodetection}
+}%DIFAUXCMD
+, which is similar to this work. 
+This tool instruments memory reference dynamically using Umbra~\mbox{%DIFAUXCMD
+\cite{Umbra}
+}%DIFAUXCMD
+, 
+tracks the ownership of cache lines and
+bases on shadow memory technique to obtain thread interleaving information.
+However, it can only support at most 32 threads and its memory overhead 
+is above $2\times$ in order to keep track of cache line ownership. 
+Moreover, it can not pinpoint the source of problems exactly,
+so programmers have to examine the source code and figure out problems
+manually.
+}
+
+\DIFadd{Intel's performance tuning utility (PTU)~\mbox{%DIFAUXCMD
+\cite{detect:ptu, detect:intel}
+}%DIFAUXCMD
+uses Precise
+Event Based Sampling (PEBS) hardware support to detect problems efficiently. 
+PTU can point out the physical cache addresses 
+and identify individual functions with possible false sharings.
+However, PTU aggregates memory accesses without considering the memory re-usage and
+access interleavings, thus it reports a lot of
+false sharings without actual performance impact.
+PTU cannot differentiate true sharing from
+false sharing and pinpoint the exact source of false sharings.
+}
+
+\DIFadd{Pesterev et al.}\ \DIFadd{develop a tool, DProf, to help programmers identfy cache misses based on
+AMD's instruction-based sampling hardware~\mbox{%DIFAUXCMD
+\cite{DProf}
+}%DIFAUXCMD
+.
+DProf requires manual annotation
+to locate data types and object fields, and cannot detect false
+sharing when multiple objects reside on the same cache line.
+}
+
+\subsection{\DIFadd{False Sharing Prevention}}
+\DIFadd{Jeremiassen and Eggers uses a compiler transformation to automatically adjust the
+memory layout of applications through padding and alignment~\mbox{%DIFAUXCMD
+\cite{falseshare:compile}
+}%DIFAUXCMD
+.
+Chow et al.}\ \DIFadd{describe an approach to alter parallel loop scheduling to avoid
+sharings~\mbox{%DIFAUXCMD
+\cite{falseshare:schedule}
+}%DIFAUXCMD
+.
+These static analysis based approaches only works for regular,
+array-based scientific codes.
+}
+
+\DIFadd{Berger et al.}\ \DIFadd{describe Hoard, a scalable memory allocator can reduce
+the possibility of false sharing
+by making different threads to use different heaps~\mbox{%DIFAUXCMD
+\cite{Hoard}
+}%DIFAUXCMD
+.
+But Hoard can not avoid the false sharings of globals and inside one heap object.
+}
+
+\subsection{\DIFadd{False Sharing Detection and Prevention}}
+\sheriff{}\DIFadd{~\mbox{%DIFAUXCMD
+\cite{sheriff}
+}%DIFAUXCMD
+develops two tools about false sharing based on 
+their threads-as-processes framework: by turning threads into processes with separate address space, }\sheriff{} \DIFadd{relies on page protection mechanism and twinning-and-diffing mechanism 
+to find out local modifications of different threads and merge them into the 
+global mapping at explicit synchronization points of calling }\pthreads{} \DIFadd{APIs. 
+}\SheriffDetect{} \DIFadd{can report false sharing accurately and precisely, which shares the same target 
+as our work.
+However, }\SheriffDetect{} \DIFadd{can only detect write-write type of false sharing for those programs 
+using }\pthreads{} \DIFadd{library, while our work can detect all kinds of false sharing for different
+kinds of threads libraries with minimum change. 
+As a prevention tool, }\SheriffProtect{} \DIFadd{are suitable for improving the performance of
+programs having small amount of synchronizations. For those programs with very significant 
+amount of synchronizations, }\SheriffProtect{} \DIFadd{may even slowdown the performance. 
+Since }\SheriffDetect{} \DIFadd{and }\SheriffProtect{} \DIFadd{assumes the correct usage of }\pthreads{} \DIFadd{APIs,  
+they may not work correctly for those programs that
+are using their own Ad Hoc synchronization or using stack variables to communicate among threads
+, like lock-free data free structures, which limits their usage for most of real applications.
+ }
+
+\DIFadd{Plastic~\mbox{%DIFAUXCMD
+\cite{OSdetection}
+}%DIFAUXCMD
+leverages the }\texttt{\DIFadd{sub-page granularity memory remapping facility}}
+\DIFadd{provided by Xen hypervisor to detect and tolerate false sharing problem automatically.
+However, this sub-page memory remapping mechanism is not supported by most of existing operating 
+system currently, making it a non-universal solution. Moreover, Plastic can not pinpoint 
+the exact source of false sharing problems, which also greatly limits its usage.
+}\DIFaddend 
+
+
+\section{Conclusion}
+%\input{conclusion}
+
+%\section{Acknowledgement}
+%\acks
+%\input{acknowledge}
+
+%\appendix
+%\section{Manual}
+
+%\section{How to Integrate with LLVM}
+
+
+
+
+
+% We recommend abbrvnat bibliography style.
+
+%\bibliographystyle{abbrvnat}
+
+% The bibliography should be embedded for final submission.
+{
+\bibliographystyle{abbrv}
+\bibliography{refs}
+}
+
+%\begin{thebibliography}{}
+%\end{thebibliography}
+
+\end{document}

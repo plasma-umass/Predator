@@ -1,0 +1,207 @@
+\documentclass[10pt]{article}
+
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage[usenames]{color}
+\usepackage{hyperref}
+\usepackage{enumitem}
+%\usepackage{ifpdf}
+\usepackage{amssymb}
+\usepackage{inputenc}
+%\usepackage{fullpage}
+\usepackage[left=1in,top=1in,right=1in,bottom=1in,nohead]{geometry}
+
+%\addtolength{\oddsidemargin}{-.5cm}
+%\addtolength{\evensidemargin}{-.5cm}
+%\addtolength{\textheight}{1.0cm}
+%\setlength{\textheight}{8.5in}
+%\setlength{\textwidth}{6in}
+
+\definecolor{darkblue}{rgb}{0.0,0.3,0.7}
+\definecolor{black}{rgb}{0,0,0}
+
+\hypersetup{
+  colorlinks,
+  letterpaper=true,
+  linkcolor=darkblue,
+  citecolor=darkblue,
+  urlcolor=darkblue,
+%  linkcolor=black,
+%  citecolor=black,
+%  urlcolor=black,
+  breaklinks=true,
+%  bookmarks=false,
+  pdfpagelayout=SinglePage,
+  pdfstartview=XYZ 0 1000 1,
+%  pdfpagemode=None,
+%  pdfpagelayout=OneColumn\definecolor{darkblue}{rgb}{0.0,0.3,0.7}
+}
+
+\hyphenation{Arch-i-pel-ago}
+
+\renewcommand{\labelitemi}{\raisebox{0.01cm}{$\blacktriangleright$}}
+\newcommand{\pointer}{\raisebox{0.01cm}{$\blacktriangleright$} }
+
+\begin{document}
+
+  \centerline{DEFAULTS User Manual}
+  \centerline{\small \sc Tongping Liu}
+%  \centerline{\small \today}
+
+  \setlength{\parindent}{1.5em}
+  \vspace{0.7cm}
+
+\section*{}
+
+\section{Compiling the llvm compiler}
+%\begin{enumerate}[label=\Alph*]
+\begin{enumerate}
+\item
+mkdir llvm-clang-src
+
+\item
+cd llvm-clang-src
+
+\item
+wget http://llvm.org/releases/3.2/llvm-3.2.src.tar.gz
+
+\item
+wget http://llvm.org/releases/3.2/clang-3.2.src.tar.gz
+
+\item
+tar zxvf llvm-3.2.src.tar.gz 
+
+\item
+tar zxvf clang-3.2.src.tar.gz 
+
+\item
+mv clang-3.2.src llvm-3.2.src/tools/clang
+
+\item
+cd llvm-3.2.src
+
+\item
+patch -Np1 $<$ ../../falsesharing/project/compiler/instrumenter.llvm-3.2.patch 
+
+%#vi build.sh ==> change prefix and libdir to target directory (e.g., ~/git/llvm-3.2-build)
+%#./build.sh
+
+\item
+mkdir -p llvm-3.2-build
+
+\item
+cd llvm-3.2-build
+
+\item
+../llvm-clang-src/llvm-3.2.src/configure -{}-prefix=/home/tianc/git/llvm-3.2-build/\
+            -{}-sysconfdir=/etc          \
+            -{}-libdir=/home/tianc/git/llvm-3.2-build/lib/llvm     \
+            -{}-enable-optimized         \
+            -{}-enable-shared            \
+            -{}-enable-targets=all       \
+            -{}-disable-assertions       \
+            -{}-disable-debug-runtime    \
+            -{}-disable-expensive-checks 
+\item
+make -j8 \& make install
+
+\end{enumerate}
+
+\section{Compiling the runtime system (library)}
+\begin{enumerate}
+\item
+cd runtime
+\item
+make
+\end{enumerate}
+
+\section{Compiling a program}
+Here, we are using the patched clang to compile a program. 
+The following step is using memtest for an example. 
+\begin{enumerate}
+\item 
+cd memtest
+\item
+ \$(CLANG\_DIR)/bin/clang -Wl,\$(RUNTIME\_DIR)/runtime/libdefault64.so -finstrumenter -g thread\_memtest.c -lpthread -o thread\_memtest.
+
+In this step, we should make sure the following things. \$(CLANG\_DIR) and \$(RUNTIME\_DIR) should be replaced by real directory name.
+\begin{itemize}
+\item
+First, we must use the patched clang to compile the program (specified in \$(CLANG\_DIR));
+
+\item
+Second, we should specify explicitely the runtime system 
+by ``-Wl,\$(RUNTIME\_DIR)/runtime/libdefault64.so''.
+
+\item
+Third, we must specify the flag ``-finstrumenter''.
+\end{itemize}
+
+\end{enumerate}
+
+\section{Compiling and Running PARSEC benchmarks}
+We assume to use new making system, provided under ``evaluation'' package.
+The original way to run PARSEC can be seen in http://parsec.cs.princeton.edu/.
+
+In this package, there are 3 different directories, a script and some basic rules of makefile(Defult.mk). 
+\begin{itemize}
+\item
+datasets: it is used to hold different datasets for different benchmarks.
+\item
+tests: source code of different benchmarks.
+\item
+include: some header files used by some Phoenix benchmarks.
+
+\item
+run\_benchmarks.py: script to run a benchmark or all benchmarks. 
+
+\item
+Default.mk: basic rules of makefile.
+Normally, we should make sure the directory of runtime system. 
+CXX\_DEFAULT = clang -Wl,\$(RUNTIME\_DIR)/libdefault64.so -finstrumenter
+CC\_DEFAULT = clang -Wl,\$(RUNTIME\_DIR)/libdefault64.so -finstrumenter -std=gnu89
+
+
+\end{itemize}
+
+In order to run PARSEC benchmarks, we first have to set corresponding datasets in the beginning. 
+
+The parsec sourcecode and its datasets can be got from http://parsec.cs.princeton.edu/download/2.1/parsec-2.1.tar.gz.
+
+Here is an example to copy datasets. We are using the ``dedup'' as an example here.  
+
+\begin{enumerate}
+\item
+tar zxvf parsec-2.1.tar.gz
+
+\item
+Go to \$(EVALUATION)/datasets.
+
+\item
+mkdir dedup
+
+\item
+cp parsec-2.1/pkgs/kernels/dedup/inputs/input\_native.tar ./ \& tar xvf input\_native.tar
+
+
+\item 
+Go to \$(EVALUATION)/tests/dedup.
+After we do this, we make sure that the file or directory after decompressed has the same name as that showed in TEST\_ARG of dedup Makefile.
+
+For example, Makefile of dedup showed liked this:
+"TEST\_ARGS = -c -p -f -t $(THREADS) -i $(DATASET\_HOME)/dedup/media.dat -o output.dat.ddp".
+
+\item
+To run the false sharing detection tools on dedup benchmark, we can run ``make eval-defaults''. 
+To run normal pthreads program, we can run ``make eval-pthread``.
+
+\end{enumerate}
+
+
+%\begin{thebibliography}{}
+%\end{thebibliography}
+
+\end{document}
+
