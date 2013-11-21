@@ -1,0 +1,89 @@
+\sheriff{} Runtime System:
+
+As the discussion from Section~\ref{overview:insight}, delaying updates can be used to improve the performance. 
+Because \sheriff{} are using processes instead of threads, 
+which have the separate address space, updates happen locally on different threads if there is no synchronization thus 
+avoid the false sharing internally caused by updating the same physical cache line. 
+Thus \sheriff{}'s runtime system can dramatically increase performance in the face of catastrophic false 
+sharing.
+
+However, when the transaction is short, 
+the overhead of protections and commits can be higher than the benefit what we can get 
+by tolerating the false sharing problem. 
+Also, based on our knowledge about false sharing problem, the overhead to protect large objects 
+can be much larger than the benefit we can get. 
+%As we can see from Section~\ref{sec:evaluation}, performance can be affected greatly by transaction length. 
+In order to improve the performance for most of applications, we propose one simple adaptive mechanism to avoid this pitfall.
+The target is to improve the performance by tolerating serious false sharing problem inside.
+In the beginning, we only create private mapping for those larger heap objects (larger than 512 bytes) and those global objects. 
+Then we are keeping track of the length of one transaction. 
+If the average transaction length is shorter than one pre-set threshold, 
+\sheriff{} runtime should close the protection for all memory.
+Since the condition of running can change, \sheriff{} keeps an eye on the average transaction length and 
+checks every 50 transactions.
+Whenever the transaction length are larger than the pre-set threashold, the memory are protected again to
+tolerate the possible false sharing inside. 
+In order to avoid the effect of temporary fluctuation of running condition, 
+which can cause too many on-and-off switches of memory protection, 
+\sheriff{} runtime are using the exponential moving average here
+to calculate the average transaction length (exponent are set to 0.9).
+
+
+\sheriff{} Detection System:
+
+\sheriff{} tries to detect those write-write false sharing caused by the heap and globals objects.
+In order to detecting those false sharing problems, one naive mechanism is to separate the running of 
+different threads using process at first, then we can discover the false sharing problem
+by analyzing the accesses of different threads using the twining and diffing mechanism. 
+
+Since all local modification of different threads should be committed to the shared space 
+at every synchronization point in order to ensure the correctness of execution (see Section~\ref{simulation:syn}),
+this naive mechanism can introduce much overhead for one application when the amount of non-shared pages are large.
+
+\sheriff{} has one key insight here in order to improve the performance of detection system. 
+\em{If two threads can cause false sharing problem on one cache line, these two threads must 
+simultaneously access the same page including this cache line}. 
+
+Based on this key insight, \sheriff{} relies on the page protection to get the knowledge about pages' sharing information.
+Instead to put everything in the separate address space in the beginning, 
+\sheriff{} utilizes the knowledge about pages' sharing and only separate those shared pages to different address space.
+ 
+In the actual implementation, \sheriff{} sets the protection mode of all memory pages
+to read-only mode in the beginning and maintains one corresponding user counter(initialized to 0 in the beginning) 
+for every page, which counts the number of threads writing on the page concurrently. 
+Since those pages are read-only mode, the attempts to write on one page can invoke a page fault. By handling the page fault error,
+\sheriff{} can get the message about the accessers on this page and increment the user counter for this page.
+Whenever the user counter for one page is larger than two, the page is considered to be shared by two users concurrently,
+which can be detected in the periodical timer handler or in the end of one transaction. 
+Thus, \sheriff{} can set those shared pages to a MAP\_PRIVATE mode using mmap and separate the running of those pages relying on the separate address space of processes. 
+
+\em{XXXX, we connect to section 4 in previous paper.}
+In the next periodical timer handler or next end of one transaction, \sheriff{} compares each dirty page
+with its twin word by word to find any modifications, and thus
+identifies all writes made by the current thread. To detect false
+sharing, \sheriff{} simply compares the original contents of adjacent
+memory in the same cache line (in the twin) to those on the committed
+page (that is, those written by another thread). A modification of any
+adjacent data indicates the presence of false sharing: another thread
+has modified data on the same cache line that the current thread has
+also modified.
+
+The following mechanisms are utilized to improve the performance of \DETECTIVE{}.
+\begin{itemize}
+\item
+\em{Reducing the overhead to start timers}. According to description in Section~\ref{}, \DETECTIVE{} are using the sampling mechanism to capture the continuous writes in one transaction by handling the timer handler (using ualarm, now 5ms). 
+One optimization is to set the timer handler only when the average transaction time is larger than one certain number(10ms now). Same as the \PATROL{} runtime system, exponential moving average is evaluated here (exponent is 0.9). 
+Unabling to start timer once can only cause the miss of one time's checking, this optimization won't lower the possibility to find the false sharing problem since the target is to find out one object with large amount of interleaving writes from different threads.
+ 
+\item
+\em{Sampling mechanism to find shared pages}. \DETECTIVE{} relies on the page protection to get the knowledge about pages' sharing information. When one application has a lot of transactions or touches a lot of pages, the overhead to find the pages' sharing can  dominate the running time. To improve the performance, \DETECTIVE{} relies on sampling mechanism to find out those un-known shared pages. If one page has a serious false sharing problem inside, the behavior of sharing is assumed to happen frequently. 
+In the actual implementation, we sampling the first 50 period out of every 500 period. 
+One period here means one transaction or one checking period. 
+In the beginning of the sampling period, all memory pages are set to the read-only mode thus writes to one page can be detected. 
+When one page is known to be shared(already set to MAP_PRIVATE), thus we won't miss any false sharing problem inside those shared pages. 
+When one page is un-known to be shared(set to be MAP_SHARED) but read-only, thus we can detect the shared status in the sampling period. 
+While in the non-sampling period, those shared pages are kept inact while those un-known pages won't introduce the protection overhead anymroe. 
+
+\end{itemize}
+
+

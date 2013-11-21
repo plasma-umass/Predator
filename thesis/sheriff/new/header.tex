@@ -1,0 +1,55 @@
+\usepackage{mathptmx} % rm & math
+\usepackage[scaled=0.90]{helvet} % ss
+\usepackage{courier} % tt
+\normalfont
+\usepackage[T1]{fontenc}
+
+% \usepackage{lmodern}
+% \usepackage{times}
+\usepackage{subfigure}
+\usepackage{url}
+\urlstyle{rm}
+\usepackage[
+      colorlinks=false,    %no frame around URL
+      urlcolor=black,    %no colors
+      menucolor=black,    %no colors
+      linkcolor=black,    %no colors
+      pagecolor=black,    %no colors
+]{hyperref}
+
+\usepackage{color}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{comment} 
+\usepackage{setspace}
+\singlespacing
+%\onehalfspacing
+\newtheorem{thm}{Theorem}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{defn}[thm]{Definition}
+
+\newcommand{\cfunction}[1]{{\bf \tt #1}}
+\newcommand{\malloc}{\cfunction{malloc}}
+\newcommand{\realloc}{\cfunction{realloc}}
+\newcommand{\free}{\cfunction{free}}
+\newcommand{\madvise}{\cfunction{madvise}}
+\newcommand{\brk}{\cfunction{brk}}
+\newcommand{\sbrk}{\cfunction{sbrk}}
+\newcommand{\mmap}{\cfunction{mmap}}
+\newcommand{\munmap}{\cfunction{munmap}}
+\newcommand{\mprotect}{\cfunction{mprotect}}
+\newcommand{\mlock}{\cfunction{mlock}}
+
+\hyphenation{app-li-ca-tion}
+\hyphenation{Die-Hard}
+\hyphenation{Ar-chi-pe-la-go}
+\hyphenation{buf-fer}
+
+\lstset{language=c++, basicstyle=\ttfamily\scriptsize,frame=trbl,tabsize=4,numbers=left,numberstyle=\tiny}
+
+\definecolor{Gray}{cmyk}{0,0,0,0.5}
+\newcommand{\footnotenonumber}[1]{{\def\thempfn{}\footnotetext{\small #1}}}

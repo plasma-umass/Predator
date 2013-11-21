@@ -1,0 +1,100 @@
+\label{sec:relatedwork}
+
+The proliferation of multicore systems has increased interest in tool
+support to detect false sharing, since standard profilers like
+OProfile~\cite{oprofile} or gprof~\cite{gprof} only report overall
+cache misses.
+
+\paragraph{Simulation and Instrumentation Approaches:} Schindewolf describes a system based on the SIMICS functional
+simulator that reports full cache miss information, including
+invalidations caused by
+sharing~\cite{falseshare:simulator}. Pluto
+uses the Valgrind framework to track the sequence of load and store
+events on different threads and reports a worst-case estimate of
+possible false sharing~\cite{falseshare:binaryinstrumentation1}. Similarly,
+Liu uses Pin to collect
+memory access information and then reports total false sharing miss
+information~\cite{falseshare:binaryinstrumentation2}.
+
+Independently and in parallel with this work, Zhao et al.\ developed a
+tool designed to detect false sharing and other sources of cache
+contention in multithreaded applications~\cite{zhao:vee:2011}. This
+tool uses shadow memory to track ownership of cache lines and cache
+access patterns. It is currently limited to at most 8 simultaneous
+threads. Like Liu above, it only reports an overall false sharing rate
+for the whole program, placing the burden on programmers to examine
+the entire source base to locate any instances of false
+sharing.
+
+Unlike \sheriffdetect{}, these systems generally suffer from high
+performance overhead ($5-200\times$ slower) or memory overheads.
+They cannot differentiate true sharing
+from false sharing, yielding numerous false positives. Because they
+operate at the binary level, they can all be misled by aliasing due to
+memory object reuse. Finally, and most importantly, they do not point
+to the objects responsible for false sharing, limiting their value to
+the programmer.
+
+\paragraph{Sampling-Based Approaches:}
+Intel's performance tuning utility (PTU)~\cite{detect:ptu,
+detect:intel} uses event-based sampling, allowing it to operate
+efficiently. PTU can discover shared physical cache lines, and can
+identify possible false sharing at the grain of individual function
+calls. PTU suffers from a high false positive rate caused by aliasing
+due to reuse of heap objects, and reports false sharing instances that
+have no impact on performance. PTU cannot differentiate true from
+false sharing or pinpoint the source of false sharing problems,
+unlike \sheriffdetect{}. Section~\ref{sec:evaluation} contains an
+extensive empirical comparison of PTU to \sheriffdetect{}
+demonstrating PTU's relative shortcomings.
+
+Pesterev et al.\ describe DProf, a tool that leverages AMD's
+instruction-based sampling hardware to help programmers identify the
+sources of cache misses~\cite{DProf}. DProf requires manual annotation
+to locate data types and object fields, and cannot detect false
+sharing when multiple objects reside on the same cache line. By
+contrast, \sheriffdetect{} is architecture independent, requires no
+manual intervention, and precisely identifies false sharing regardless
+of the flow of data or which data types are involved.
+
+\paragraph{False Sharing Avoidance: }
+In some restricted cases, it is possible to eliminate false sharing,
+obviating the need for detection. Jeremiassen and Eggers describe a
+compiler transformation that adjusts the memory layout of applications
+through padding and alignment~\cite{falseshare:compile}.  Chow et al.\
+describe an approach that alters parallel loop scheduling to avoid
+sharing~\cite{falseshare:schedule}. The effectiveness of these
+static analysis based approaches is primarily limited to regular,
+array-based scientific codes, while \sheriffprotect{} can prevent false
+sharing in any application.
+
+Berger et al.\ describe Hoard, a scalable memory allocator can reduce
+the likelihood of false sharing of distinct heap
+objects~\cite{BergerMcKinleyBlumofeWilson:ASPLOS2000}. Hoard limits
+accidental false sharing of entire heap objects by making it unlikely
+that two threads will use the same cache lines to satisfy memory
+requests, but this has no effect on false sharing within individual heap
+objects, which \sheriffprotect{} avoids.
+
+\paragraph{Other Related Work:}
+\sheriff{} borrows the
+process-as-thread model pioneered by Grace~\cite{grace}, but otherwise
+differs from it in its semantics, generality, and goals.
+
+Grace is a process-based approach designed to prevent concurrency
+errors, such as deadlock, race conditions, and atomicity errors by
+imposing a sequential semantics on speculatively-executed
+threads. Grace supports only fork-join programs without inter-thread
+communication (e.g., condition variables or barriers), and rolls back
+threads when their effects would violate sequential semantics.
+
+\sheriff{} extends Grace to handle
+arbitrary multithreaded programs; for example, Grace is incompatible
+with any applications that employ inter-thread communication,
+including the PARSEC benchmarks we examine here. \sheriff{} applies
+diffs at synchronization points in the program to enable updates
+without rollback, giving it far greater performance (but different
+semantics) than Grace. \sheriff{} does not eliminate concurrency
+errors, but instead allows applications to selectively track updates
+and isolate memory, enabling tools like \sheriffdetect{}
+and \sheriffprotect{}.

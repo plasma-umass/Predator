@@ -1,0 +1,110 @@
+\label{sec:patrol}
+
+While \sheriffdetect{} can be effective at locating the sources of
+false sharing, it is sometimes difficult or impossible for programmers
+to remove the false sharing that \sheriffdetect{} can reveal. For
+instance, padding data structures to eliminate false sharing within an
+object or different elements of an array can cause excessive memory
+consumption or degrade cache utilization~\cite{zhao:vee:2011}. Time
+constraints may prevent programmers from investing in other solutions,
+or the source code may simply be unavailable. \sheriffprotect{}, our
+second tool developed with the \sheriff{} framework, can take
+unaltered C/C++ binaries and eliminate the performance degradation
+caused by false sharing.
+
+To accomplish its goals, \sheriffprotect{} relies on a key insight
+due initially to DuBois et al.\
+~\cite{Dubois:1991:DCE:125826.125941}: \emph{delaying updates avoids
+  false sharing.}  Delaying one thread's updates
+so that they do not cause invalidations to other threads 
+eliminates the performance impact of false sharing. Consider the case when
+two threads are updating two falsely-shared objects A and B. If one
+thread's accesses to A were delayed so that they preceded all of the
+other thread's accesses to B, then the false sharing would cause no
+invalidations and hence have no performance impact.
+
+In effect, this is exactly what \sheriff{} does already when all pages
+are mapped private. By using processes instead of threads, all updates
+between synchronization points are applied to different physical addresses
+belonging to the different ``threads''. In this way, \sheriff{} itself
+prevents false sharing by not updating the same physical cache
+lines.
+
+However, using \sheriff{} with all pages mapped private would be impractical as a runtime
+replacement for \pthreads{}, because it would impose excessive overhead.
+This overhead arises due to 
+protection and copying costs that would counteract the benefit of
+preventing false sharing.
+
+For example, when a thread updates a large number of pages between
+transactions, \sheriff{} must commit all local changes to the shared
+mapping at the end of every transaction, \emph{even in the absence of
+  sharing}. The associated protection and copying overhead can
+dramatically degrade performance. The same problem arises when transactions are
+short (e.g., when there are frequent lock acquisitions), because the
+cost of protection and page faults cannot be amortized by the
+protection-free part of the transaction.
+
+\sheriffprotect{} implements two key optimizations that improve performance by directly addressing these issues.
+
+\paragraph{Focus on smaller objects:}
+  \sheriffprotect{} focuses its false sharing prevention exclusively
+  on small objects (those less than 1024 bytes in size). All large
+  objects are mapped shared and are never protected. 
+
+  First, we expect small objects to be a likely source of false
+  sharing because they fit on a cache line. False sharing in large
+  objects like arrays is also possible, but we expect the amount of
+  false sharing relative to the size of the object to be far lower
+  than with small objects (an intuition that \sheriffdetect{}
+  confirms, at least across our benchmark suite). For such objects,
+  the cost of protection would outweigh the advantages of
+  preventing false sharing.
+
+  Second, the total amount of memory consumed by small objects tends
+  to be less than that consumed by large objects. Because the cost of
+  protecting and committing changes is proportional to the volume of
+  updates, \sheriffprotect{} limits protection to small objects,
+  reducing overhead while capturing the benefit of false sharing
+  prevention where it matters most.
+
+\begin{table*}[!t]
+\centering
+\begin{tabular}{l|c|c|c}
+\hline
+{\bf \small Microbenchmark} & {\bf \small Performance-Sensitive /} & {\bf \small \sheriffdetect{} } & {\bf \small PTU } \\
+ & {\bf \small Actual False Sharing?} & & \\
+\hline
+
+\small {\em False sharing (adjacent objects)} & Yes & $\checkmark$ & $\checkmark$\\
+\small {\em Pseudo sharing (array elements)} & Yes & $\checkmark$ & $\checkmark$\\
+\hline
+\small {\em True sharing} & No &  & \\
+\small {\em Non-interleaved false sharing} & No  & & $\times$\\
+\small {\em Heap reuse (no sharing)} & No & & $\times$\\
+\hline
+\end{tabular}
+\caption{False sharing detection results using PTU and \sheriffdetect{}. 
+\sheriffdetect{}
+correctly reports only actual false sharing instances, and only those with a
+performance impact; $\checkmark$ denotes a correct report, and
+$\times$ indicates a spurious report (a false positive).
+\label{table:microbenchmarks}}
+\end{table*}
+
+
+\paragraph{Adaptive false sharing prevention:} 
+  Short transactions do not give \sheriff{} the chance to amortize its
+  protection overheads. To address this, \sheriffprotect{} employs a simple adaptive
+  mechanism.  \sheriffprotect{} tracks the
+  length of each transaction and uses exponential weighted averaging
+  ($\alpha = 0.9$) to calculate the average transaction length.  Once
+  the average transaction length is shorter than an established
+  threshold, \sheriffprotect{} switches to using shared mappings for
+  all memory and does no further page protection. As long as
+  transactions remain too short for \sheriffprotect{} to have any
+  benefit, all of its overhead-producing mechanisms remain switched
+  off. If the average transaction length rises back above the
+  threshold, \sheriffprotect{} re-establishes private mappings and
+  page protection.
+

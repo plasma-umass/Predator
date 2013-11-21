@@ -1,0 +1,64 @@
+
+set title ''
+# can also pass "fontsize 12" to fig terminal
+set terminal fig color depth 98
+
+set xlabel '' 0,-1
+set ylabel 'Basic block cache size reduction' 0,0
+set xtics  ("SPECFP" 0.675, "SPECINT" 1.635, "SPECJVM" 2.595, "excel" 3.555, "photoshp" 4.515, "powerpnt" 5.475, "winword" 6.435)
+set format y "  %g%%"
+
+set boxwidth 0.15
+set xrange [0:7.11]
+set yrange[0:100]
+set grid noxtics ytics
+
+set size 1.2,1
+set label "BARGRAPH_TEMP_" at 1,1
+set label "BARGRAPH_TEMP_20% regeneration" at 1,1
+set label "BARGRAPH_TEMP_40% regeneration" at 2,1
+set label "BARGRAPH_TEMP_60% regeneration" at 3,1
+set label "BARGRAPH_TEMP_80% regeneration" at 4,1
+set label "BARGRAPH_TEMP_90% regeneration" at 5,1
+
+plot  '-' notitle with boxes fs pattern 0 lt -1, '-' notitle with boxes fs pattern 1 lt -1, '-' notitle with boxes fs pattern 2 lt -1, '-' notitle with boxes fs pattern 3 lt -1, '-' notitle with boxes fs pattern 4 lt -1
+0.375, 88
+1.335, 80
+2.295, 60
+3.255, 63
+4.215, 61
+5.175, 62
+6.135, 72
+e
+0.525, 86
+1.485, 76
+2.445, 49
+3.405, 51
+4.365, 34
+5.325, 39
+6.285, 54
+e
+0.675, 85
+1.635, 70
+2.595, 49
+3.555, 40
+4.515, 27
+5.475, 24
+6.435, 40
+e
+0.825, 76
+1.785, 63
+2.745, 44
+3.705, 03
+4.665, 22
+5.625, 18
+6.585, 33
+e
+0.975, 76
+1.935, 57
+2.895, 45
+3.855, 03
+4.815, 23
+5.775, 12
+6.735, 03
+e

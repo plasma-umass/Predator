@@ -1,0 +1,21 @@
+\label{sec:conclusion}
+This paper presents two tools that attack the problem of false sharing
+in multithreaded programs. Both are built with \sheriff{}, a
+software-only framework that enables per-thread memory protection and
+isolation. \sheriff{} works by converting threads into processes, and
+uses memory mapping and a difference-based commit protocol to provide
+isolated writes. \sheriffdetect{} identifies false sharing instances
+with no false positives, and pinpoints the objects involved in
+performance-critical false sharing problems. We show
+that \sheriffdetect{} can greatly assist programmers in tracking down
+and resolving false sharing problems. When it is not feasible for
+programmers to resolve these problems, either because code is
+unavailable or because the fixes would degrade performance
+further, \sheriffprotect{} can be used to automatically eliminate the
+false sharing problems indicated by \sheriffdetect{}. We show
+that \sheriffprotect{} can substantially improve the performance of
+applications with moderate to severe false sharing, without the need
+for programmer intervention or source code.
+
+We plan to release the source code for \sheriff{}, \sheriffdetect{},
+and \sheriffprotect{} by publication time.

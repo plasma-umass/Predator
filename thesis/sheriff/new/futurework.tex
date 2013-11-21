@@ -1,0 +1,15 @@
+\label{sec:future}
+\label{futurework}
+
+We plan to extend \sheriff{} to find more performance related problems in
+multithreaded programs. For example, if one frequently-read word
+happens to be in the same cache line with one frequently-written word,
+it would be better to separate those two words. But in the current
+framework, \sheriff{} cannot detect a single memory read operation using the
+twin page mechanism. We are examining the combination of hardware
+watchpoints to help us locate this kind of performance error. In
+addition, we plan to exploit watchpoints to capture those program
+counters that touch specific addresses so as to point the programmer
+to specific lines of code responsible for false sharing.
+
+

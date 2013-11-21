@@ -1,0 +1,19 @@
+False sharing is a notorious challenge for multi-threaded programs
+running on multicore processors, where it can silently degrade
+performance and scalability. Debugging false sharing problems is
+extremely difficult. Previous approaches aimed at identifying false
+sharing impose significant performance penalties (approximately 200X),
+generate numerous false positives, and are unable to pinpoint the
+sources of false sharing, at best pointing to particular addresses
+accessed by functions.
+
+This paper presents Sheriff, a software-only system that both
+withstands and identifies false sharing in C/C++ applications. Sheriff
+replaces the standard pthreads library and eliminates false sharing
+problems, imposing low overhead for most programs (on average,
+26\%) while dramatically speeding up performance in the presence of
+catastrophic false sharing (by almost 10X). Sheriff also precisely
+identifies the sources of false sharing without false positives. A
+case study using Sheriff shows that it can be used to quickly identify
+and correct false sharing issues in benchmarks from the Phoenix and
+PARSEC benchmark suites.
