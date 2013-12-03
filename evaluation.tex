@@ -12,9 +12,7 @@ so memory allocation callsites can be reported precisely.
 %since we can not report line number of source code with optimization level larger than
 %``-O2''.
 In our evaluation, we use two popular benchmark suites,
-Phoenix~\cite{phoenix-hpca} and PARSEC~\cite{parsec}.  Some programs
-of PARSEC that cannot be compiled or run successfully with LLVM are
-excluded here (\texttt{facesim} and \texttt{canneal}).
+Phoenix (with large input) ~\cite{phoenix-hpca} and PARSEC (with simlarge input) ~\cite{parsec}. Even with unmodified LLVM-3.2, Facesim can not be compiled successfully (with complaints on an undefined template) and Canneal aborts unexpectedly. Thus, Facesim and Canneal are excluded here. 
 
 This evaluation aims to answer the following questions:
 \begin{itemize}
@@ -25,6 +23,9 @@ This evaluation aims to answer the following questions:
   What is the performance and memory overhead of \Predator{} with and without prediction
   (Sections~\ref{sec:perfoverhead} and \ref{sec:memoverhead})?
 
+\item 
+  \CC{How sensitive is \Predator{} on different thresholds and sampling rate (Section~\ref{sec:sensitivity})}? 
+ 
 \end{itemize}
 
 \subsection{Detection and Prediction Effectiveness}
@@ -261,6 +262,8 @@ In our evaluation, we do not observe significant performance overhead for
 In these, a large portion of the computation operates on stack variables, which are
 not tracked by \Predator{}. 
 
+\CC{ADD performance data on real applications}
+
 \subsection{Memory Overhead}
 \label{sec:memoverhead}
 Since \Predator{} pre-allocates a huge block of memory
@@ -300,3 +303,7 @@ reporting contributes to a large portion of memory overhead.
 \end{figure*}
 
 
+\CC{NEW here.}
+\subsection{Sensitivity on Sampling Rate}
+\label{sec:sensitivity}
+Different 

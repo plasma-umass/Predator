@@ -40,8 +40,7 @@ support~\cite{OSdetection} or impose limits on their use~\cite{sheriff}.
 %false sharing problem on a specific multithreading library~\cite{sheriff}.
 
 In addition, all of these systems share one key limitation: they can
-only report \emph{observed} cases of false sharing. As Nanavati et
-al.\ point out, false sharing is sensitive to where objects are
+only report \emph{observed} cases of false sharing. As Nanavati et al.\ point out, false sharing is sensitive to where objects are
 placed in cache lines and so can be affected by a wide range of
 factors~\cite{OSdetection}. For example, using the gcc compiler
 \emph{accidentally} eliminates false sharing in the Phoenix
@@ -90,14 +89,12 @@ This paper makes the following contributions:
 \textbf{Predictive False Sharing Detection:} \Predator{} is the first system that can \emph{predict} potential false sharing that does
 not manifest in an execution but may appear and greatly degrade the
 performance of programs in a slightly different
-environment. Predictive false sharing generalizes from a single
-execution to identify potential false sharing instances that are
-within one cache line of each other, which could be exposed by slight
-changes in object placement and alignment. It also can predict false sharing
+environment. 
+\CC{Predictive false sharing generalizes from a single
+execution to identify potential false sharing instances that can arise by slight changes in object placement and alignment. }
+It also can predict false sharing
 in hardware platforms with larger cache line sizes by tracking
-accesses within \emph{virtual cache lines} that span multiple physical
-lines. Predictive false sharing detection thus overcomes a key
-limitation of previous detection tools.
+accesses within \emph{virtual cache lines} that span multiple physical lines. Predictive false sharing detection thus overcomes a key limitation of previous detection tools.
 
 %Existing approaches is based on specific hardware,
 %runtime environment(using specific libraries and compilers) and specific cache line size, which is OK to detect those 

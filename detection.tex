@@ -8,32 +8,18 @@ predicts potential false sharing based on a single execution.
 \subsection{Overview}
 %\Predator{} is a hybrid approach that combines the runtime system with compiler instrumentation.
 \label{sec:overview}
-As described in Section~\ref{sec:intro}, 
-false sharing only occurs when two threads
+False sharing only occurs when two threads
 simultaneously access independent data in the same cache line.
 In the remainder of this paper, we assume for the purposes of exposition that each thread runs on a 
 distinct core with its own private cache.
 
 Given this assumption, we observe that 
 if a thread writes a cache line after other threads have 
-accessed the same cache line, this write operation most likely causes at least
-a cache invalidation.
-Drawing from this observation, \Predator{} tracks cache invalidations of all 
-cache lines and ranks the severity of performance degradation of any detected false sharing problems 
-according to the number of cache invalidations. 
+accessed the same cache line, this write operation most likely causes at least a cache invalidation. Drawing from this observation, \Predator{} tracks cache invalidations of all 
+cache lines and ranks the severity of performance degradation of any detected false sharing problems according to the number of cache invalidations. 
 % by keeping track of accesses from different threads. 
  
-To track cache invalidations, it is important to trace memory accesses
-from different threads.  On the one hand, without hardware support, it
-is difficult for a runtime system itself to track read and write
-accesses efficiently and accurately.  For example, \Sheriff{}, a
-previous false sharing detection tool, relies on memory protection and
-word-by-word comparison to track accumulated write accesses.  But
-there is no way to track read accesses with reasonable
-overhead~\cite{sheriff}.  On the other hand, the compiler can easily
-identify read or write accesses. However, the compiler does not know
-how and when those instructions are being executed, since that depends
-on a specific execution, input, and runtime environment.
+To track cache invalidations, \Predator{} relies on compiler instrumentation to track those memory accesses. Corresponding tradeoff on this has been discussed in Section~\ref{sec:instrumentationtradeoff}. Compiler can easily identify read or write accesses. However, the compiler does not know how and when those instructions are being executed, since that depends on a specific execution, input, and runtime environment.
 
 Therefore, \Predator{} combines a runtime system with compiler
 instrumentation to track cache invalidations: the compiler
@@ -169,9 +155,10 @@ object. To obtain callsite information, \Predator{} intercepts all
 memory allocations and de-allocations, and relies
 on the \texttt{backtrace()} function in the \texttt{glibc} library to obtain
 the whole callsite stack.
+\CC{
 \Predator{} also avoids pseudo false sharing (false positives) caused by memory re-usage 
-because it tracks memory de-allocations; heap objects involved in false 
-sharing are never reused.
+because it adjusts recording information during memory de-allocations for those objects without false sharing problems; heap objects involved in false 
+sharing are never reused.}
 
 \item
 For every access, \Predator{} needs to lookup the corresponding cache line's metadata 
@@ -266,6 +253,7 @@ all read and write accesses on this cache line are tracked.
 
 
 \subsubsection{Selective Compiler Instrumentation}
+\label{sec:selectinstrumentation}
 
 \Predator{} relies on instrumentation to provide memory access information to the runtime system 
 and detects false sharing based on the sequences of memory accesses on every cache line. 
