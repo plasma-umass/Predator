@@ -174,7 +174,7 @@ Whenever it finds such a pair $X$ and $Y$,
 \Predator{} identifies potential performance-degrading false sharing whenever
  the number of cache invalidations caused by $X$ and $Y$, at a possible virtual line, 
 is larger than the average number of accesses on each word of $L$. 
-This approach is based on a similar observation as in prediction:
+This approach is based on a similar observation as in detection:
 \emph{if a thread writes a virtual line after other threads 
 have accessed the same virtual line, this write operation most likely causes at least one cache 
 invalidation}. 

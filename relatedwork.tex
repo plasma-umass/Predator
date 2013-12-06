@@ -16,7 +16,7 @@ It uses a shadow memory technique to maintain memory access history and track th
 However, it can only support at most $8$ threads. In addition, it cannot differentiate cold cache misses from actual false sharing problems.
 
 Intel's performance tuning utility (PTU)~\cite{detect:ptu, detect:intel} uses Precise Event Based Sampling (PEBS) hardware support to detect false sharing problems.  It can only point out those functions that might cause false sharing, but no line number information on a false sharing problem.  PTU cannot distinguish true sharing from false sharing. In addition, PTU aggregates memory accesses without considering the memory re-usage and access interleaving, leading to numerous false positives. Sanath et.al. designed a machine learning based approach to detect false sharing problems. They train their classifier on mini-programs and apply this classifier to general programs ~\cite{mldetect}. 
-In stead of instrument memory accesses, this tool relies on hardware performance counters to collect memory accesses events. So they can achieve very low performance overhead, about 2\% performance overhead. 
+In stead of instrument memory accesses, this tool relies on hardware performance counters to collect memory accesses events. So it achieves very low performance overhead, about 2\% performance overhead. 
 
 In addition to their individual disadvantages,
 all above approaches share a common shortcoming. 
