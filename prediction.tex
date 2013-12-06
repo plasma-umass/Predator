@@ -179,7 +179,7 @@ This approach is based on a similar observation as in prediction:
 have accessed the same virtual line, this write operation most likely causes at least one cache 
 invalidation}. 
 \CC{
-Before tracking detailed memory accesses on this cache line, it is impossible to know exactly how many cache invalidations happen on a virtual line.  \Predator{} conservatively assumes that accesses from different threads are interleaved.
+Before tracking detailed memory accesses on this cache line, it is impossible to know exactly how many cache invalidations happen on a virtual line. Thus, \Predator{} conservatively assumes that accesses from different threads are interleaved.
 This approach ensures that \Predator{} does not miss any potential false sharing as well as 
 not reporting false positives. }
 

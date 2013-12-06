@@ -6,10 +6,9 @@ Hence, it is applicable to detect and predict false sharing in different levels 
 software stack in theory, including hypervisors, operating systems, libraries or 
 applications using different threading libraries.
 However, some components of \Predator{} has to be 
-modified correspondingly instead of applying to them directly.
-For example, \Predator{} has to identify computing unit of all memory accesses, 
-e.g., different virtual machines, tasks or threads. 
-Different system has their own specific allocation and deallocations, which should be intercepted correspondingly. Extending \Predator{} to different levels of software stack will be the future work for us.
+modified correspondingly.
+For example, \Predator{} has to identify computing unit of all memory accesses, e.g., different virtual machines, tasks or threads. 
+Different system has their own specific allocation and deallocations, which should be intercepted appropriately. Extending \Predator{} to different levels of software stack will be the future work for us.
 
 
 \subsection{Performance Improvement}
@@ -23,15 +22,11 @@ It is too heavy for simple computations, listed in the following:
 Before the number of writes on a cache line reaches {\it Tracking-Threshold},  \Predator{} simply increments its write counter.
 
 \item
-In sampling mechanism discussed in Section~\ref{sec:sample}, 
-most accesses (99\%) only needs to increment access counters of cache lines.
+In the sampling mechanism discussed in Section~\ref{sec:sample}, most accesses (99\%) outside sampling period only needs to increment access counters of cache lines.
 \end{itemize}
 
-These computations only involve in simple checking or updating operations,
-normally taking only a few CPU cycles to finish. 
-In the future, we plan to further improve the performance of \Predator{} 
-by instrumenting those simple computations directly, 
-instead of using library calls to notify runtime system.
+These computations only involve in simple checking or updating operations, normally taking only a few CPU cycles to finish. 
+In the future, we plan to further improve the performance of \Predator{} by instrumenting those simple computations directly, instead of using library calls to notify runtime system.
 
 \subsection{Valuable Suggestions}
 \Predator{} can be extended to provide suggestions for fixing false sharing problems based on the memory trace information, which can help reduce the manual overhead of fixing false sharing problems.  

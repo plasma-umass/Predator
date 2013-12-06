@@ -1,6 +1,6 @@
 \label{sec:evaluation}
 
-This evaluation answers the following questions:
+This section answers the following questions:
 \begin{itemize}
 \item
   How effective is \Predator{} at detecting and predicting false sharing (Section~\ref{sec:effective})?
@@ -19,7 +19,7 @@ This evaluation answers the following questions:
 \paragraph{Evaluated Applications} 
 This paper evaluates two popular benchmark suites,
 Phoenix (with large input) ~\cite{phoenix-hpca} and PARSEC (with simlarge input) ~\cite{parsec}. Even with unmodified LLVM-3.2, Facesim can not be compiled successfully (with complaints on an undefined template) and Canneal aborts unexpectedly. Thus, these two benchmarks are excluded here.
-We also evaluate \Predator{} on six real applications, including MySQL, Boost, Memcached, aget, pbzip2 and pfscan.
+We also evaluate \Predator{} on six real applications, including \texttt{MySQL, Boost, Memcached, aget, pbzip2} and \texttt{pfscan}.
 
 In order to compare performance fairly, all benchmarks were built as 64-bit executables 
 using LLVM compiler (clang-3.2) with optimization level ``-O1''.
@@ -37,11 +37,9 @@ using LLVM compiler (clang-3.2) with optimization level ``-O1''.
 }
 \end{figure*}
 
-
-
 \subsubsection{Benchmarks}
 \label{sec:benchmarks}
-Results on two benchmark suites, Phoenix and PARSEC, are listed in the Table~\ref{table:detection}. 
+Detection results on two benchmark suites, Phoenix and PARSEC, are listed in the Table~\ref{table:detection}. 
 
 \begin{table*}[ht!]
 {\centering\begin{tabular}{l|r|r|r|r|r}\hline
@@ -56,15 +54,11 @@ Results on two benchmark suites, Phoenix and PARSEC, are listed in the Table~\re
 \small \textbf{streamcluster} & {\small streamcluster.cpp:1907} & \cmark{} & \cmark{} & \cmark{} & 4.77\%\\
 \hline
 \end{tabular}
-\caption{Detection results of \Predator{} on Phoenix and PARSEC benchmark suites. \label{table:detection}}
+\caption{False sharing problems of Phoenix and PARSEC benchmark suites. \label{table:detection}}
 }
 \end{table*}
 
-In this table, the first column lists those programs with false
-sharing problems.  The second column shows precisely where the problem
-is. Since all discovered false sharing occurs inside the same heap
-object, we list callsite source code information in this column.  The
-third column ``New'' marks whether this false sharing was newly
+In this table, the first column lists those programs with false sharing problems.  The second column shows precisely where the problem is. Since all discovered false sharing occurs inside the same heap object, we list callsite source code information in this column.  The third column ``New'' marks whether this false sharing was newly
 discovered by \Predator{} or not.  A checkmark in the appropriate
 column indicates whether the false sharing was identified without
 prediction and/or with prediction.  The final column, ``Improvement'',
@@ -73,40 +67,21 @@ shows the performance improvement after fixing false sharing.
 
 As shown in the table, \Predator{} reveals two unknown false sharing problems. 
 It is the first tool to detect the false sharing problem in \texttt{histogram} 
-and that in line $1908$ of \texttt{streamcluster}. 
+and in line $1908$ of \texttt{streamcluster}. 
 In \texttt{histogram}, multiple threads repeatedly modify different locations of the same heap object. 
-Padding the data structure \texttt{thread\_arg\_t} fixes the false sharing problem and 
-helps to improve the performance around 46\%.
-In \texttt{streamcluster}, multiple threads are simultaneously accessing and updating 
-the same \texttt{bool} array, \texttt{switch\_membership}. 
-By simply changing this array to \texttt{long} type contributes to about 4.7\% performance improvement.
+Padding the data structure \texttt{thread\_arg\_t} fixes the false sharing problem and improves the performance around 46\%. In \texttt{streamcluster}, multiple threads are simultaneously accessing and updating the same \texttt{bool} array, \texttt{switch\_membership}. By simply changing this array to \texttt{long} type contributes to about 4.7\% performance improvement.
 
 %, although it is not a complete fix of false sharing. 
 %None of these two false sharing problems has been reported by previous tools.
-All other false sharing problems have been discovered by previous tools~\cite{sheriff}.
-We do not see much performance improvement for \texttt{reverse\_index} and 
-\texttt{word\_count} benchmarks, but they are reported because the number of cache invalidations 
+All other false sharing problems have been discovered by previous tools~\cite{sheriff}. We do not see much performance improvement for \texttt{reverse\_index} and \texttt{word\_count} benchmarks, but they are reported because the number of cache invalidations 
 reaches our predefined threshold.
 Making reporting threshold higher can avoid the report of insignificant false sharing problems.
 It is worth noting that these two benchmarks definitely have false sharing problems,
-which has been confirmed by \Sheriff~\cite{sheriff}. 
+which has been confirmed by \Sheriff~\cite{sheriff} and can be confirmed by word level information outputted by \Predator{} too. 
 
-\texttt{streamcluster} has another false sharing problem at line $985$. 
-Different threads change the same object (\texttt{work\_mem}) simultaneously. 
-Authors of \texttt{streamclsuter} have already realized possible
-false sharing problems and meant to utilize a macro \texttt{CACHE\_LINE} to avoid it. Unfortunately,
-the defaulted value of this macro is set to $32$ bytes, which is different with the actual
-cache line size of our hardware. By setting to $64$ bytes instead, we achieve around $7.5\%$ performance improvement.
+\texttt{streamcluster} has another false sharing problem at line $985$. Different threads change the same object (\texttt{work\_mem}) simultaneously. Authors of \texttt{streamclsuter} have already realized possible false sharing problems and meant to utilize a macro \texttt{CACHE\_LINE} to avoid it. Unfortunately, the defaulted value of this macro is set to $32$ bytes, which is different with the actual cache line size of our hardware. By setting to $64$ bytes instead, we achieve around $7.5\%$ performance improvement.
 
-\texttt{linear\_regression} has a severe false sharing problem, 
-while fixing it improves the performance more than $12\times$.
-In this benchmark, different threads update their thread specific locations 
-inside a heap object(\texttt{tid\_args}) in a tight loop, 
-causing a huge amount of cache invalidations. 
-For this benchmark, Nanavati et al.~\cite{OSdetection} observe that 
-false sharing occurs when using \texttt{clang} 
-and disappears when using gcc with optimization levels -O2 and -O3.  
-However, we observe a different result on \texttt{clang} when using our customized memory allocator. As shown in Figure~\ref{fig:lrreport}, there is no observed false sharing problem when using \texttt{clang-3.2} at ``-O1'' optimization level. This phenomenon actually exemplifies the necessity of a predictive detection tool. 
+\texttt{linear\_regression} has a severe false sharing problem, while fixing it improves the performance more than $12\times$. In this benchmark, different threads update their thread specific locations inside a heap object(\texttt{tid\_args}) in a tight loop,  causing a huge amount of cache invalidations. For this benchmark, Nanavati et al.~\cite{OSdetection} observe that false sharing occurs when using \texttt{clang} and disappears when using gcc with optimization levels -O2 and -O3. However, we observe a different result on \texttt{clang} when using our customized memory allocator. As shown in Figure~\ref{fig:lrreport}, there is no observed false sharing problem when using \texttt{clang-3.2} at ``-O1'' optimization level. This phenomenon actually exemplifies the necessity of a predictive detection tool. 
 
 \subsubsection{Real Applications}
 To verify \Predator{}'s practicality, we further evaluate it on several widely-used real applications, whereas none of previous work has done this. These real applications include a server application (MySQL~\cite{mysql}),
@@ -114,15 +89,13 @@ a standard C++ library (Boost~\cite{libfalsesharing}),
 a distributed memory object caching system (\texttt{memcached}), a network retriever (\texttt{aget}),
 a parallel bzip2 file compressor (\texttt{pbzip2}), and a parallel file scanner (\texttt{pfscan}).
 
-For MySQL and Boost, we evaluate on two specific versions, MySQL-5.5.32 and boost-1.49.0, which are known to have some false sharing problems.
-Other applications includes \texttt{memcached-1.4.15, 
-aget-0.4.1} and \texttt{pbzip2-1.1.6}.
+For MySQL and Boost, we evaluate on two specific versions, MySQL-5.5.32 and boost-1.49.0, which are known to have some false sharing problems. Other applications includes \texttt{memcached-1.4.15, aget-0.4.1} and \texttt{pbzip2-1.1.6}.
 
 The false sharing problem of MySQL has caused a significant scalability problem and was very difficult to identify.
 According to the architect of MySQL Mikael Ronstrom, ``we had gathered specialists on InnoDB..., participants from MySQL support... and a number of generic specialists on 
 computer performance...'', ``the fruit of the meeting ... were able to improve MySQL performance by 6$\times$ with those scalability fixes''~\cite{mysql}. 
-The false sharing of boost library is caused by the usage of \texttt{spinlock} pool. Different threads may utilize different spinlocks located in the same cache line in this case. Fixing it brings a 40\% performance improvement.
-\Predator{} is able to successfully detect false sharing locations in both MySQL and the Boost library. 
+The false sharing of \texttt{Boost} library is caused by the usage of \texttt{spinlock} pool. Different threads may utilize different spinlocks located in the same cache line in this case. Fixing it brings a 40\% performance improvement.
+\Predator{} is able to successfully detect false sharing locations in both \texttt{MySQL} and the \texttt{Boost} library. 
 For the other four applications, \Predator{} does not find severe false sharing problems.
 
 \subsubsection{Prediction Effectiveness}
@@ -134,8 +107,7 @@ Predictive detection reveals un-observed false sharing problems. In this section
 \item
 The false sharing problem of this benchmark cannot be detected without prediction; 
 \item
-False sharing severely degrades performance when it actually occurs. 
-Hence, it is a serious problem that should always be detected. 
+False sharing severely degrades performance when it actually occurs. Hence, it is a serious problem that should always be detected. 
 \end{enumerate}
 
 \begin{figure}[!ht]
@@ -147,8 +119,7 @@ Hence, it is a serious problem that should always be detected.
 \end{figure}
 
 Figure~\ref{fig:linearregression} shows the data structure and source code exercising appropriate false sharing. The size of this data structure, \texttt{lreg\_args}, is $64$ bytes 
-when we use clang to compile a $64$-bit binary at the ``-O1'' optimization level. For this benchmark, the main thread allocates an array with the number of elements equalling to
-the number of underlying hardware cores. Each element is a \texttt{lreg\_args} type with $64$ bytes. Then this array is passed to different threads (\texttt{lreg\_thread}) so that each thread only updates its thread-dependent area, see Figure~\ref{fig:linearregression}. False sharing occurs if two threads happens to update data in the same cache line. 
+when we use \texttt{clang} to compile a $64$-bit binary at the ``-O1'' optimization level. For this benchmark, the main thread allocates an array with the number of elements equalling to the number of underlying hardware cores. Each element is a \texttt{lreg\_args} type with $64$ bytes. Then this array is passed to different threads (\texttt{lreg\_thread}) so that each thread only updates its thread-dependent area. False sharing occurs if two threads happens to update data in the same cache line. 
 
 Figure~\ref{fig:perfsensitive} shows how sensitive  of the performance is to different starting address of false sharing object. When the offset is $0$ or $56$ bytes, this benchmark achieves its optimal performance and has no false sharing at all. When the offset is $24$ bytes, this benchmarks runs around $15$ times slower than its optimal performance because of false sharing problem.
 
@@ -172,18 +143,15 @@ is based on the average of $10$ runs while excluding the maximum and minimum val
 For $16$ benchmarks from Phoenix and PARSEC benchmark suites and six real applications,  \Predator{} imposes around $5.4\times$ performance overhead. There is no big difference on performance when disabling the prediction mechanism. 
  
 Among these programs, five of them have more than $8\times$ performance overhead, including \texttt{histogram, kmeans, bodytrack, ferret} and \texttt{swaptions}. 
-Program \texttt{histogram} runs more than $26$ slower than original executions, which is caused by a severe false sharing problem inside. Tracking detailed access for cache lines with false sharing exacerbates the false sharing effect (see more discussion of this in Section~\ref{sec:sample}).  For \texttt{bodytrack} and \texttt{ferret}, \Predator{} found a large amount of cache lines with writes larger than {\it Tracking-Threshold}. Thus Tracking all accesses details for those cache lines imposes significant performance overhead. Currently, we cannot identify the reasons why \texttt{kmeans} runs much slower in \Predator{}.
+Program \texttt{histogram} runs more than $26$ slower than original executions with \pthreads{} library, which is caused by a severe false sharing problem inside. Tracking detailed access for cache lines with false sharing exacerbates the false sharing effect (see more discussion of this in Section~\ref{sec:sample}).  For \texttt{bodytrack} and \texttt{ferret}, \Predator{} found a large amount of cache lines with writes larger than {\it Tracking-Threshold}, but there is no actual false sharing problem inside. Thus Tracking all accesses details for those cache lines imposes significant performance overhead. Currently, we cannot identify the reasons why \texttt{kmeans} runs much slower in \Predator{}.
    
-We also observe that \Predator{} impose very minimum performance overhead for IO-bound applications, such as \texttt{aget}, \texttt{Memcached}, \texttt{pbzip2}, and \texttt{pfscan}.  
-
-We do not observe significant performance overhead for \texttt{matrix\_multiply, blackscholes} and 
-\texttt{x264}. In these benchmarks, a large portion of the computation operates on stack variables, which are not tracked by \Predator{}. 
+We also observe that \Predator{} impose very minimum performance overhead for IO-bound applications, such as \texttt{matrix\_multiply}, \texttt{blackscholes}, \texttt{x264}, \texttt{aget}, \texttt{Memcached}, \texttt{pbzip2}, and \texttt{pfscan}.  
 
 \subsection{Memory Overhead}
 \label{sec:memoverhead}
 We evaluate the physical memory overhead here because \Predator{} pre-allocates a 4 gigabytes block of heap initially. Proportional set size (PSS) in \texttt{/proc/self/smaps} reflects physical memory increase on the existing system by running an application~\cite{memusage}. Thus, we periodically collect this data and use the sum of different memory mappings as total physical memory usage. We presents the maximum value of physical memory usage in Figure~\ref{fig:memusage}. 
 
-\Predator{} imposes less than 50\% memory overhead for 17 applications out of 22 applications.  For \texttt{swaptions} and \texttt{aget}, \Predator{} introduces significant memory overhead because original memory usage of these two benchmarks are too small, only $3$ kilobytes. Adding the code of detection, prediction and reporting contributes to a large portion of memory overhead. We are not clear about the reason of \texttt{MySQL}. Although the average memory usage of all applications is about $2\times$, the total memory usage overhead is only about $40\%$. 
+\Predator{} imposes less than 50\% memory overhead for 17 applications out of 22 applications.  For \texttt{swaptions} and \texttt{aget}, \Predator{} introduces significant memory overhead because original memory usage of these two benchmarks are too small, only $3$ kilobytes. Adding the code of detection, prediction and reporting contributes to a large portion of memory overhead. We are not clear why \texttt{MySQL} consume much more memory. Although the average memory usage of all applications is over $2\times$, the total memory usage overhead is only about $40\%$. 
 
 \begin{figure*}
 \begin{center} 
