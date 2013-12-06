@@ -17,9 +17,9 @@ and the start of cache line.
 \label{fig:perfsensitive}}
 \end{figure}
 
-False sharing can depend on 
+The appearance of false sharing depends on 
 the alignment between objects and corresponding cache lines.
-\CC{A real example, \texttt{linear\_regression}, is shown in Figure~ref{fig:perfsensitive}, which are further discussed in Section~\ref{sec:evaluation}. }
+\CC{A real example, \texttt{linear\_regression}, is shown in Figure~ref{fig:perfsensitive}, which are further discussed in Section~\ref{sec:evaluation}.}
 For this benchmark,
 when the offset of the starting address between the potentially falsely-shared object and corresponding cache lines 
 is $0$ or $56$ bytes, 

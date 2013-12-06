@@ -1,3 +1,5 @@
+\label{sec:futurework}
+
 \subsection{Approach Applicability}
 The approach of combining compiler instrumentation and runtime system does not rely on the support of specific hardware, OS and libraries.
 Hence, it is applicable to detect and predict false sharing in different levels of 
@@ -11,7 +13,7 @@ Different system has their own specific allocation and deallocations, which shou
 
 
 \subsection{Performance Improvement}
-\Predator{} runs around $7\times$ slower on average for all evaluated benchmarks. 
+\Predator{} runs around $6\times$ slower on average for all evaluated applications. 
 In our current implementation, every memory access is instrumented with a library call 
 in order to notify the runtime system for tracking purpose. A library call entails not only normal function call overhead but also Global Offset Table(GOT) and/or Procedure Linkage Table (PLT) look-up overhead. 
 It is too heavy for simple computations, listed in the following:
