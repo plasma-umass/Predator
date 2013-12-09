@@ -68,7 +68,7 @@ This paper makes the following contributions:
 \item
 \textbf{Predictive False Sharing Detection:} \Predator{} is the first system that can \emph{predict} potential false sharing that does not manifest in an execution but may appear and greatly degrade the performance of programs in a slightly different environment. 
 \CC{Predictive false sharing generalizes from a single
-execution to identify potential false sharing instances that can arise by slight changes in object placement and alignment. }
+execution to identify potential false sharing instances that are caused by slight changes in object placement and alignment. }
 It also can predict false sharing in hardware platforms with larger cache line sizes by tracking accesses within \emph{virtual cache lines} that span multiple physical lines. Predictive false sharing detection thus overcomes a key limitation of previous detection tools.
 
 %Existing approaches is based on specific hardware,
@@ -110,8 +110,8 @@ paper focuses on user-level multithreaded applications, \Predator{}'s approach i
 
 \CC{
 The remainder of this paper is organized as follows. 
-Section~\ref{sec:detection} describes \Predator{}'s detection mechanisms and algorithms in detail. Section~\ref{sec:prediction} discusses how to predict potential false sharing accurately without actually observing false sharing directly. Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to reveal unknown false sharing problems in several benchmarks and real applications. 
-Section~\ref{sec:discussion} discusses design tradeoffs and some important facts of \Predator{}. 
+Section~\ref{sec:detection} describes \Predator{}'s detection mechanisms and algorithms in detail. Section~\ref{sec:prediction} discusses how to predict potential false sharing accurately without actually observing false sharing directly. Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to reveal unknown false sharing problems in applications. 
+Section~\ref{sec:discussion} discusses design tradeoffs and important factors which may affect the effectiveness of \Predator{}. 
 Section~\ref{sec:futurework} outlines directions for future work and Section~\ref{sec:relatedwork} describes key related work. Finally, Section~\ref{sec:conclusion} concludes.}
 
 

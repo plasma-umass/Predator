@@ -17,7 +17,7 @@ accessed the same cache line, this write operation most likely causes at least a
 % by keeping track of accesses from different threads. 
  
 \CC{
-To track cache invalidations, \Predator{} relies on compiler instrumentation to track those memory accesses. Corresponding tradeoff on this has been discussed in Section~\ref{sec:instrumentationtradeoff}. Compiler can easily identify read or write accesses. However, the compiler does not know how and when those instructions are being executed, since that depends on a specific execution, input, and runtime environment.}
+In order to track cache invalidations, \Predator{} relies on compiler instrumentation for tracking memory accesses of applications. The design tradeoff of choosing compiler instrumentation has been discussed in Section~\ref{sec:instrumentationtradeoff}. Compiler can easily identify read or write accesses. However, the compiler does not know how and when those instructions are being executed, since that depends on a specific execution, input, and runtime environment.}
 
 Therefore, \Predator{} combines a runtime system with compiler
 instrumentation to track cache invalidations: the compiler
@@ -111,7 +111,7 @@ object and reports source code level information for each heap
 object. To obtain callsite information, \Predator{} intercepts all memory allocations and de-allocations, and relies
 on the \texttt{backtrace()} function in the \texttt{glibc} library to obtain the whole callsite stack.
 \CC{
-\Predator{} also avoids pseudo false sharing (false positives) caused by memory re-usage because it flushs recording information during memory de-allocations for those objects without false sharing problems; heap objects involved in false 
+\Predator{} also avoids pseudo false sharing (false positives) caused by memory re-usage because it flushes recording information at memory de-allocations for those objects without false sharing problems; heap objects involved in false 
 sharing are never reused.}
 
 \item
