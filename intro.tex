@@ -18,9 +18,7 @@ It occurs when two threads inadvertently contend because the objects
 they are accessing happen to reside on the same cache line. When at least
 one of the threads frequently updates its object, the resulting cache
 coherence traffic can degrade performance by up to an order of
-magnitude~\cite{falseshareeffect}. Worse, false sharing is generally
-difficult to detect\CC{ : SHOULD we remove this: unlike locks or truly shared objects, there is
-often no obvious culprit in the source code}.
+magnitude~\cite{falseshareeffect}. Worse, false sharing is generally difficult to detect.
 
 As cache lines have grown larger and multithreaded applications have
 become commonplace, false sharing has become an increasingly important
@@ -110,8 +108,8 @@ paper focuses on user-level multithreaded applications, \Predator{}'s approach i
 
 \CC{
 The remainder of this paper is organized as follows. 
-Section~\ref{sec:detection} describes \Predator{}'s detection mechanisms and algorithms in detail. Section~\ref{sec:prediction} discusses how to predict potential false sharing accurately without actually observing false sharing directly. Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to reveal unknown false sharing problems in applications. 
-Section~\ref{sec:discussion} discusses design tradeoffs and important factors which may affect the effectiveness of \Predator{}. 
+Section~\ref{sec:detection} describes \Predator{}'s detection mechanisms and algorithms in detail. Section~\ref{sec:prediction} discusses how to predict potential false sharing accurately without actually observing false sharing directly. Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to reveal previously unknown false sharing problems in applications. 
+Section~\ref{sec:discussion} discusses design tradeoffs and important factorors which may affect the effectiveness of \Predator{}. 
 Section~\ref{sec:futurework} outlines directions for future work and Section~\ref{sec:relatedwork} describes key related work. Finally, Section~\ref{sec:conclusion} concludes.}
 
 

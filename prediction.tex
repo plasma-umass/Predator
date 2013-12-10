@@ -19,7 +19,7 @@ and the start of cache line.
 
 The appearance of false sharing depends on 
 the alignment between objects and corresponding cache lines.
-\CC{A real example, linear\_regression, is shown in Figure~ref{fig:perfsensitive}.}
+\CC{A real example, linear\_regression, is shown in Figure~\ref{fig:perfsensitive}.}
 For this benchmark,
 when the offset of the starting address between the potentially falsely-shared object and corresponding cache lines 
 is $0$ or $56$ bytes, 
@@ -179,7 +179,7 @@ This approach is based on a similar observation as in detection:
 have accessed the same virtual line, this write operation most likely causes at least one cache 
 invalidation}. 
 \CC{
-Before tracking detailed memory accesses on this cache line, it is impossible to know exactly how many cache invalidations happen on a virtual line. Thus, \Predator{} conservatively assumes that accesses from different threads are interleaved.
+Before tracking detailed memory accesses on a virtual line, it is impossible to know exactly how many cache invalidations happen on a virtual line. Thus, \Predator{} conservatively assumes that accesses from different threads occurs interleavedly.
 This approach ensures that \Predator{} does not miss any potential false sharing as well as 
 not reporting false positives. }
 

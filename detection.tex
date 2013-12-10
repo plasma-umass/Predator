@@ -17,7 +17,7 @@ accessed the same cache line, this write operation most likely causes at least a
 % by keeping track of accesses from different threads. 
  
 \CC{
-In order to track cache invalidations, \Predator{} relies on compiler instrumentation for tracking memory accesses of applications. The design tradeoff of choosing compiler instrumentation has been discussed in Section~\ref{sec:instrumentationtradeoff}. Compiler can easily identify read or write accesses. However, the compiler does not know how and when those instructions are being executed, since that depends on a specific execution, input, and runtime environment.}
+In order to track cache invalidations, \Predator{} relies on the compiler instrumentation to track memory accesses of applications. The design tradeoff of choosing compiler instrumentation has been discussed in Section~\ref{sec:instrumentationtradeoff}. A compiler can easily identify read or write accesses. However, a compiler does not know how and when those instructions are being executed, since that depends on a specific execution, input, and runtime environment.}
 
 Therefore, \Predator{} combines a runtime system with compiler
 instrumentation to track cache invalidations: the compiler
@@ -111,7 +111,7 @@ object and reports source code level information for each heap
 object. To obtain callsite information, \Predator{} intercepts all memory allocations and de-allocations, and relies
 on the \texttt{backtrace()} function in the \texttt{glibc} library to obtain the whole callsite stack.
 \CC{
-\Predator{} also avoids pseudo false sharing (false positives) caused by memory re-usage because it flushes recording information at memory de-allocations for those objects without false sharing problems; heap objects involved in false 
+\Predator{} also avoids pseudo false sharing (false positives) caused by memory reuses because it updates recording information at memory de-allocations for those objects without false sharing problems; heap objects involved in false 
 sharing are never reused.}
 
 \item
@@ -222,9 +222,9 @@ Instrumenting only writes reduces overhead while detecting write-write false sha
 as \Sheriff{} does. 
 \item
 \Predator{} can be set to instrument or skip specific code or data. 
-For example, the user could provide a black list so that given modules,
+For example, the user could provide a black-list so that given modules,
 functions or variables are not instrumented. 
-Conversely, the user could provide a white list so that only specified functions or variables are instrumented. 
+Conversely, the user could provide a white-list so that only specified functions or variables are instrumented. 
 \end{itemize}
 
 \subsubsection{Sampling Mechanism}
@@ -274,7 +274,7 @@ sample interval. Most accesses (99\%) only need to increment an access counter f
 
 This simple logic only involves a few cycles of useful work, either checking or updating a counter, which is swamped by the overhead of function calls or library
 calls.
-To avoid this overhead, \Predator{} implements this logic directly---without recourse to function calls---in places wwhere these
+To avoid this overhead, \Predator{} implements this logic directly---without recourse to function calls---in places where these
 memory accesses are instrumented. 
 This approach leads to another technical problem: how to choose shadow mapping addresses. 
 We solve this straightforwardly by choosing these addresses statically. \Predator{} pre-allocates the address space between $0x40000000$ and

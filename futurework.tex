@@ -1,13 +1,12 @@
 \label{sec:futurework}
 
 \subsection{Approach Applicability}
-\Predator{} does not rely on the support of specific hardware, OS and libraries.
-Hence, it is applicable to detect and predict false sharing in the entire software stack in theory, including hypervisors, operating systems, libraries or applications using different threading libraries. It is the future work for us to detect false sharing problems of other level's software.
-
+\Predator{} does not rely on any specific hardware or a special operating system support.
+In theory, \Predator{} can detect and predict false sharing in the entire software stack, including hypervisors, operating systems, libraries, and applications using different threading libraries. We leave this for the future work. 
 
 \subsection{Performance Improvement}
-\Predator{} runs around $6\times$ slower on average for all evaluated applications. In the current implementation, every memory access is instrumented with a library call to notify the runtime system. A library call entails not only normal function call overhead but also Global Offset Table(GOT) and/or Procedure Linkage Table (PLT) look-up overhead. 
-It is too heavy for simple computations in the following:
+\Predator{} runs around $6\times$ slower on average over all evaluated applications. In the current implementation, every memory access is instrumented with a library call to notify the runtime system. A library call entails not only normal function call overhead but also Global Offset Table(GOT) and/or Procedure Linkage Table (PLT) look-up overhead. 
+The overhead of a library call is much larger than the cost of simple computations. For example, 
 
 \begin{itemize}
 \item
@@ -17,8 +16,8 @@ Before the number of writes on a cache line reaches {\it Tracking-Threshold},  \
 In the sampling mechanism discussed in Section~\ref{sec:sample}, most accesses (99\%) outside sampling period only needs to increment access counters of cache lines.
 \end{itemize}
 
-These computations listed above only need simple checking or updating operations, normally taking only a few CPU cycles to finish. 
-In the future, we plan to instrument those simple computations directly, instead of using library calls.
+These computations only need simple checks or counter updates, normally taking only a few CPU cycles to finish. 
+In the future, we plan to insert the simple computations directly, instead of using library calls.
 
 \subsection{Valuable Suggestions}
 \Predator{} can be extended to provide suggestions for fixing false sharing problems based on the memory trace information, which can help reduce the manual overhead of fixing false sharing problems.  
