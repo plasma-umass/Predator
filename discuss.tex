@@ -14,5 +14,5 @@ Different sampling rates do not affect effectiveness, which is discussed in Sect
 
 \ emph{Memory Hierarchy} Memory hierarchy of the underlying experimental machine cannot affect \Predator{}'s detection results. \Predator{} conservatively assumes that different threads are running on different cores and detects false sharing problems based on possible cache invalidations. \Predator{} does not attempt to obtain the actual cache invalidations of a program, which can depend on real memory hierarchy. Thus, \Predator{} does not bind to a specific machine, providing better generality than tools using hardware performance counters. A deeper hierarchy should only amplify the costs of false sharing, and thus exemplify the value of \Predator{}.
 
-\subsection{Prediction Limitation} 
+\subsection{Prediction Limitations} 
 \Predator{} can accurately and precisely predict a false sharing problem even when it does not occur. But \Predator{} cannot predict a false sharing problem if the code with false sharing is not exercised at all. Also, \Predator{} may miss potential false sharing problems between two objects brought by a different compiler or memory allocator. 
