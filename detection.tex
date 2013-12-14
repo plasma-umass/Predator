@@ -183,8 +183,7 @@ uses an atomic compare-and-swap to set the cache tracking address for this cache
 the shadow mapping.
 After {\it CacheWrites} on a cache line have crossed the {\it TrackingThreshold}, 
 \Predator{} tracks all read and write accesses to this cache line.
-%Cache invalidations are also computed based on cache line history table of corresponding
-%cache line, shown in Table~\ref{table:cachehistory}. 
+
 
 
 \subsubsection{Selective Compiler Instrumentation}
@@ -195,17 +194,15 @@ and detects false sharing based on the sequences of memory accesses to every cac
 The performance overhead of doing this is proportional to 
 the degree of instrumentation: more 
 instrumentation means higher performance overhead. \Predator{}'s design makes it possible to trade performance and accuracy as needed.
-%Thus, \Predator{} provides a flexible framework to instrument programs 
-%depending on the performance requirements of the user.
 
 Currently, \Predator{} only adds instrumentation once for each type of memory access on each address 
 in the same basic block. 
 This selective instrumentation does not normally affect the effectiveness of detection. 
 Because \Predator{} aims to detect cases of false sharing with many cache invalidations,
 less tracking inside a basic block can induce fewer cache invalidations, 
-but it does not affect the overall behavior of cache invalidations. 
+but this does not affect the overall behavior of cache invalidations. 
 
-% detection will not cause performance problem. 
+
 To further improve performance,
 \Predator{} could easily be extended to support more flexible instrumentation:
 \begin{itemize}
@@ -234,11 +231,7 @@ caused by updating the metadata of the corresponding cache lines.
 
 To further reduce performance overhead, \Predator{} only samples the first specified
 number of accesses of each sampling interval for problematic cache lines. 
-%Note that we originally keep a global counter for all accesses and uses the number of 
-%all accesses to compuate sample intervals. However, this creates 
-%extereme performance overhead caused by cache invalidations of updating the same counter
-%for all accesses. 
 Currently, \Predator{} maintains an access counter for each cache line
-and only tracks the first $10,000$ accesses out of every 1 million
+and only tracks the first $10,000$ out of every 1 million
 accesses to a cache line (a 1\% sampling rate).
 
