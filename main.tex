@@ -3,7 +3,7 @@
 \RequirePackage[normalem]{ulem} %DIF PREAMBLE
 \RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
 \providecommand{\DIFadd}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
-\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
 %DIF SAFE PREAMBLE %DIF PREAMBLE
 \providecommand{\DIFaddbegin}{} %DIF PREAMBLE
 \providecommand{\DIFaddend}{} %DIF PREAMBLE
@@ -86,18 +86,10 @@
 \newcommand{\munmap}{\cfunction{munmap}}
 \newcommand{\mprotect}{\cfunction{mprotect}}
 \newcommand{\mlock}{\cfunction{mlock}}
-\newcommand{\cmark}{\ding{52}} %51 or 52
-\newcommand{\xmark}{\ding{53}}% 53, 54, 55, 56
+\newcommand{\cmark}{\ding{52}} 
+\newcommand{\xmark}{\ding{53}}
 
-\hyphenation{app-li-ca-tion}
-\hyphenation{Die-Hard}
-\hyphenation{Ar-chi-pe-la-go}
-\hyphenation{buf-fer}
-\hyphenation{D-threads}
 \hyphenation{Heap-Layers}
-\hyphenation{wait-Token}
-\hyphenation{mul-ti-threa-ded}
-\hyphenation{me-m-ory}
 
 \hyphenation{pthread-create}
 \hyphenation{pthread-self}
@@ -109,14 +101,6 @@
 \newcommand{\sheriff}{{\scshape Sheriff}}
 \newcommand{\Predator}{{\scshape Predator}}
 \newcommand{\predator}{{\scshape Predator}}
-\newcommand{\SheriffProtect}{\textsc{Sheriff-Protect}}
-\newcommand{\sheriffProtect}{\textsc{Sheriff-Protect}}
-\newcommand{\sheriffprotect}{\textsc{Sheriff-Protect}}
-\newcommand{\SheriffDetect}{\textsc{Sheriff-Detect}}
-\newcommand{\sheriffDetect}{\textsc{Sheriff-Detect}}
-\newcommand{\sheriffdetect}{\textsc{Sheriff-Detect}}
-%\newcommand{\Grace}{{\scshape Grace}}
-%\newcommand{\grace}{{\scshape Grace}}
 \newcommand{\pthreads}{\texttt{pthreads}}
 
 \lstdefinelanguage{c++threads}[]{c++}{morekeywords={pthread_create,pthread_join}}
@@ -132,12 +116,9 @@
 %\copyrightdata{[to be supplied]} 
 
 %\titlebanner{banner above paper title}        % These are ignored unless
-\preprintfooter{short description of paper}   % 'preprint' option specified.
 
 \title{\Predator{}: Predictive False Sharing Detection}
-%\title{\Predator{}: Detecting and Predicting All False Sharing Precisely and Accurately}
-%\title{DeFault: Precisely Detecting All False Sharing with Compiler Instrumentation}
-%\subtitle{Subtitle Text, if any}
+
 \authorinfo{Tongping Liu}
            {University of Massachusetts Amherst}
            {tonyliu@cs.umass.edu}
@@ -151,7 +132,6 @@
 \maketitle
 
 \begin{abstract}
-%This is the text of the abstract.
 \input{abstract}
 \end{abstract}
 
@@ -171,13 +151,9 @@ keyword1, keyword2
 
 \section{False Sharing Detection}
 \input{detection}
-%\subsection{Compiler Instrumentation}
-%\subsection{Runtime System}
-%\subsection{Performance Optimization}
 
 \section{False Sharing Prediction}
 \input{prediction}
-%\input{Prediction}
 
 \section{Experimental Evaluation}
 \input{evaluation}
@@ -188,21 +164,15 @@ keyword1, keyword2
 \section{Future Work}
 \input{futurework}
 
-%\section{Issues}
-%\input{issues}
 \section{Related Work}
 \input{relatedwork}
 
 \section{Conclusion}
 \input{conclusion}
 
-\section{Acknowledgement}
+\acks
 \input{acknowledge}
 
-%\appendix
-%\section{Manual}
-
-%\section{How to Integrate with LLVM}
 
 
 
