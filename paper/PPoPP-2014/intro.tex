@@ -5,11 +5,9 @@ making them scale can present even greater obstacles. Any contention can impair 
 applications to run slower as the number of threads increases.
 
 False sharing is a particularly insidious form of contention.
-It occurs when two threads \emph{inadvertently} contend because the objects
-they are accessing happen to reside on the same cache line. When at least
-one of the threads frequently updates its object, the resulting cache
-coherence traffic can degrade performance by up to an order of
-magnitude~\cite{falseshareeffect}. Worse, unlike sources of contention like locks, false sharing is often invisible at the source code level.
+It occurs when two threads update logically-distinct objects that happen to reside on the same cache line. The resulting
+coherence traffic can degrade performance by an order of
+magnitude~\cite{falseshareeffect}. Unlike sources of contention like locks, false sharing is often invisible in the source code, making it difficult to find.
 
 As cache lines have grown larger and multithreaded applications have
 become commonplace, false sharing has become an increasingly important
@@ -19,7 +17,7 @@ virtual machine~\cite{JVMfalsesharing}, common
 libraries~\cite{libfalsesharing} and widely-used
 applications~\cite{mysql,appfalsesharing}.
 
-Recent efforts to false sharing detection fall short in a number of dimensions. Some introduce excessive performance overhead, making them too slow to use in practice~\cite{falseshare:binaryinstrumentation1,falseshare:binaryinstrumentation2,falseshare:simulator}. Most do not report false sharing precisely and accurately~\cite{falseshare:binaryinstrumentation1,detect:ptu,detect:intel,falseshare:binaryinstrumentation2,DProf,qinzhaodetection}, some require special OS support~\cite{OSdetection} or only work on a restricted class of applications~\cite{sheriff}.
+Recent work on false sharing detection falls short in several dimensions. Some introduce excessive performance overhead, making them impractical~\cite{falseshare:binaryinstrumentation1,falseshare:binaryinstrumentation2,falseshare:simulator}. Most do not report false sharing precisely and accurately~\cite{falseshare:binaryinstrumentation1,detect:ptu,detect:intel,falseshare:binaryinstrumentation2,DProf,qinzhaodetection}, and some require special OS support or only work on a restricted class of applications~\cite{OSdetection,sheriff}.
 
 In addition, all of these systems share one key limitation: they can
 only report \emph{observed} cases of false sharing. As Nanavati et al.\ point out, false sharing is sensitive to where objects are placed in cache lines and so can be affected by a wide range of factors~\cite{OSdetection}. For example, using the gcc compiler \emph{accidentally} eliminates false sharing in the Phoenix linear\_regression benchmark at certain optimization levels, while LLVM does not do so at any optimization level.  A slightly different memory allocation sequence (or different memory allocator) can reveal or hide
