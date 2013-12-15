@@ -2,8 +2,8 @@
 
 \subsection{Instrumentation Selection}
 \label{sec:instrumentationtradeoff}
-Dynamic binary instrumentation and compiler-based instrumentation are two alternative approaches for performing instrumentation~\cite{Instrumentation}. They exhibit different tradeoffs of performance and generality. Dynamic instrumentation approaches, such as Valgrind~\cite{Valgrind}, Pin~\cite{Pin}, and DynamoRIO~\cite{DynamoRIO}, normally analyze the program's code just before execution in order to insert instrumentation. They introduce significant performance overhead, mostly caused by run-time encoding and decoding, but provide better generality because there is no need for recompilation. Compiler instrumentation inserts instrumentation in the compilation phase, which requires re-compilation of the source code. 
-\Predator{} employs compiler-based instrumentation both because of its better performance its greater flexibility, as discussed in Section~\ref{sec:selectinstrumentation}.
+Dynamic binary instrumentation and compiler-based instrumentation are two alternative approaches for performing instrumentation~\cite{Instrumentation}. They exhibit different tradeoffs of performance and generality. Dynamic binary instrumentors, such as Valgrind~\cite{Valgrind}, Pin~\cite{Pin}, and DynamoRIO~\cite{DynamoRIO}, typically analyze the program's code just before execution in order to insert instrumentation. They introduce significant performance overhead, mostly caused by run-time encoding and decoding, but the fact that they operate directly on binaries makes them extremely convenient. By contrast, compiler instrumentation inserts instrumentation in the compilation phase, which requires re-compilation of all source code. 
+\Predator{} employs compiler-based instrumentation both because of its better performance and its greater flexibility, as discussed in Section~\ref{sec:selectinstrumentation}.
 
 \subsection{Effectiveness}
 Several factors can affect \Predator{}'s ability to identify false sharing.

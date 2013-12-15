@@ -33,13 +33,12 @@ This paper makes the following contributions:
 \textbf{Predictive False Sharing Detection:} This paper introduces \emph{predictive false sharing analysis}, an approach that can \emph{predict} potential false sharing that does not manifest in a given run but may appear---and greatly degrade application performance---in a slightly different execution environment. 
 Predictive false sharing detection thus overcomes a key limitation of previous detection tools.
 
-\item
-\textbf{A Fully General Approach to False Sharing Detection:} This paper presents the first completely general false sharing detection method by combining compiler-based instrumentation with a runtime system. While this
-paper focuses on user-level multithreaded applications, the approach outlined here is broadly applicable across the entire software stack because it does not depend on specific hardware, OS, or library support.
+%\item
+%\textbf{A Fully General Approach to False Sharing Detection:} This paper presents the first completely general false sharing detection method by combining compiler-based instrumentation with a runtime system. While this paper focuses on user-level multithreaded applications, the approach outlined here is broadly applicable across the entire software stack because it does not depend on specific hardware, OS, or library support.
 
 \item
 \textbf{A Practical and Effective Predictive False Sharing Detector:} 
-This paper presents \Predator{}, a false sharing detector that not only \emph{detects} but also \emph{predicts} potential false sharing problems.
+This paper presents \Predator{}, a prototype predictive false sharing detector. \Predator{} not only \emph{detects} but also \emph{predicts} potential false sharing problems.
 \Predator{} operates with reasonable overhead (average: $6\times$ performance, $2\times$ memory). It is the first false sharing tool able to automatically and precisely uncover
 false sharing problems in real applications, including 
 MySQL and the Boost library.

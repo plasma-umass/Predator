@@ -8,12 +8,14 @@ This section further motivates predictive false sharing and explains how to supp
 
 \begin{figure}[!t]
 \begin{center}
+\vspace{1.2em}
 \includegraphics[width=3.3in]{fig/perfsensitive}
+\vspace{1.2em}
 \end{center}
 \caption{
 Performance of the linear\_regression benchmark from the Phoenix benchmark suite.
 Performance is highly sensitive to the offset of the starting address of the (potentially) falsely-shared object 
-and the start of the cache line. 
+from the start of the cache line. 
 \label{fig:perfsensitive}}
 \end{figure}
 
