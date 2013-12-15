@@ -6,8 +6,6 @@ Callsite stack:
   ./linear_regression-pthread.c:133
 
 Word level information:
-  Address 0x40000038 (line 16777216): reads 1       writes 0      by thread 0
-  Address 0x40000040 (line 16777217): reads 2716061 writes 0      by thread 1
   ......
   Address 0x40000070 (line 16777217): reads 339508  writes 339507 by thread 1
   Address 0x40000080 (line 16777218): reads 2716059 writes 0      by thread 2

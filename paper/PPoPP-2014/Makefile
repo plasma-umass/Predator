@@ -4,7 +4,8 @@ PDFLATEX = pdflatex -halt-on-error -interaction nonstopmode
 BIBTEX = bibtex
 PATCH = patch -p0 -t
 
-R ?= HEAD
+R ?= 78a25fcd17d0b310ba837d55fd62ed2dff0b1083
+ # HEAD
 DIFF_DIR = .diff.$(R)
 OLDVERSION_DIR = .oldversion.$(R)
 CHANGES_FILE = .changes.$(R).diff
@@ -78,8 +79,8 @@ oldversion_dummy: $(CHANGES_FILE)
 $(CHANGES_FILE): $(FILES)
 ifeq ($(R),HEAD)
 	@echo "[DIFF] Using local checkout to compute changes"
-	@svn diff *.tex > $@
+	@git diff 78a25fcd17d0b310ba837d55fd62ed2dff0b1083 *.tex > $@
 else
 	@echo "[DIFF] Fetching changes from repository"
-	@svn diff -r $(R):HEAD > $@
+	@git diff $(R) > $@
 endif
