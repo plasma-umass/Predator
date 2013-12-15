@@ -1,3 +1,14 @@
+\begin{figure*}[htb]
+{\centering
+\tiny
+\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/linearregression.report}}
+\caption{An example report by \Predator{} indicating false sharing in the linear\_regression benchmark.
+\label{fig:lrreport}}
+}
+\end{figure*}
+
+
+
 \label{sec:evaluation}
 
 This section answers the following questions:
@@ -13,6 +24,7 @@ This section answers the following questions:
  
 \end{itemize}
 
+
 \paragraph{Experimental Platform.} All evaluations are performed on a quiescent Intel Core 2 dual-processor system equipped with 
 16GB RAM. Each processor is a 4-core 64-bit Intel Xeon running at 2.33 GHz, with a 4MB shared L2 cache and 32KB private L1 cache. The underlying operating system is an unmodified CentOS 5.5, running with Linux kernel version 2.6.18-194.17.1.el5. We use glibc version 2.5 and LLVM version 3.2. 
 All applications were compiled as 64-bit executables with the optimization level set to \texttt{-O1} in order to maintain accurate source code line number information.
@@ -23,23 +35,18 @@ Phoenix (with large input)~\cite{phoenix-hpca} and PARSEC (with simlarge input)~
 we evaluate \Predator{} on six real applications: MySQL, Boost, Memcached, aget, pbzip2 and pfscan.
 
 
+
 \subsection{Detection and Prediction Effectiveness}
 \label{sec:effective}
 
-For every detected or predicted false sharing problem, \Predator{} reports source code information and detailed memory access information. Figure~\ref{fig:lrreport} shows an example for the linear\_regression benchmark. This report shows that the heap object starting with $0x40000038$ potentially causes numerous cache invalidations. The allocation callsite is provided to help locate culprits. In addition, \Predator{} also reports word-level access information of this object, which makes it possible for the developer to identify where and how false sharing occurs. From this information, we can see that this instance is a latent false sharing problem predicted by \Predator{}, since different threads are accessing different hardware cache lines. 
+For every detected or predicted false sharing problem, \Predator{} reports source code information and detailed memory access information. Figure~\ref{fig:lrreport} shows an example for the linear\_regression benchmark. This report shows that the heap object starting with $0x40000038$ potentially causes numerous cache invalidations. The allocation callsite is provided to help locate culprits. In addition, \Predator{} also reports word-level access information of this object, which makes it possible for the developer to identify where and how false sharing occurs. From this information, we can see that this instance is a latent false sharing problem predicted by \Predator{}, since different threads are accessing different hardware cache lines.
 
-\begin{figure*}[!ht]
-{\centering
-\subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/linearregression.report}}
-\caption{False sharing report for the linear\_regression benchmark.
-\label{fig:lrreport}}
-}
-\end{figure*}
+ 
 
 \subsubsection{Benchmarks}
 \label{sec:benchmarks}
 
-\begin{table*}[ht!]
+\begin{table*}[!t]
 {\centering\begin{tabular}{l|r|r|r|r|r}\hline
 {\bf \small Benchmark} & {\bf \small Source Code} & {\bf \small New} & {\bf \small Without Prediction} &{\bf \small With Prediction} & {\bf \small Improvement} \\
 \hline
@@ -76,10 +83,10 @@ The streamcluster benchmark has another false sharing problem located at line $9
 The linear\_regression benchmark has an unusually severe false sharing problem. Fixing it improves performance by more than $12\times$. In this benchmark, different threads repeatedly update their thread-specific locations inside the tid\_args object inside a tight loop. Interestingly, Nanavati et al. observe that this false sharing problem occurs when using clang and disappears when using gcc with the \texttt{-O2} and \texttt{-O3} optimization levels~\cite{OSdetection}. However, we observe a different result when using our version of clang and the custom memory allocator: the false sharing problem \emph{does not occur at all} because the offset of the starting address of the potentially falsely-shared object and the start of cache line is 56 bytes (see Figure~\ref{fig:perfsensitive}). As we discuss below,\Predator{}'s prediction mechanism identifies this latent false sharing problem, highlighting the value of predictive detection.
 
 \subsubsection{Real Applications}
-To verify \Predator{}'s utility, we evaluate its effectiveness on several widely-used real applications. These applications include a database server (MySQL~\cite{mysql}),
-a standard C++ library (Boost~\cite{libfalsesharing}),
-a distributed memory object caching system (Memcached), a download accelerator (aget),
-a parallel bzip2 file compressor (pbzip2), and a parallel file scanner (pfscan).
+To verify \Predator{}'s utility, we evaluate its effectiveness on several widely-used real applications. These applications include a MySQL, a database server~\cite{mysql};
+Boost, a standard C++ library~\cite{libfalsesharing};
+Memcached, a distributed memory object caching system; aget, a download accelerator;
+pbzip2, a parallel bzip2 file compressor; and pfscan, a parallel file scanner.
 
 MySQL-5.5.32 and boost-1.49.0 are known to have false sharing problems. The other applications we examine (memcached-1.4.15, aget-0.4.1 and pbzip2-1.1.6) do not have  any known false sharing problems.
 
@@ -97,7 +104,7 @@ In this section, we describe in detail our experience with a particular benchmar
 \begin{figure}[!t]
 {\centering
 \subfigure{\lstinputlisting[numbers=none,frame=none,boxpos=t]{fig/linearregression.psedocode}}
-\caption{The false sharing problem inside the linear\_regression benchmark.
+\caption{The false sharing problem inside the linear\_regression benchmark: multiple threads simultaneously update their entries in lreg\_args.
 \label{fig:linearregression}}
 }
 \end{figure}
@@ -111,9 +118,8 @@ Figure~\ref{fig:perfsensitive} shows how sensitive linear\_regression's performa
 \label{sec:perfoverhead}
 
 \begin{figure*}[!t]
-\begin{center}
-\includegraphics[width=6.5in]{fig/perf}
-\end{center}
+\centering
+\includegraphics[width=6in]{fig/perf}
 \caption{
 Performance overhead of \Predator{} with and without prediction (PREDATOR-NP).
 \label{fig:perf}}
@@ -121,7 +127,7 @@ Performance overhead of \Predator{} with and without prediction (PREDATOR-NP).
 
 
 Figure~\ref{fig:perf} presents runtime overhead for using \Predator{}. All 
-measurements are based on the average of $10$ runs, excluding the maximum and minimum values. Overall, \Predator{} imposes an average of $5.4\times$ performance overhead. There is no noticeable difference on performance whether the prediction mechanism is enabled or not. 
+measurements are based on the average of $10$ runs, excluding the maximum and minimum values. \Predator{} imposes an average of $5.4\times$ performance overhead. There is no noticeable difference on performance whether the prediction mechanism is enabled or not. 
  
 Five of these (histogram, kmeans, bodytrack, ferret, and swaptions), have more than $8\times$ performance overhead. The histogram benchmark runs more than $26\times$ slower because tracking detailed accesses to cache lines with false sharing exacerbates the false sharing effect (see Section~\ref{sec:sample}). Although bodytrack and ferret have no false sharing, \Predator{} detects numerous cache lines with writes that exceed the {\it TrackingThreshold}, causing it to track detailed access information. We have not identified the exact cause of \Predator{}'s high performance overhead for kmeans.
    
@@ -130,19 +136,9 @@ As expected, \Predator{} imposes relatively little overhead for I/O-bound applic
 \subsection{Memory Overhead}
 \label{sec:memoverhead}
 
-Figure~\ref{fig:memusage} presents \Predator{}'s memory overhead. We account for \Predator{}'s physical memory consumption by collecting information on the proportional set size (PSS) in \texttt{/proc/self/smaps}, which reflects the physical memory increase on the existing system of running an application~\cite{memusage}. We periodically collect this data and use the sum of different memory mappings as the total physical memory usage of running an application.
+Figure~\ref{fig:memusage} and~\ref{fig:absolutememusage} present \Predator{}'s relative and absolute memory overhead, respectively. We compute \Predator{}'s physical memory consumption via information about the proportional set size (PSS) in Linux via \texttt{/proc/self/smaps}~\cite{memusage}. We periodically collect this data and use the sum of all memory mappings as the total physical memory usage of running an application.
 
 \Predator{} imposes less than 50\% memory overhead for 17 out of 22 applications.  For swaptions and aget, \Predator{} introduces high \emph{relative} memory overhead because their original memory footprints are extraordinarily small (only $3$ kilobytes). We are continuing to investigate the source of MySQL's large increase in memory consumption (from 132MB to 1.3GB). Nonetheless, even in the cases when \Predator{}'s absolute memory overhead is high, all of these applications comfortably fit into RAM on modern platforms.
-
-\begin{figure*}[!t]
-\begin{center} 
-\includegraphics[width=6.5in]{fig/absolutememory}
-\end{center}
-%\includegraphics{fig/potential.pdf}
-\caption{Normalized physical memory usage overhead with \Predator{}.}
-\label{fig:memusage}
-\end{figure*}
-
 
 \subsection{Sensitivity to Different Sampling Rates}
 \label{sec:sensitivity}
@@ -150,14 +146,22 @@ Figure~\ref{fig:memusage} presents \Predator{}'s memory overhead. We account for
 Section~\ref{sec:sample} describes \Predator{}'s sampling approach to reduce tracking overhead. This section evaluates the effect of different sampling rates on performance and effectiveness. Note that running an application with different sampling rates does not affect its memory usage.
 
 The default sampling rate used by \Predator{} is 1\%. To test \Predator{}'s sensitivity to this choice, we evaluate performance on a representative subset of the benchmarks with two other sampling rates: 0.1\% and 10\%. Figure~\ref{fig:sample} presents the results. As expected, \Predator{} introduces lower performance overhead at lower sampling rates. Even when using the 0.1\% sampling rate, \Predator{} is still able to detect all false sharing problems reported here, although it reports a lower number of cache invalidations.
- 
-\begin{figure}[!t]
-\begin{center} 
-\includegraphics[width=3.4in]{fig/sample}
-\end{center}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=6in]{fig/absolutememory}
 %\includegraphics{fig/potential.pdf}
-\caption{Normalized execution time for different sampling rates.}
-\label{fig:sample}
-\end{figure}
+\caption{Absolute physical memory usage overhead with \Predator{}.}
+\label{fig:absolutememusage}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=6in]{fig/memusage}
+%\includegraphics{fig/potential.pdf}
+\caption{Relative physical memory usage overhead with \Predator{}.}
+\label{fig:memusage}
+\end{figure*}
+ 
 
 

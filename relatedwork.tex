@@ -1,6 +1,6 @@
 \label{sec:relatedwork}
 
-This section describes related work in false sharing detection, prevention, or both; no previous work predicts unobserved false sharing.
+This section describes related work in false sharing detection, prevention, or both; no prior work predicts false sharing.
 
 \subsection{False Sharing Detection}
 Schindewolf et al.\ designed a tool based on the SIMICS functional simulator to report different kinds of cache usage information, such as cache misses and cache invalidations~\cite{falseshare:simulator}. Pluto relies on the Valgrind dynamic instrumentation framework to track the sequence of memory read and write events on different threads, and reports a worst-case estimation of possible false sharing~\cite{falseshare:binaryinstrumentation1}.
@@ -15,7 +15,7 @@ Intel's performance tuning utility (PTU) uses Precise Event Based Sampling (PEBS
 
 In addition to their individual disadvantages,
 all approaches discussed above share a common shortcoming:  
-they cannot pinpoint the exact location of false sharing in the source code, so programmers must examine the source code and identify problems manually.
+they cannot pinpoint the exact location of false sharing in the source code, so programmers must manually examine the source code to identify problems.
 
 Pesterev et al.\ present DProf, a tool that help programmers identify cache misses based on AMD's instruction-based sampling hardware~\cite{DProf}. DProf requires manual annotation to locate data types and object fields, and cannot detect false sharing when multiple objects reside on the same cache line.
 

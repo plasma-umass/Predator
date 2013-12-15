@@ -149,7 +149,7 @@ For every hot access $X$ in cache line $L$, \Predator{} searches for another
 hot access $Y$ in $L$'s previous cache line or next cache line satisfying
 the following conditions: 
 
-\begin{itemize}
+\begin{enumerate}
 \item
 $X$ and $Y$ reside in the same virtual line. 
 
@@ -159,9 +159,9 @@ At least one of $X$ or $Y$ are a write access.
 \item 
 $X$ and $Y$ are issued by different threads.
 
-\end{itemize}
+\end{enumerate}
 
-% why it finds a pair of $X$ and $Y$ == a potential false sharing 
+ 
 Whenever it finds such a pair $X$ and $Y$, 
 \Predator{} identifies potential performance-degrading false sharing whenever
  the number of cache invalidations caused by $X$ and $Y$, at a possible virtual line, 

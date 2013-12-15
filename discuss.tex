@@ -6,7 +6,15 @@ Dynamic binary instrumentation and compiler-based instrumentation are two altern
 \Predator{} employs compiler-based instrumentation both because of its better performance its greater flexibility, as discussed in Section~\ref{sec:selectinstrumentation}.
 
 \subsection{Effectiveness}
-Different sampling rates do not affect effectiveness, which is discussed in Section~\ref{sec:sensitivity}. We discuss several other important factors here. 
+Different sampling rates do not affect effectiveness, which is discussed in Section~\ref{sec:sensitivity}. We discuss other important factors here. 
+
+\begin{figure}[!t]
+\centering 
+\includegraphics[width=3.4in]{fig/sample}
+%\includegraphics{fig/potential.pdf}
+\caption{Sampling rate sensitivity (execution time).}
+\label{fig:sample}
+\end{figure}
 
 \paragraph{Inputs.} Different inputs trigger distinct executions of a program. If a specific input does not exercise the code with false sharing problems, \Predator{} cannot necessarily detect them. However, \Predator{} does generalize over inputs to find latent false sharing problems on those exercised code. When any reasonably representative set of inputs are exercised, as is required by any testing regime, \Predator{} can effectively predict false sharing.
 
