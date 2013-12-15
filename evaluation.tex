@@ -31,8 +31,7 @@ All applications were compiled as 64-bit executables with the optimization level
 
 \paragraph{Evaluated Applications.} 
 This paper evaluates two popular benchmark suites,
-Phoenix (with large input)~\cite{phoenix-hpca} and PARSEC (with simlarge input)~\cite{parsec}. We were unable to include two of the benchmarks. LLVM does not compile Facesim successfully, reporting an undefined template. Canneal compiles but then aborts unexpectedly. In addition to these benchmark suites, 
-we evaluate \Predator{} on six real applications: MySQL, Boost, Memcached, aget, pbzip2 and pfscan.
+Phoenix (with large input)~\cite{phoenix-hpca} and PARSEC (with simlarge input)~\cite{parsec}. We were unable to include two of the benchmarks. LLVM does not compile Facesim successfully, reporting an undefined template. Canneal compiles but then aborts unexpectedly. We also evaluate \Predator{} on six real applications: MySQL, Boost, Memcached, aget, pbzip2 and pfscan.
 
 
 
@@ -83,7 +82,7 @@ The streamcluster benchmark has another false sharing problem located at line $9
 The linear\_regression benchmark has an unusually severe false sharing problem. Fixing it improves performance by more than $12\times$. In this benchmark, different threads repeatedly update their thread-specific locations inside the tid\_args object inside a tight loop. Interestingly, Nanavati et al. observe that this false sharing problem occurs when using clang and disappears when using gcc with the \texttt{-O2} and \texttt{-O3} optimization levels~\cite{OSdetection}. However, we observe a different result when using our version of clang and the custom memory allocator: the false sharing problem \emph{does not occur at all} because the offset of the starting address of the potentially falsely-shared object and the start of cache line is 56 bytes (see Figure~\ref{fig:perfsensitive}). As we discuss below,\Predator{}'s prediction mechanism identifies this latent false sharing problem, highlighting the value of predictive detection.
 
 \subsubsection{Real Applications}
-To verify \Predator{}'s utility, we evaluate its effectiveness on several widely-used real applications. These applications include a MySQL, a database server~\cite{mysql};
+We evaluate \Predator{}'s effectiveness on several widely-used real applications. These applications include a MySQL, a database server~\cite{mysql};
 Boost, a standard C++ library~\cite{libfalsesharing};
 Memcached, a distributed memory object caching system; aget, a download accelerator;
 pbzip2, a parallel bzip2 file compressor; and pfscan, a parallel file scanner.
@@ -121,7 +120,7 @@ Figure~\ref{fig:perfsensitive} shows how sensitive linear\_regression's performa
 \centering
 \includegraphics[width=6in]{fig/perf}
 \caption{
-Performance overhead of \Predator{} with and without prediction (PREDATOR-NP).
+Execution time overhead of \Predator{} with and without prediction (PREDATOR-NP).
 \label{fig:perf}}
 \end{figure*}
 

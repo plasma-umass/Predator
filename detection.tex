@@ -61,7 +61,7 @@ For every new access to a cache line $L$, \Predator{} checks $L$'s history table
 
 \begin{itemize}
 \item
-  For a read access $R$, 
+  For each read access $R$, 
   \begin{itemize}
     \item
       If $T$ is full, there is no need to record this read access.
@@ -70,7 +70,7 @@ For every new access to a cache line $L$, \Predator{} checks $L$'s history table
       ID, then \Predator{} records this read and its thread by adding a new entry to the table. 
   \end{itemize}
 \item
-  For a write access $W$, 
+  For each write access $W$, 
   \begin{itemize}
     \item
       If $T$ is full, then $W$ can cause a cache invalidation since at least one of two existing entries has a different thread ID.
