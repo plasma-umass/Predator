@@ -1,6 +1,6 @@
 \label{sec:relatedwork}
 
-This section describes related work in false sharing detection, prevention, or both; no prior work predicts false sharing.
+This section describes related work in detecting or preventing false sharing; no prior work predicts false sharing.
 
 \subsection{False Sharing Detection}
 Schindewolf et al.\ designed a tool based on the SIMICS functional simulator to report different kinds of cache usage information, such as cache misses and cache invalidations~\cite{falseshare:simulator}. Pluto relies on the Valgrind dynamic instrumentation framework to track the sequence of memory read and write events on different threads, and reports a worst-case estimation of possible false sharing~\cite{falseshare:binaryinstrumentation1}.

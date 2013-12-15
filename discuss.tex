@@ -6,7 +6,7 @@ Dynamic binary instrumentation and compiler-based instrumentation are two altern
 \Predator{} employs compiler-based instrumentation both because of its better performance its greater flexibility, as discussed in Section~\ref{sec:selectinstrumentation}.
 
 \subsection{Effectiveness}
-Different sampling rates do not affect effectiveness, which is discussed in Section~\ref{sec:sensitivity}. We discuss other important factors here. 
+Several factors can affect \Predator{}'s ability to identify false sharing.
 
 \begin{figure}[!t]
 \centering 
@@ -16,11 +16,11 @@ Different sampling rates do not affect effectiveness, which is discussed in Sect
 \label{fig:sample}
 \end{figure}
 
-\paragraph{Inputs.} Different inputs trigger distinct executions of a program. If a specific input does not exercise the code with false sharing problems, \Predator{} cannot necessarily detect them. However, \Predator{} does generalize over inputs to find latent false sharing problems on those exercised code. When any reasonably representative set of inputs are exercised, as is required by any testing regime, \Predator{} can effectively predict false sharing.
+\paragraph{Different Inputs.} Different inputs trigger distinct executions of a program. If a specific input does not exercise the code with false sharing problems, \Predator{} cannot necessarily detect them. However, \Predator{} does generalize over inputs to find latent false sharing problems on those exercised code. When any reasonably representative set of inputs are exercised, as is required by any testing regime, \Predator{} can effectively predict false sharing.
 
 \paragraph{Input Size.} Input size may affect detection results.  As discussed in Section~\ref{optimization}, \Predator{} introduces several threshold values to reduce tracking overhead, which can be adjusted as needed. If the input size is so small that it cannot generate enough false sharing events to cross the predefined thresholds, then the detection mechanism will not be triggered. In such cases, \Predator{} will miss actual cases of false sharing. However, realistically large inputs should be enough to trigger \Predator{}'s detection mechanisms. In our experience, running applications for at least 150 seconds is sufficient to expose false sharing problems. 
 
-\paragraph{Hardware Independence.} Because of \Predator{}'s compiler-based approach, it is independent of details of the underlying experimental machine. \Predator{} conservatively assumes that different threads are running on different cores and detects false sharing problems based on possible cache invalidations. \Predator{} does not attempt to obtain the actual cache invalidations of a program, which would depend on details of the actual memory hierarchy. \Predator{} thus provides greater generality than tools that rely on hardware-specific values such as those reported by hardware performance counters.
+\paragraph{Hardware Independence.}  \Predator{}'s compiler-based approach provides greater generality than tools that rely on the underlying hardware platform, but may lead it to over-report false sharing. \Predator{} conservatively assumes that different threads are running on different cores and detects false sharing problems based on possible cache invalidations. However, if multiple threads involved in false sharing are on the same core, then there will be no performance impact. 
 
 %\subsection{Prediction Limitations} 
 %\Predator{} can accurately and precisely predict a false sharing problem even when it does not occur. But \Predator{} cannot predict a false sharing problem if the code with false sharing is not exercised at all. Also, \Predator{} may miss potential false sharing problems between two objects brought by a different compiler or memory allocator. 

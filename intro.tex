@@ -1,8 +1,8 @@
 \label{sec:intro} 
 
 While writing correct multithreaded programs is often challenging,
-making them scale can present even greater obstacles. Any contention can impair scalability or even lead to
-applications running slower as the number of threads increases.
+making them scale can present even greater obstacles. Any contention can impair scalability or even cause
+applications to run slower as the number of threads increases.
 
 False sharing is a particularly insidious form of contention.
 It occurs when two threads \emph{inadvertently} contend because the objects
@@ -25,8 +25,6 @@ In addition, all of these systems share one key limitation: they can
 only report \emph{observed} cases of false sharing. As Nanavati et al.\ point out, false sharing is sensitive to where objects are placed in cache lines and so can be affected by a wide range of factors~\cite{OSdetection}. For example, using the gcc compiler \emph{accidentally} eliminates false sharing in the Phoenix linear\_regression benchmark at certain optimization levels, while LLVM does not do so at any optimization level.  A slightly different memory allocation sequence (or different memory allocator) can reveal or hide
 false sharing, depending on where objects end up in memory; using a different hardware platform with different addressing or cache line sizes can have the same effect. All of this means that existing tools cannot root out potentially devastating cases of false sharing that could arise with different inputs, in different execution environments, and on different hardware platforms.
 
-\subsection*{Contributions}
-
 This paper makes the following contributions:
 
 \begin{itemize}
@@ -35,8 +33,7 @@ This paper makes the following contributions:
 % prediction
 \item
 \textbf{Predictive False Sharing Detection:} This paper introduces \emph{predictive false sharing analysis}, an approach that can \emph{predict} potential false sharing that does not manifest in a given run but may appear---and greatly degrade application performance---in a slightly different execution environment. 
-Predictive false sharing generalizes from one execution to identify potential false sharing instances that could be caused by slight changes in object placement and alignment.
-It also can predict false sharing in hardware platforms with larger cache line sizes by tracking accesses within \emph{virtual cache lines} that span multiple physical lines. Predictive false sharing detection thus overcomes a key limitation of previous detection tools.
+Predictive false sharing detection thus overcomes a key limitation of previous detection tools.
 
 \item
 \textbf{A Fully General Approach to False Sharing Detection:} This paper presents the first completely general false sharing detection method by combining compiler-based instrumentation with a runtime system. While this
@@ -44,18 +41,14 @@ paper focuses on user-level multithreaded applications, the approach outlined he
 
 \item
 \textbf{A Practical and Effective Predictive False Sharing Detector:} 
-This paper presents \Predator{}, a false sharing detector that not only \emph{detects} existing false sharing problems accurately and precisely, but also \emph{predicts} potential false sharing problems that could appear in a different execution environment.
-\Predator{} detects both observed and predicted false sharing 
-problems with reasonable overhead (average: $6\times$ performance, $2\times$ memory).  It reveals unknown false sharing problems in benchmark suites evaluated by previous work. It is also the first false sharing tool able to automatically and precisely uncover
+This paper presents \Predator{}, a false sharing detector that not only \emph{detects} but also \emph{predicts} potential false sharing problems.
+\Predator{} operates with reasonable overhead (average: $6\times$ performance, $2\times$ memory). It is the first false sharing tool able to automatically and precisely uncover
 false sharing problems in real applications, including 
-MySQL and the Boost library. Fixing these problems improves performance by $12\times$ for one benchmark, and by $6\times$ for MySQL.
-
+MySQL and the Boost library.
 
 \end{itemize}
 
-\subsection*{Outline}
-
-The remainder of this paper is organized as follows. 
-Section~\ref{sec:detection} describes \Predator{}'s detection mechanisms and algorithms in detail. Section~\ref{sec:prediction} discusses how to predict potential false sharing accurately without actually observing false sharing directly. Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to reveal previously unknown false sharing problems in applications. 
-Section~\ref{sec:discussion} discusses design tradeoffs and important factors which may affect the effectiveness of \Predator{}. 
-Section~\ref{sec:futurework} outlines directions for future work and Section~\ref{sec:relatedwork} describes key related work. Finally, Section~\ref{sec:conclusion} concludes.
+%The remainder of this paper is organized as follows. 
+%Section~\ref{sec:detection} describes \Predator{}'s detection mechanisms and algorithms in detail. Section~\ref{sec:prediction} discusses how to predict potential false sharing accurately without actually observing false sharing directly. Section~\ref{sec:evaluation} presents experimental results, including using \Predator{} to reveal previously unknown false sharing problems in applications. 
+%Section~\ref{sec:discussion} discusses design tradeoffs and important factors which may affect the effectiveness of \Predator{}. 
+%Section~\ref{sec:futurework} outlines directions for future work and Section~\ref{sec:relatedwork} describes key related work. Finally, Section~\ref{sec:conclusion} concludes.

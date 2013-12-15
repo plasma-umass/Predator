@@ -8,12 +8,11 @@ components. Section~\ref{sec:prediction} then explains how \Predator{} predicts 
 
 False sharing occurs when two threads
 simultaneously access logically independent data in the same cache line, and where at least one of the accesses is a write.
-In the remainder of this paper, we assume for the purposes of exposition that each thread runs on a 
-distinct core with its own private cache.
+For the purposes of exposition, we assume that each thread runs on a distinct core with its own private cache.
 
-Given this assumption, we observe that 
+We observe that 
 if a thread writes a cache line after other threads have 
-accessed the same cache line, this write operation most likely causes at least a cache invalidation. It is this invalidation traffic that leads to performance degradation due to false sharing. To identify the root cause of such traffic due to false sharing, \Predator{} tracks cache invalidations of all cache lines, and ranks the severity of performance degradation of any detected false sharing problems according to the number of cache invalidations. 
+accessed the same cache line, this write operation most likely causes at least one cache invalidation. It is this invalidation traffic that leads to performance degradation due to false sharing. To identify the root cause of such traffic due to false sharing, \Predator{} tracks cache invalidations of all cache lines, and ranks the severity of performance degradation of any detected false sharing problems according to the number of cache invalidations. 
  
 
 % The design tradeoff of choosing compiler instrumentation has been discussed in Section~\ref{sec:instrumentationtradeoff}. 
@@ -96,20 +95,19 @@ True sharing, e.g., multiple threads updating the same counter in a cache line, 
 In order to report false sharing precisely and accurately,  
 \Predator{} employs the following mechanisms:
 
-\begin{itemize}
-\item \textbf{Distinguishing False from True Sharing.} \Predator{} keeps track of access information for each word on those cache lines involved in false sharing: how many reads or writes to each word by which thread.  When a word is accessed by multiple threads, \Predator{} marks the origin of this word as a shared access and does not track threads for further accesses to it. This approach lets \Predator{} accurately distinguish false sharing from true sharing in the reporting phase.  It also helps diagnose where
+\paragraph{Distinguishing False from True Sharing.} \Predator{} keeps track of access information for each word on those cache lines involved in false sharing: how many reads or writes to each word by which thread.  When a word is accessed by multiple threads, \Predator{} marks the origin of this word as a shared access and does not track threads for further accesses to it. This approach lets \Predator{} accurately distinguish false sharing from true sharing in the reporting phase.  It also helps diagnose where
 actual false sharing occurs when there are multiple fields or multiple
 objects in the same cache line, as this can greatly reduce the manual
 effort required to fix the false sharing problems.
 
-\item \textbf{Callsite Tracking for Heap Objects.} In order to precisely report the origins of heap objects with false
+\paragraph{Callsite Tracking for Heap Objects.} In order to precisely report the origins of heap objects with false
 sharing problems, \Predator{} maintains detailed information so it can report source code level information for each heap
 object. To obtain callsite information, \Predator{} intercepts all memory allocations and de-allocations, and relies
 on the \texttt{backtrace()} function in the \texttt{glibc} library to obtain the whole callsite stack.
 \Predator{} also avoids pseudo false sharing (false positives) caused by memory reuse because it updates recording information at memory de-allocations for those objects without false sharing problems; heap objects involved in false 
 sharing are never reused.
 
-\item \textbf{Optimizing Metadata Lookup}
+\paragraph{Optimizing Metadata Lookup.}
 For every access, \Predator{} needs to look up the corresponding cache line's metadata 
 in order to store detailed information or update access counters. Because this operation is so frequent,
  lookups need to be very efficient.
@@ -118,9 +116,8 @@ AddressSanitizer~\cite{Addresssanitizer} and other systems~\cite{qinzhaodetectio
 \Predator{} uses a shadow memory mechanism to store metadata for every piece of application data. 
 Thus, \Predator{} can compute and locate corresponding metadata directly via address arithmetic.
 
-\item \textbf{Custom Allocator.} In order to efficiently support shadow memory, \Predator{} uses a predefined starting address and fixed size for its heap.  It also contains a custom memory allocator, which is built with Heap Layers~\cite{heaplayers} using a ``per-thread-heap'' mechanism similar to that used by Hoard~\cite{Hoard}.  In this allocator, memory allocations from different threads never occupy the same physical cache line, which automatically prevents false sharing among different objects.  However, using this custom memory allocator implies that false sharing caused by a memory allocator cannot be detected by \Predator{}. It is straightforward to solve such false sharing problems by using an allocator like Hoard that avoids this kind of false sharing.
+\paragraph{Custom Memory Allocation.} In order to efficiently support shadow memory, \Predator{} uses a predefined starting address and fixed size for its heap.  It also contains a custom memory allocator, which is built with Heap Layers~\cite{heaplayers} using a ``per-thread-heap'' mechanism similar to that used by Hoard~\cite{Hoard}.  In this allocator, memory allocations from different threads never occupy the same physical cache line, which automatically prevents false sharing among different objects.  However, using this custom memory allocator implies that false sharing caused by a memory allocator cannot be detected by \Predator{}. It is straightforward to solve such false sharing problems by using an allocator like Hoard that avoids this kind of false sharing.
 
-\end{itemize} 
  
 \subsection{Optimizations}
 \label{optimization}
@@ -146,7 +143,6 @@ at the same time.
 for each cache line once the number of writes on a cache line exceeds
 the {\it TrackingThreshold}. 
 If the threshold is not reached, there is no need to check the corresponding {\it CacheTracking} entry. 
-Figure~\ref{fig:algorithm} illustrates this approach in detail.
 
 \begin{figure}[!t]
 \begin{lstlisting}

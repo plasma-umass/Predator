@@ -148,18 +148,9 @@ is larger than the average number of accesses to each word of cache line $L$.
 For every hot access $X$ in cache line $L$, \Predator{} searches for another
 hot access $Y$ in $L$'s previous cache line or next cache line satisfying
 the following conditions: 
-
-\begin{enumerate}
-\item
-$X$ and $Y$ reside in the same virtual line. 
-
-\item
-At least one of $X$ or $Y$ are a write access.
-
-\item 
-$X$ and $Y$ are issued by different threads.
-
-\end{enumerate}
+(1) $X$ and $Y$ reside in the same virtual line;
+(2) at least one of $X$ or $Y$ are a write access; and 
+(3) $X$ and $Y$ are issued by different threads.
 
  
 Whenever it finds such a pair $X$ and $Y$, 

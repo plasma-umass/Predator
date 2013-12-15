@@ -2,14 +2,11 @@
 
 We have identified several directions along which \Predator{} could be enhanced.
 
-\begin{itemize}
-
-\item \textbf{Use Across the Software Stack.} 
+\paragraph{Use Across the Software Stack.} 
 \Predator{}'s architecture should in principle let it detect and predict false sharing in the entire software stack, including hypervisors, operating systems, libraries, and applications using different threading libraries.
 
-\item \textbf{Improved Performance.}
+\paragraph{Improved Performance.}
 \Predator{} currently imposes approximately $6\times$ performance overhead. In the current implementation, every memory access is instrumented with a library call to notify the runtime system. A library call entails not only normal function call overhead but also Global Offset Table (GOT) and/or Procedure Linkage Table (PLT) lookup overhead. We plan to improve \Predator{}'s performance by inserting relevant code directly, rather than via function calls.
 
-\item \textbf{Fix Suggestions.} Finally, we would like to enhance \Predator{}'s reporting. We believe that leveraging memory trace information will make it possible for \Predator{} to prescribe fixes to the programmer to help them eliminate false sharing.
+\paragraph{Suggest Fixes.} Finally, we would like to enhance \Predator{}'s reporting. We believe that leveraging memory trace information will make it possible for \Predator{} to prescribe fixes to the programmer to help them eliminate false sharing.
   
-\end{itemize}
