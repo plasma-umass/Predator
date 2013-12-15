@@ -1,23 +1,15 @@
 \label{sec:futurework}
 
-\subsection{Approach Applicability}
-\Predator{} does not rely on any specific hardware or a special operating system support.
-In theory, \Predator{} can detect and predict false sharing in the entire software stack, including hypervisors, operating systems, libraries, and applications using different threading libraries. We leave this for the future work. 
-
-\subsection{Performance Improvement}
-\Predator{} runs around $6\times$ slower on average over all evaluated applications. In the current implementation, every memory access is instrumented with a library call to notify the runtime system. A library call entails not only normal function call overhead but also Global Offset Table(GOT) and/or Procedure Linkage Table (PLT) look-up overhead. 
-The overhead of a library call is much larger than the cost of simple computations. For example, 
+We have identified several directions along which \Predator{} could be extended that would enhance its applicability and usefulness.
 
 \begin{itemize}
-\item
-Before the number of writes on a cache line reaches {\it Tracking-Threshold},  \Predator{} simply increments its write counter.
 
-\item
-In the sampling mechanism discussed in Section~\ref{sec:sample}, most accesses (99\%) outside sampling period only needs to increment access counters of cache lines.
+\item \textbf{Across the Software Stack.} 
+\Predator{}'s architecture should let it detect and predict false sharing in the entire software stack, including hypervisors, operating systems, libraries, and applications using different threading libraries.
+
+\item \textbf{Improved Performance.}
+\Predator{} currently imposes approximately $6\times$ performance overhead. In the current implementation, every memory access is instrumented with a library call to notify the runtime system. A library call entails not only normal function call overhead but also Global Offset Table (GOT) and/or Procedure Linkage Table (PLT) lookup overhead. We plan to improve \Predator{}'s performance by inserting relevant code directly, rather than via function calls.
+
+\item \textbf{Fix Suggestions.} Finally, we would like to enhance \Predator{}'s reporting. We believe that leveraging memory trace information will make it possible for \Predator{} to prescribe specific fixes to the programmer to help them eliminate false sharing.
+  
 \end{itemize}
-
-These computations only need simple checks or counter updates, normally taking only a few CPU cycles to finish. 
-In the future, we plan to insert the simple computations directly, instead of using library calls.
-
-\subsection{Valuable Suggestions}
-\Predator{} can be extended to provide suggestions for fixing false sharing problems based on the memory trace information, which can help reduce the manual overhead of fixing false sharing problems.  

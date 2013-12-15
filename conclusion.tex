@@ -1,8 +1,10 @@
 \label{sec:conclusion}
-This paper presents \Predator{}, a novel approach to both detect and predict false sharing. By collecting and analyzing information passed through instrumented function calls, the runtime system detects false sharing based on cache invalidations and only reports those  causing (or potentially causing) severe performance degradation.
-\Predator{} predicts potential false sharing caused by the change of hardware cache line size or the starting addresses of objects. By detecting latent false sharing problems that can occur in the wild but which are unobserved in the test environment, \Predator{} overcomes a key limitation of
+This paper introduces \emph{predictive false sharing detection}, and presents a prototype system that performs this detection called \Predator{}. By collecting and analyzing information through instrumented reads and writes, the runtime system detects false sharing based on cache invalidations and only reports those potentially causing severe performance degradation.
+\Predator{} predicts potential false sharing that could be caused by a change of hardware cache line size or the starting addresses of objects. By identifying latent false sharing problems that can occur in the wild but which are unobserved in the test environment, \Predator{} overcomes a key limitation of
 all previous false sharing detection approaches.
 
 Our evaluation shows that \Predator{} can effectively detect and predict several previously unknown and existing false sharing problems in two popular benchmark suites, Phoenix and PARSEC. We also evaluate \Predator{} on six real applications. 
 It successfully detects two known false sharing problems inside \texttt{MySQL} and the \texttt{Boost} library.
 Fixing these false sharing problems improves performance by $6\times$ and $40\%$, respectively.
+
+% Availability.
