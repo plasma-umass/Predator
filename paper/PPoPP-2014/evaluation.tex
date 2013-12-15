@@ -137,7 +137,7 @@ As expected, \Predator{} imposes relatively little overhead for I/O-bound applic
 
 Figure~\ref{fig:memusage} and~\ref{fig:absolutememusage} present \Predator{}'s relative and absolute memory overhead, respectively. We compute \Predator{}'s physical memory consumption via the proportional set size (PSS) obtained from the \texttt{/proc/self/smaps} file~\cite{memusage}. We periodically collect this data and use the sum of all memory mappings as the total physical memory usage of running an application.
 
-\Predator{} imposes less than 50\% memory overhead for 17 out of 22 applications.  For swaptions and aget, \Predator{} introduces high \emph{relative} memory overhead because their original memory footprints are extraordinarily small (only $3$ kilobytes). We are continuing to investigate the source of MySQL's large increase in memory consumption (from 132MB to 1.3GB). Nonetheless, even in the cases when \Predator{}'s absolute memory overhead is high, all of these applications comfortably fit into RAM on modern platforms.
+\Predator{} imposes less than 50\% memory overhead for 17 out of 22 applications.  For swaptions and aget, \Predator{} introduces high \emph{relative} memory overhead because their original memory footprints are extraordinarily small: both have sub-megabyte footprints. MySQL's increase in memory consumption, from 132 MB to 512 MB, is due to \Predator{}'s heap organization, which does not aggressively reclaim memory held by individual threads. In all cases where \Predator{}'s imposes substantial memory overhead, the applications continue to comfortably fit into RAM on modern platforms.
 
 \subsection{Sensitivity to Different Sampling Rates}
 \label{sec:sensitivity}
