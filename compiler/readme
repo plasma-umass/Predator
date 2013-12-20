@@ -1,0 +1,9 @@
+Patch:
+First, download the source code from 
+
+Usage: 
+To compile a file with instrumenter, we should explicitly mention the instrumentation tool:
+-finstrumenter
+
+clang -Wl,/home/tongping/work/falsesharing/project/runtime/libdefault64.so -finstrumenter -g -O0
+

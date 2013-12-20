@@ -1,0 +1,731 @@
+diff -Nur llvm-3.2-source-orig/include/llvm/InitializePasses.h llvm-3.2-new/include/llvm/InitializePasses.h
+--- llvm-3.2-source-orig/include/llvm/InitializePasses.h	2013-07-08 11:13:46.040948440 -0700
++++ llvm-3.2-new/include/llvm/InitializePasses.h	2013-07-11 14:30:44.913893016 -0700
+@@ -46,6 +46,9 @@
+ /// Instrumentation library.
+ void initializeInstrumentation(PassRegistry&);
+ 
++/// Initialize all passes linked into RW instrumenter to detect false sharing.
++void initializeInstrumenter(PassRegistry&);
++
+ /// initializeAnalysis - Initialize all passes linked into the Analysis library.
+ void initializeAnalysis(PassRegistry&);
+ 
+@@ -110,6 +113,7 @@
+ void initializePathProfilerPass(PassRegistry&);
+ void initializeGCOVProfilerPass(PassRegistry&);
+ void initializeAddressSanitizerPass(PassRegistry&);
++void initializeInstrumenterPass(PassRegistry&);
+ void initializeThreadSanitizerPass(PassRegistry&);
+ void initializeEarlyCSEPass(PassRegistry&);
+ void initializeExpandISelPseudosPass(PassRegistry&);
+diff -Nur llvm-3.2-source-orig/include/llvm/Transforms/Instrumentation.h llvm-3.2-new/include/llvm/Transforms/Instrumentation.h
+--- llvm-3.2-source-orig/include/llvm/Transforms/Instrumentation.h	2013-07-08 11:13:46.048948440 -0700
++++ llvm-3.2-new/include/llvm/Transforms/Instrumentation.h	2013-07-11 14:30:44.917893016 -0700
+@@ -38,6 +38,7 @@
+ // Insert ThreadSanitizer (race detection) instrumentation
+ FunctionPass *createThreadSanitizerPass();
+ 
++FunctionPass *createInstrumenterPass();
+ 
+ // BoundsChecking - This pass instruments the code to perform run-time bounds
+ // checking on loads, stores, and other memory intrinsics.
+diff -Nur llvm-3.2-source-orig/include/llvm-c/Initialization.h llvm-3.2-new/include/llvm-c/Initialization.h
+--- llvm-3.2-source-orig/include/llvm-c/Initialization.h	2013-07-08 11:13:46.048948440 -0700
++++ llvm-3.2-new/include/llvm-c/Initialization.h	2013-07-11 14:30:44.921893016 -0700
+@@ -38,6 +38,7 @@
+ void LLVMInitializeInstCombine(LLVMPassRegistryRef R);
+ void LLVMInitializeIPO(LLVMPassRegistryRef R);
+ void LLVMInitializeInstrumentation(LLVMPassRegistryRef R);
++void LLVMInitializeInstrumenter(LLVMPassRegistryRef R);
+ void LLVMInitializeAnalysis(LLVMPassRegistryRef R);
+ void LLVMInitializeIPA(LLVMPassRegistryRef R);
+ void LLVMInitializeCodeGen(LLVMPassRegistryRef R);
+diff -Nur llvm-3.2-source-orig/lib/Transforms/instrumenter/CMakeLists.txt llvm-3.2-new/lib/Transforms/instrumenter/CMakeLists.txt
+--- llvm-3.2-source-orig/lib/Transforms/instrumenter/CMakeLists.txt	1969-12-31 16:00:00.000000000 -0800
++++ llvm-3.2-new/lib/Transforms/instrumenter/CMakeLists.txt	2013-07-11 14:30:45.057893015 -0700
+@@ -0,0 +1,3 @@
++add_llvm_loadable_module( LLVMHello
++  Hello.cpp
++  )
+diff -Nur llvm-3.2-source-orig/lib/Transforms/instrumenter/instrumenter.cpp llvm-3.2-new/lib/Transforms/instrumenter/instrumenter.cpp
+--- llvm-3.2-source-orig/lib/Transforms/instrumenter/instrumenter.cpp	1969-12-31 16:00:00.000000000 -0800
++++ llvm-3.2-new/lib/Transforms/instrumenter/instrumenter.cpp	2013-07-11 14:30:45.057893015 -0700
+@@ -0,0 +1,363 @@
++//===-- Instrumenter.cpp - memory error detector ------------*- C++ -*-===//
++//
++//                     The LLVM Compiler Infrastructure
++//
++// This file is distributed under the University of Illinois Open Source
++// License. See LICENSE.TXT for details.
++//
++//===----------------------------------------------------------------------===//
++//
++// This file is a part of Instrumenter, an address sanity checker.
++// Details of the algorithm:
++//  http://code.google.com/p/address-sanitizer/wiki/InstrumenterAlgorithm
++//
++//===----------------------------------------------------------------------===//
++
++#define DEBUG_TYPE "instrumenter"
++
++#include "llvm/Function.h"
++#include "llvm/IRBuilder.h"
++#include "llvm/InlineAsm.h"
++#include "llvm/IntrinsicInst.h"
++#include "llvm/LLVMContext.h"
++#include "llvm/Module.h"
++#include "llvm/Type.h"
++#include "llvm/ADT/SmallSet.h"
++#include "llvm/ADT/SmallString.h"
++#include "llvm/ADT/SmallVector.h"
++#include "llvm/ADT/StringExtras.h"
++#include "llvm/Support/CommandLine.h"
++#include "llvm/Support/DataTypes.h"
++#include "llvm/Support/Debug.h"
++#include "llvm/Support/raw_ostream.h"
++#include "llvm/Support/system_error.h"
++#include "llvm/DataLayout.h"
++#include "llvm/Transforms/Instrumentation.h"
++#include "llvm/Transforms/Utils/BasicBlockUtils.h"
++#include "llvm/Transforms/Utils/ModuleUtils.h"
++#include "llvm/InitializePasses.h"
++#include "llvm-c/Initialization.h"
++
++#include <string>
++#include <algorithm>
++
++using namespace llvm;
++
++void llvm::initializeInstrumenter(PassRegistry &Registry) {
++  initializeInstrumenterPass(Registry);
++}
++ 
++/// LLVMInitializeInstrumentation - C binding for
++/// initializeInstrumentation.
++void LLVMInitializeInstrumenter(LLVMPassRegistryRef R) {
++  initializeInstrumenter(*unwrap(R));
++}
++
++// We only support 5 sizes(powers of two): 1, 2, 4, 8, 16.
++static const size_t numAccessesSizes = 5;
++
++namespace {
++
++/// Instrumenter: instrument the memory accesses.
++struct Instrumenter : public FunctionPass {
++  Instrumenter();
++  virtual const char *getPassName() const;
++  void instrementMemoryAccess(Instruction * ins);
++  void instrumentAddress(Instruction *origIns, IRBuilder<> &IRB,
++                         Value *addr, uint32_t typeSize, bool isWrite);
++  bool instrumentMemIntrinsic(MemIntrinsic *mInst);
++  void instrumentMemIntrinsicParam(Instruction *origIns, Value *addr,
++                                   Value *size,
++                                   Instruction *insertBefore, bool isWrite);
++  Instruction * insertAccessCallback( Instruction *insertBefore, Value *addr,
++                                   bool isWrite, size_t accessSizeArrayIndex);
++
++  bool runOnFunction(Function &F);
++  virtual bool doInitialization(Module &M);
++  virtual bool doFinalization(Module &M);
++  static char ID;  // Pass identification, replacement for typeid
++
++ private:
++  Function *checkInterfaceFunction(Constant *FuncOrBitcast);
++
++  LLVMContext *context;
++  DataLayout *TD;
++  int LongSize;
++  // READ/WRITE access
++  Function *accessCallback[2][numAccessesSizes];
++  Function *ctorFunction;
++  Type *intptrType;
++  Type *intptrPtrType;
++  InlineAsm *noopAsm;
++};
++
++}  // namespace
++
++char Instrumenter::ID = 0;
++//static RegisterPass<Instrumenter> instrumenter("instrumenter", "Instrumenting READ/WRITE pass", false, false);
++static cl::opt<int> maxInsPerBB("max-ins-per-bb",
++       cl::init(10000),
++       cl::desc("maximal number of instructions to instrument in any given BB"),
++       cl::Hidden);
++static cl::opt<bool> toInstrumentStack("instrument-stack-variables",
++       cl::desc("instrument stack variables"), cl::Hidden, cl::init(false));
++static cl::opt<bool> toInstrumentReads("instrument-reads",
++       cl::desc("instrument read instructions"), cl::Hidden, cl::init(true));
++static cl::opt<bool> toInstrumentWrites("instrument-writes",
++       cl::desc("instrument write instructions"), cl::Hidden, cl::init(true));
++static cl::opt<bool> toInstrumentAtomics("instrument-atomics",
++       cl::desc("instrument atomic instructions (rmw, cmpxchg)"),
++       cl::Hidden, cl::init(true));
++
++INITIALIZE_PASS(Instrumenter, "Instrumenter",
++                "Instrumenting Read/Write accesses",
++                false, false)
++Instrumenter::Instrumenter() : FunctionPass(ID) { }
++FunctionPass *llvm::createInstrumenterPass() {
++//  errs() << "\n^^^^^^^^^^^^^^^^^^Instrumenter initialization. CreateInstrumenterPass" << "\n";
++  return new Instrumenter();
++}
++const char *Instrumenter::getPassName() const {
++  return "Instrumenter";
++}
++
++// virtual: define some initialization for the whole module
++bool Instrumenter::doInitialization(Module &M) {
++
++  errs() << "\n^^^^^^^^^^^^^^^^^^Instrumenter initialization^^^^^^^^^^^^^^^^^^^^^^^^^"  << "\n";
++  TD = getAnalysisIfAvailable<DataLayout>();
++  if (!TD)
++    return false;
++
++  context = &(M.getContext());
++  LongSize = TD->getPointerSizeInBits();
++  intptrType = Type::getIntNTy(*context, LongSize);
++  intptrPtrType = PointerType::get(intptrType, 0);
++
++  // Creating the contrunctor module "instrumenter"
++  ctorFunction = Function::Create(
++      FunctionType::get(Type::getVoidTy(*context), false),
++      GlobalValue::InternalLinkage, "instrumenter", &M);
++//   errs() << "\nHello: ctorFunction: " << ctorFunction->getName() << "\n";
++ 
++  BasicBlock *ctorBB = BasicBlock::Create(*context, "", ctorFunction);
++  Instruction * ctorinsertBefore = ReturnInst::Create(*context, ctorBB);
++
++  IRBuilder<> IRB(ctorinsertBefore);
++
++  // We insert an empty inline asm after __asan_report* to avoid callback merge.
++  noopAsm = InlineAsm::get(FunctionType::get(IRB.getVoidTy(), false),
++                           StringRef(""), StringRef(""),
++                           /*hasSideEffects=*/true);
++
++  // Create instrumenation callbacks.
++  for (size_t isWriteAccess = 0; isWriteAccess <= 1; isWriteAccess++) {
++    for (size_t accessSizeArrayIndex = 0; accessSizeArrayIndex < numAccessesSizes;
++         accessSizeArrayIndex++) {
++      // isWrite and typeSize are encoded in the function name.
++      std::string funcName;
++      if(isWriteAccess) {
++        funcName = std::string("store_") + itostr(1 << accessSizeArrayIndex) + "bytes";
++      }
++      else {
++        funcName = std::string("load_") + itostr(1 << accessSizeArrayIndex) + "bytes";
++      }
++      // If we are merging crash callbacks, they have two parameters.
++      accessCallback[isWriteAccess][accessSizeArrayIndex] =
++          checkInterfaceFunction(M.getOrInsertFunction(
++              funcName, IRB.getVoidTy(), intptrType, NULL));
++    }
++  }
++
++  // We insert an empty inline asm after __asan_report* to avoid callback merge.
++ // noopAsm = InlineAsm::get(FunctionType::get(IRB.getVoidTy(), false),
++  //                          StringRef(""), StringRef(""), true);
++  return true;
++}
++
++// and set isWrite. Otherwise return NULL.
++static Value *isInterestingMemoryAccess(Instruction *ins, bool *isWrite) {
++  if (LoadInst *LI = dyn_cast<LoadInst>(ins)) {
++    
++    if (!toInstrumentReads) return NULL;
++//    errs() << "instruction is a load instruction\n\n";
++    *isWrite = false;
++    return LI->getPointerOperand();
++  }
++  if (StoreInst *SI = dyn_cast<StoreInst>(ins)) {
++    if (!toInstrumentWrites) return NULL;
++ //   errs() << "instruction is a store instruction\n\n";
++    *isWrite = true;
++    return SI->getPointerOperand();
++  }
++  if (AtomicRMWInst *RMW = dyn_cast<AtomicRMWInst>(ins)) {
++    if (!toInstrumentAtomics) return NULL;
++  //  errs() << "instruction is a atomic READ and Write instruction\n\n";
++    *isWrite = true;
++    return RMW->getPointerOperand();
++  }
++  if (AtomicCmpXchgInst *XCHG = dyn_cast<AtomicCmpXchgInst>(ins)) {
++    if (!toInstrumentAtomics) return NULL;
++  //  errs() << "instruction is a atomic cmpXchg instruction\n\n";
++    *isWrite = true;
++    return XCHG->getPointerOperand();
++  }
++  return NULL;
++}
++
++void Instrumenter::instrementMemoryAccess(Instruction *ins) {
++  bool isWrite = false;
++  Value *addr = isInterestingMemoryAccess(ins, &isWrite);
++  assert(addr);
++
++  Type *OrigPtrTy = addr->getType();
++  Type *OrigTy = cast<PointerType>(OrigPtrTy)->getElementType();
++
++  assert(OrigTy->isSized());
++  uint32_t typeSize = TD->getTypeStoreSizeInBits(OrigTy);
++
++  if (typeSize != 8  && typeSize != 16 &&
++      typeSize != 32 && typeSize != 64 && typeSize != 128) {
++    // Ignore all unusual sizes.
++    return;
++  }
++
++//  errs() << "typesize is " << typeSize << "at: ";
++//  ins->dump();
++
++  IRBuilder<> IRB(ins);
++  instrumentAddress(ins, IRB, addr, typeSize, isWrite);
++}
++
++// General function call before some given instruction
++Instruction * Instrumenter::insertAccessCallback(
++    Instruction *insertBefore, Value *addr,
++    bool isWrite, size_t accessSizeArrayIndex) {
++  IRBuilder<> IRB(insertBefore);
++  CallInst *Call = IRB.CreateCall(accessCallback[isWrite][accessSizeArrayIndex], addr);
++  // We don't do Call->setDoesNotReturn() because the BB already has
++  // UnreachableInst at the end.
++  // This noopAsm is required to avoid callback merge.
++  IRB.CreateCall(noopAsm);
++  return Call;
++}
++
++static size_t TypeSizeToSizeIndex(uint32_t typeSize) {
++  size_t Res = CountTrailingZeros_32(typeSize / 8);
++  assert(Res < numAccessesSizes);
++  return Res;
++}
++
++void Instrumenter::instrumentAddress(Instruction *origIns,
++                                         IRBuilder<> &IRB, Value *addr,
++                                         uint32_t typeSize, bool isWrite) {
++
++  Value * actualAddr = IRB.CreatePointerCast(addr, intptrType);
++  size_t accessSizeArrayIndex = TypeSizeToSizeIndex(typeSize);
++//  errs() << "Type size:" << typeSize << ".Access size index:" << accessSizeArrayIndex << "\n";
++
++  // Insert the callback function here.
++  insertAccessCallback(origIns, actualAddr, isWrite, accessSizeArrayIndex);
++//  ins->dump();
++}
++
++// Validate the result of Module::getOrInsertFunction called for an interface
++// function of Instrumenter. If the instrumented module defines a function
++// with the same name, their prototypes must match, otherwise
++// getOrInsertFunction returns a bitcast.
++Function *Instrumenter::checkInterfaceFunction(Constant *FuncOrBitcast) {
++  if (isa<Function>(FuncOrBitcast)) return cast<Function>(FuncOrBitcast);
++//  FuncOrBitcast->dump();
++  report_fatal_error("trying to redefine an Instrumenter "
++                     "interface function");
++}
++
++bool Instrumenter::doFinalization(Module &M) {
++  return false;
++}
++
++bool isLocalVariable(Value * value) {
++ // errs() << "Value id:" << value->getValueID() << "\n";
++  return value->getValueID() == 48; 
++}
++
++bool Instrumenter::runOnFunction(Function &F) {
++  // If the input function is the function added by myself, don't do anything.
++  if (&F == ctorFunction) return false;
++
++  // We want to instrument every address only once per basic block (unless there
++  // are calls between uses).
++  SmallSet<Value*, 16> tempToInstrument;
++  SmallVector<Instruction*, 16> ToInstrument;
++  SmallVector<Instruction*, 8> NoReturnCalls;
++  bool isWrite;
++
++  // Fill the set of memory operations to instrument.
++  for (Function::iterator bb = F.begin(), FE = F.end();
++       bb != FE; ++bb) {
++    tempToInstrument.clear();
++      
++    int NumInsnsPerBB = 0;
++    for (BasicBlock::iterator ins = bb->begin(), BE = bb->end();
++         ins != BE; ++ins) {
++      if (Value *addr = isInterestingMemoryAccess(ins, &isWrite)) {
++        if(isLocalVariable(addr)) {
++          continue;
++        }
++         
++        instrementMemoryAccess(ins);
++#if 0
++        if (!tempToInstrument.insert(addr)) {
++          errs() << "Now discarding instruction because of already there:\n" ;
++         // addr->dump();
++          ins->dump();
++         // errs() << "\n";
++          continue;  // We've seen this temp in the current BB.
++        }
++        else {
++         // errs() << "Inserting instruction:\n" ;
++         // addr->dump();
++         // ins->dump();
++
++          // Value->getValueID() can be used to differentiate the global variable or static variable.
++         // errs() << "with value id is:" <<  addr->getValueID() << ". Valuename:" << addr->getValueName() << "\n";
++         // errs() << "\n";
++        }
++#endif
++  //    } else if (isa<MemIntrinsic>(ins)) {
++        // ok, take it.
++      }
++#if 0 
++      else {
++        if (CallInst *CI = dyn_cast<CallInst>(ins)) {
++          // A call inside BB.
++          tempToInstrument.clear();
++          if (CI->doesNotReturn()) {
++            NoReturnCalls.push_back(CI);
++          }
++        }
++        continue;
++      }
++      ToInstrument.push_back(ins);
++      NumInsnsPerBB++;
++      if (NumInsnsPerBB >= maxInsPerBB)
++        break;
++#endif
++    }
++  }
++
++  int NumInstrumented = 0;
++#if 0
++  // Actual instrumentation.
++  for (size_t i = 0, n = ToInstrument.size(); i != n; i++) {
++    Instruction *Inst = ToInstrument[i];
++    if (isInterestingMemoryAccess(Inst, &isWrite))
++      instrementMemoryAccess(Inst);
++ //   else
++ //     instrumentMemIntrinsic(cast<MemIntrinsic>(Inst));
++    NumInstrumented++;
++  }
++#endif
++  return NumInstrumented > 0;
++}
++
+diff -Nur llvm-3.2-source-orig/lib/Transforms/instrumenter/Makefile llvm-3.2-new/lib/Transforms/instrumenter/Makefile
+--- llvm-3.2-source-orig/lib/Transforms/instrumenter/Makefile	1969-12-31 16:00:00.000000000 -0800
++++ llvm-3.2-new/lib/Transforms/instrumenter/Makefile	2013-07-11 14:30:45.057893015 -0700
+@@ -0,0 +1,11 @@
++# Makefile for hello pass
++
++# Path to top level of LLVM hierarchy
++LEVEL = ../../..
++
++# Name of the library to build
++LIBRARYNAME = LLVMInstrumenter
++BUILD_ARCHIVE = 1
++
++# Include the makefile implementation stuff
++include $(LEVEL)/Makefile.common
+diff -Nur llvm-3.2-source-orig/tools/bugpoint/CMakeLists.txt llvm-3.2-new/tools/bugpoint/CMakeLists.txt
+--- llvm-3.2-source-orig/tools/bugpoint/CMakeLists.txt	2013-07-08 11:13:46.272948436 -0700
++++ llvm-3.2-new/tools/bugpoint/CMakeLists.txt	2013-07-11 14:30:45.305893014 -0700
+@@ -1,4 +1,4 @@
+-set(LLVM_LINK_COMPONENTS asmparser instrumentation scalaropts ipo
++set(LLVM_LINK_COMPONENTS asmparser instrumentation instrumenter scalaropts ipo
+   linker bitreader bitwriter vectorize)
+ 
+ add_llvm_tool(bugpoint
+diff -Nur llvm-3.2-source-orig/tools/bugpoint/Makefile llvm-3.2-new/tools/bugpoint/Makefile
+--- llvm-3.2-source-orig/tools/bugpoint/Makefile	2013-07-08 11:13:46.272948436 -0700
++++ llvm-3.2-new/tools/bugpoint/Makefile	2013-07-11 14:30:45.305893014 -0700
+@@ -9,7 +9,7 @@
+ 
+ LEVEL := ../..
+ TOOLNAME := bugpoint
+-LINK_COMPONENTS := asmparser instrumentation scalaropts ipo linker bitreader \
++LINK_COMPONENTS := asmparser instrumentation instrumenter scalaropts ipo linker bitreader \
+                    bitwriter vectorize
+ 
+ include $(LEVEL)/Makefile.common
+diff -Nur llvm-3.2-source-orig/tools/clang/examples/clang-interpreter/Makefile llvm-3.2-new/tools/clang/examples/clang-interpreter/Makefile
+--- llvm-3.2-source-orig/tools/clang/examples/clang-interpreter/Makefile	2013-07-08 11:13:46.128948439 -0700
++++ llvm-3.2-new/tools/clang/examples/clang-interpreter/Makefile	2013-07-11 14:30:45.141893015 -0700
+@@ -16,7 +16,7 @@
+ TOOL_NO_EXPORTS = 1
+ 
+ LINK_COMPONENTS := jit interpreter nativecodegen bitreader bitwriter ipo \
+-	linker selectiondag asmparser instrumentation
++	linker selectiondag asmparser instrumentation instrumenter
+ USEDLIBS = clangFrontend.a clangSerialization.a clangDriver.a clangCodeGen.a \
+            clangParse.a clangSema.a clangStaticAnalyzerFrontend.a \
+            clangStaticAnalyzerCheckers.a clangStaticAnalyzerCore.a \
+diff -Nur llvm-3.2-source-orig/tools/clang/include/clang/Basic/LangOptions.def llvm-3.2-new/tools/clang/include/clang/Basic/LangOptions.def
+--- llvm-3.2-source-orig/tools/clang/include/clang/Basic/LangOptions.def	2013-07-08 11:13:46.100948439 -0700
++++ llvm-3.2-new/tools/clang/include/clang/Basic/LangOptions.def	2013-07-11 14:30:45.065893015 -0700
+@@ -174,6 +174,8 @@
+ BENIGN_LANGOPT(Sanitize##ID, 1, 0, NAME " sanitizer")
+ #include "clang/Basic/Sanitizers.def"
+ 
++BENIGN_LANGOPT(Instrumenter, 1, 0, "RW instrumenter for false sharing detection")
++
+ #undef LANGOPT
+ #undef VALUE_LANGOPT
+ #undef BENIGN_LANGOPT
+diff -Nur llvm-3.2-source-orig/tools/clang/include/clang/Driver/Options.td llvm-3.2-new/tools/clang/include/clang/Driver/Options.td
+--- llvm-3.2-source-orig/tools/clang/include/clang/Driver/Options.td	2013-07-08 11:13:46.100948439 -0700
++++ llvm-3.2-new/tools/clang/include/clang/Driver/Options.td	2013-07-11 14:30:45.065893015 -0700
+@@ -299,6 +299,7 @@
+ def fthread_sanitizer : Flag<["-"], "fthread-sanitizer">, Group<f_Group>;
+ def fno_thread_sanitizer : Flag<["-"], "fno-thread-sanitizer">, Group<f_Group>;
+ def fasm : Flag<["-"], "fasm">, Group<f_Group>;
++def finstrumenter : Flag<["-"], "finstrumenter">, Group<f_Group>, Flags<[CC1Option]>;
+ 
+ def fasm_blocks : Flag<["-"], "fasm-blocks">, Group<f_Group>;
+ def fno_asm_blocks : Flag<["-"], "fno-asm-blocks">, Group<f_Group>;
+diff -Nur llvm-3.2-source-orig/tools/clang/lib/CodeGen/BackendUtil.cpp llvm-3.2-new/tools/clang/lib/CodeGen/BackendUtil.cpp
+--- llvm-3.2-source-orig/tools/clang/lib/CodeGen/BackendUtil.cpp	2013-07-08 11:13:46.120948439 -0700
++++ llvm-3.2-new/tools/clang/lib/CodeGen/BackendUtil.cpp	2013-07-11 14:30:45.117893015 -0700
+@@ -168,6 +168,12 @@
+   PM.add(createThreadSanitizerPass());
+ }
+ 
++static void addInstrumenterPass(const PassManagerBuilder &Builder,
++                                    PassManagerBase &PM) {
++  PM.add(createInstrumenterPass());
++}
++
++
+ void EmitAssemblyHelper::CreatePasses(TargetMachine *TM) {
+   unsigned OptLevel = CodeGenOpts.OptimizationLevel;
+   CodeGenOptions::InliningMethod Inlining = CodeGenOpts.getInlining();
+@@ -212,6 +218,14 @@
+                            addAddressSanitizerPass);
+   }
+ 
++  if (LangOpts.Instrumenter) {
++    // Added by tongping in order to instrument all reads/writes.
++    PMBuilder.addExtension(PassManagerBuilder::EP_OptimizerLast,
++                           addInstrumenterPass);
++    PMBuilder.addExtension(PassManagerBuilder::EP_EnabledOnOptLevel0,
++                           addInstrumenterPass);
++  }
++
+   if (LangOpts.SanitizeThread) {
+     PMBuilder.addExtension(PassManagerBuilder::EP_OptimizerLast,
+                            addThreadSanitizerPass);
+diff -Nur llvm-3.2-source-orig/tools/clang/lib/CodeGen/CMakeLists.txt llvm-3.2-new/tools/clang/lib/CodeGen/CMakeLists.txt
+--- llvm-3.2-source-orig/tools/clang/lib/CodeGen/CMakeLists.txt	2013-07-08 11:13:46.120948439 -0700
++++ llvm-3.2-new/tools/clang/lib/CodeGen/CMakeLists.txt	2013-07-11 14:30:45.121893015 -0700
+@@ -3,6 +3,7 @@
+   bitreader
+   bitwriter
+   instrumentation
++  instrumenter
+   ipo
+   linker
+   vectorize
+diff -Nur llvm-3.2-source-orig/tools/clang/lib/Driver/Tools.cpp llvm-3.2-new/tools/clang/lib/Driver/Tools.cpp
+--- llvm-3.2-source-orig/tools/clang/lib/Driver/Tools.cpp	2013-07-08 11:13:46.116948439 -0700
++++ llvm-3.2-new/tools/clang/lib/Driver/Tools.cpp	2013-07-11 14:30:45.105893015 -0700
+@@ -1606,6 +1606,11 @@
+   ArgStringList CmdArgs;
+ 
+   assert(Inputs.size() == 1 && "Unable to handle multiple inputs.");
++#if 0
++    for (unsigned i = 0, e = Inputs.size(); i != e; ++i) {
++      llvm::errs() << "ConstructJob: " << Inputs[i].getAsString() << "\n";
++    }
++#endif
+ 
+   // Invoke ourselves in -cc1 mode.
+   //
+@@ -1720,6 +1725,11 @@
+   if (Args.hasArg(options::OPT_static))
+     CmdArgs.push_back("-static-define");
+ 
++  if (Args.hasArg(options::OPT_finstrumenter)) {
++   // llvm::errs() << "adding finstrumenter!!!!!\n" ;
++    CmdArgs.push_back("-finstrumenter");
++  }
++
+   if (isa<AnalyzeJobAction>(JA)) {
+     // Enable region store model by default.
+     CmdArgs.push_back("-analyzer-store=region");
+@@ -2164,6 +2174,7 @@
+   Args.AddAllArgs(CmdArgs, options::OPT_fdata_sections);
+ 
+   Args.AddAllArgs(CmdArgs, options::OPT_finstrument_functions);
++//  Args.AddAllArgs(CmdArgs, options::OPT_finstrumenter);
+ 
+   if (Args.hasArg(options::OPT_ftest_coverage) ||
+       Args.hasArg(options::OPT_coverage))
+diff -Nur llvm-3.2-source-orig/tools/clang/lib/Frontend/CompilerInvocation.cpp llvm-3.2-new/tools/clang/lib/Frontend/CompilerInvocation.cpp
+--- llvm-3.2-source-orig/tools/clang/lib/Frontend/CompilerInvocation.cpp	2013-07-08 11:13:46.116948439 -0700
++++ llvm-3.2-new/tools/clang/lib/Frontend/CompilerInvocation.cpp	2013-07-11 14:30:45.105893015 -0700
+@@ -1100,7 +1100,7 @@
+     if (Args.hasArg(OPT_fno_objc_infer_related_result_type))
+       Opts.ObjCInferRelatedResultType = 0;
+   }
+-    
++
+   if (Args.hasArg(OPT_fgnu89_inline))
+     Opts.GNUInline = 1;
+ 
+@@ -1273,6 +1273,15 @@
+   case 2: Opts.setStackProtector(LangOptions::SSPReq); break;
+   }
+ 
++  if(Args.hasArg(OPT_finstrumenter)) {
++    Opts.Instrumenter = 1;
++  }
++  else {
++    if(getenv("INSTRUMENTER") != NULL) {
++      Opts.Instrumenter = 1;
++    }
++  }
++    
+   // Parse -fsanitize= arguments.
+   std::vector<std::string> Sanitizers = Args.getAllArgValues(OPT_fsanitize_EQ);
+   for (unsigned I = 0, N = Sanitizers.size(); I != N; ++I) {
+@@ -1303,6 +1312,7 @@
+       break;
+     }
+   }
++
+ }
+ 
+ static void ParsePreprocessorArgs(PreprocessorOptions &Opts, ArgList &Args,
+@@ -1448,6 +1458,7 @@
+   // Issue errors on unknown arguments.
+   for (arg_iterator it = Args->filtered_begin(OPT_UNKNOWN),
+          ie = Args->filtered_end(); it != ie; ++it) {
++    llvm::errs() << "Unknown ARG:" << (*it)->getAsString(*Args) << "\n";
+     Diags.Report(diag::err_drv_unknown_argument) << (*it)->getAsString(*Args);
+     Success = false;
+   }
+@@ -1455,6 +1466,8 @@
+   // Issue errors on arguments that are not valid for CC1.
+   for (ArgList::iterator I = Args->begin(), E = Args->end();
+        I != E; ++I) {
++//    llvm::errs() << "ARG:" << (*I)->getAsString(*Args) << "\n";
++    
+     if (!(*I)->getOption().hasFlag(options::CC1Option)) {
+       Diags.Report(diag::err_drv_unknown_argument) << (*I)->getAsString(*Args);
+       Success = false;
+diff -Nur llvm-3.2-source-orig/tools/clang/tools/driver/CMakeLists.txt llvm-3.2-new/tools/clang/tools/driver/CMakeLists.txt
+--- llvm-3.2-source-orig/tools/clang/tools/driver/CMakeLists.txt	2013-07-08 11:13:46.124948439 -0700
++++ llvm-3.2-new/tools/clang/tools/driver/CMakeLists.txt	2013-07-11 14:30:45.137893015 -0700
+@@ -5,6 +5,7 @@
+   bitwriter
+   codegen
+   instrumentation
++  instrumenter
+   ipo
+   linker
+   selectiondag
+diff -Nur llvm-3.2-source-orig/tools/clang/tools/driver/Makefile llvm-3.2-new/tools/clang/tools/driver/Makefile
+--- llvm-3.2-source-orig/tools/clang/tools/driver/Makefile	2013-07-08 11:13:46.124948439 -0700
++++ llvm-3.2-new/tools/clang/tools/driver/Makefile	2013-07-11 14:30:45.137893015 -0700
+@@ -30,7 +30,7 @@
+ include $(CLANG_LEVEL)/../../Makefile.config
+ 
+ LINK_COMPONENTS := $(TARGETS_TO_BUILD) asmparser bitreader bitwriter codegen \
+-                   instrumentation ipo linker selectiondag
++                   instrumentation instrumenter ipo linker selectiondag
+ USEDLIBS = clangFrontendTool.a clangFrontend.a clangDriver.a \
+            clangSerialization.a clangCodeGen.a clangParse.a clangSema.a \
+            clangStaticAnalyzerFrontend.a clangStaticAnalyzerCheckers.a \
+diff -Nur llvm-3.2-source-orig/tools/llvm-cov/CMakeLists.txt llvm-3.2-new/tools/llvm-cov/CMakeLists.txt
+--- llvm-3.2-source-orig/tools/llvm-cov/CMakeLists.txt	2013-07-08 11:13:46.272948436 -0700
++++ llvm-3.2-new/tools/llvm-cov/CMakeLists.txt	2013-07-11 14:30:45.301893014 -0700
+@@ -1,4 +1,4 @@
+-set(LLVM_LINK_COMPONENTS instrumentation )
++set(LLVM_LINK_COMPONENTS instrumentation instrumenter )
+ 
+ add_llvm_tool(llvm-cov
+   llvm-cov.cpp
+diff -Nur llvm-3.2-source-orig/tools/llvm-cov/Makefile llvm-3.2-new/tools/llvm-cov/Makefile
+--- llvm-3.2-source-orig/tools/llvm-cov/Makefile	2013-07-08 11:13:46.272948436 -0700
++++ llvm-3.2-new/tools/llvm-cov/Makefile	2013-07-11 14:30:45.301893014 -0700
+@@ -9,7 +9,7 @@
+ 
+ LEVEL := ../..
+ TOOLNAME := llvm-cov
+-LINK_COMPONENTS := instrumentation
++LINK_COMPONENTS := instrumentation instrumenter
+ 
+ # This tool has no plugins, optimize startup time.
+ TOOL_NO_EXPORTS := 1
+diff -Nur llvm-3.2-source-orig/tools/llvm-stress/CMakeLists.txt llvm-3.2-new/tools/llvm-stress/CMakeLists.txt
+--- llvm-3.2-source-orig/tools/llvm-stress/CMakeLists.txt	2013-07-08 11:13:46.272948436 -0700
++++ llvm-3.2-new/tools/llvm-stress/CMakeLists.txt	2013-07-11 14:30:45.301893014 -0700
+@@ -1,4 +1,4 @@
+-set(LLVM_LINK_COMPONENTS bitreader asmparser bitwriter instrumentation scalaropts ipo)
++set(LLVM_LINK_COMPONENTS bitreader asmparser bitwriter instrumentation instrumenter scalaropts ipo)
+ 
+ add_llvm_tool(llvm-stress
+   llvm-stress.cpp
+diff -Nur llvm-3.2-source-orig/tools/llvm-stress/Makefile llvm-3.2-new/tools/llvm-stress/Makefile
+--- llvm-3.2-source-orig/tools/llvm-stress/Makefile	2013-07-08 11:13:46.272948436 -0700
++++ llvm-3.2-new/tools/llvm-stress/Makefile	2013-07-11 14:30:45.301893014 -0700
+@@ -10,7 +10,7 @@
+ LEVEL := ../..
+ TOOLNAME := llvm-stress
+ LINK_COMPONENTS := object
+-LINK_COMPONENTS := bitreader bitwriter asmparser instrumentation scalaropts ipo
++LINK_COMPONENTS := bitreader bitwriter asmparser instrumentation instrumenter scalaropts ipo
+ 
+ # This tool has no plugins, optimize startup time.
+ TOOL_NO_EXPORTS = 1
+diff -Nur llvm-3.2-source-orig/tools/opt/Makefile llvm-3.2-new/tools/opt/Makefile
+--- llvm-3.2-source-orig/tools/opt/Makefile	2013-07-08 11:13:46.268948436 -0700
++++ llvm-3.2-new/tools/opt/Makefile	2013-07-11 14:30:45.277893014 -0700
+@@ -9,6 +9,6 @@
+ 
+ LEVEL := ../..
+ TOOLNAME := opt
+-LINK_COMPONENTS := bitreader bitwriter asmparser instrumentation scalaropts ipo vectorize all-targets
++LINK_COMPONENTS := bitreader bitwriter asmparser instrumentation instrumenter scalaropts ipo vectorize all-targets
+ 
+ include $(LEVEL)/Makefile.common
+diff -Nur llvm-3.2-source-orig/tools/opt/opt.cpp llvm-3.2-new/tools/opt/opt.cpp
+--- llvm-3.2-source-orig/tools/opt/opt.cpp	2013-07-08 11:13:46.268948436 -0700
++++ llvm-3.2-new/tools/opt/opt.cpp	2013-07-11 14:30:45.277893014 -0700
+@@ -579,6 +579,7 @@
+   initializeTransformUtils(Registry);
+   initializeInstCombine(Registry);
+   initializeInstrumentation(Registry);
++  initializeInstrumenter(Registry);
+   initializeTarget(Registry);
+ 
+   cl::ParseCommandLineOptions(argc, argv,
+--- llvm-3.2-source-orig/lib/Transforms/Makefile	2013-07-08 11:13:46.092948439 -0700
++++ llvm-3.2-new/lib/Transforms/Makefile	2013-07-11 15:11:12.553876034 -0700
+@@ -8,7 +8,7 @@
+ ##===----------------------------------------------------------------------===##
+ 
+ LEVEL = ../..
+-PARALLEL_DIRS = Utils Instrumentation Scalar InstCombine IPO Vectorize Hello
++PARALLEL_DIRS = Utils Instrumentation Scalar InstCombine IPO instrumenter Vectorize Hello
+ 
+ include $(LEVEL)/Makefile.config
+ 
+--- llvm-3.2-source-orig/build.sh	1969-12-31 16:00:00.000000000 -0800
++++ llvm-3.2/build.sh	2013-07-09 10:49:58.293157320 -0700
+@@ -0,0 +1,12 @@
++#!/bin/sh
++
++./configure --prefix=/home/tongping/work/llvm/try/llvm-install \
++            --sysconfdir=/etc          \
++            --libdir=/home/tongping/work/llvm/try/llvm-install/lib/llvm     \
++            --enable-optimized         \
++            --enable-shared            \
++            --enable-targets=all       \
++            --disable-assertions       \
++            --disable-debug-runtime    \
++            --disable-expensive-checks 
++make -j8 & make install
